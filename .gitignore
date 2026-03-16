@@ -59,6 +59,7 @@ application_default_credentials.json
 .cursor/
 .goose/
 .nuxtrc
+.history/
 
 # Public Content
 content/social/
