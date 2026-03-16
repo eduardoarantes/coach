@@ -118,6 +118,8 @@ model User {
   oauthConsents                      OAuthConsent[]
   oauthTokens                        OAuthToken[]
   plannedWorkouts                    PlannedWorkout[]
+  workoutLibraries                   WorkoutLibrary[]
+  workoutLibraryItems                WorkoutLibraryItem[]
   recommendations                    Recommendation[]
   reports                            Report[]
   reportTemplates                    ReportTemplate[]
@@ -575,13 +577,12 @@ model Workout {
   plannedWorkout                  PlannedWorkout?   @relation(fields: [plannedWorkoutId], references: [id])
   user                            User              @relation(fields: [userId], references: [id], onDelete: Cascade)
   exercises                       WorkoutExercise[]
-
-  @@index([tags], type: Gin)
   streams                         WorkoutStream?
   metricHistory                   MetricHistory[]
   personalBests                   PersonalBest[]
 
   @@unique([userId, source, externalId])
+  @@index([tags], type: Gin)
   @@index([userId, date])
   @@index([userId, isDuplicate])
   @@index([date])
@@ -688,51 +689,52 @@ model FitFile {
 }
 
 model PlannedWorkout {
-  id                String                   @id @default(uuid())
-  userId            String
-  externalId        String
-  date              DateTime                 @db.Date
-  title             String
-  description       String?
-  type              String?
-  category          String?
-  durationSec       Int?
-  distanceMeters    Float?
-  tss               Float?
-  workIntensity     Float?
-  completed         Boolean?                 @default(false)
-  rawJson           Json?
-  createdAt         DateTime                 @default(now())
-  updatedAt         DateTime                 @updatedAt
-  lastSyncedAt      DateTime?
-  modifiedLocally   Boolean                  @default(false)
-  lastStructureEditedAt DateTime?
-  lastStructureEditSource String?
-  lastStructurePublishedAt DateTime?
-  lastRemoteStructureSeenAt DateTime?
-  structureHash     String?
-  remoteStructureHash String?
-  syncConflict      Boolean                  @default(false)
+  id                             String                        @id @default(uuid())
+  userId                         String
+  externalId                     String
+  date                           DateTime                      @db.Date
+  title                          String
+  description                    String?
+  type                           String?
+  category                       String?
+  durationSec                    Int?
+  distanceMeters                 Float?
+  tss                            Float?
+  workIntensity                  Float?
+  completed                      Boolean?                      @default(false)
+  rawJson                        Json?
+  createdAt                      DateTime                      @default(now())
+  updatedAt                      DateTime                      @updatedAt
+  lastSyncedAt                   DateTime?
+  modifiedLocally                Boolean                       @default(false)
+  lastStructureEditedAt          DateTime?
+  lastStructureEditSource        String?
+  lastStructurePublishedAt       DateTime?
+  lastRemoteStructureSeenAt      DateTime?
+  structureHash                  String?
+  remoteStructureHash            String?
+  syncConflict                   Boolean                       @default(false)
   pendingRemoteStructuredWorkout Json?
-  syncError         String?
-  syncStatus        String?                  @default("SYNCED")
-  shareToken        String?                  @unique
-  completionStatus  String                   @default("PENDING")
-  structuredWorkout Json?
-  trainingWeekId    String?
-  targetArea        String?
-  managedBy         String                   @default("USER")
-  fuelingStrategy   String?
-  startTime         String?
-  createdFromSettingsSnapshot   Json?
+  syncError                      String?
+  syncStatus                     String?                       @default("SYNCED")
+  shareToken                     String?                       @unique
+  completionStatus               String                        @default("PENDING")
+  structuredWorkout              Json?
+  trainingWeekId                 String?
+  targetArea                     String?
+  managedBy                      String                        @default("USER")
+  fuelingStrategy                String?
+  startTime                      String?
+  createdFromSettingsSnapshot    Json?
   lastGenerationSettingsSnapshot Json?
-  lastGenerationContext         Json?
-  recommendations   ActivityRecommendation[]
-  planAdherences    PlanAdherence[]
-  publishTargets    PlannedWorkoutPublishTarget[]
-  trainingWeek      TrainingWeek?            @relation(fields: [trainingWeekId], references: [id])
-  user              User                     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  completedWorkouts Workout[]
+  lastGenerationContext          Json?
+  recommendations                ActivityRecommendation[]
+  planAdherences                 PlanAdherence[]
+  publishTargets                 PlannedWorkoutPublishTarget[]
+  libraryItems                   WorkoutLibraryItem[]
+  trainingWeek                   TrainingWeek?                 @relation(fields: [trainingWeekId], references: [id])
+  user                           User                          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  completedWorkouts              Workout[]
 
   @@unique([userId, externalId])
   @@index([userId, date])
@@ -740,21 +742,67 @@ model PlannedWorkout {
 }
 
 model PlannedWorkoutPublishTarget {
-  id              String        @id @default(uuid())
+  id               String         @id @default(uuid())
   plannedWorkoutId String
-  provider        String
-  externalId      String?
-  scheduleId      String?
-  status          String        @default("PENDING")
-  error           String?
-  lastSyncedAt    DateTime?
-  createdAt       DateTime      @default(now())
-  updatedAt       DateTime      @updatedAt
-  plannedWorkout  PlannedWorkout @relation(fields: [plannedWorkoutId], references: [id], onDelete: Cascade)
+  provider         String
+  externalId       String?
+  scheduleId       String?
+  status           String         @default("PENDING")
+  error            String?
+  lastSyncedAt     DateTime?
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+  plannedWorkout   PlannedWorkout @relation(fields: [plannedWorkoutId], references: [id], onDelete: Cascade)
 
   @@unique([plannedWorkoutId, provider])
   @@index([provider, externalId])
   @@index([status])
+}
+
+model WorkoutLibrary {
+  id          String                     @id @default(uuid())
+  userId      String
+  name        String
+  description String?
+  visibility  WorkoutLibraryVisibility   @default(PRIVATE)
+  isDefault   Boolean                    @default(false)
+  defaultKind WorkoutLibraryDefaultKind?
+  createdAt   DateTime                   @default(now())
+  updatedAt   DateTime                   @updatedAt
+  items       WorkoutLibraryItem[]
+  user        User                       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, defaultKind])
+  @@index([userId])
+  @@index([visibility, createdAt])
+}
+
+model WorkoutLibraryItem {
+  id                     String          @id @default(uuid())
+  userId                 String
+  libraryId              String
+  title                  String
+  description            String?
+  type                   String?
+  category               String?
+  durationSec            Int?
+  distanceMeters         Float?
+  tss                    Float?
+  workIntensity          Float?
+  targetArea             String?
+  tags                   String[]        @default([])
+  structuredWorkout      Json?
+  sourcePlannedWorkoutId String?
+  createdAt              DateTime        @default(now())
+  updatedAt              DateTime        @updatedAt
+  library                WorkoutLibrary  @relation(fields: [libraryId], references: [id], onDelete: Cascade)
+  sourcePlannedWorkout   PlannedWorkout? @relation(fields: [sourcePlannedWorkoutId], references: [id], onDelete: SetNull)
+  user                   User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([libraryId])
+  @@index([userId, type])
+  @@index([sourcePlannedWorkoutId])
 }
 
 model CalendarNote {
@@ -780,83 +828,83 @@ model CalendarNote {
 }
 
 model DailyMetric {
-  id            String   @id @default(uuid())
-  userId        String
-  date          DateTime @db.Date
-  source        String
-  hrv           Float?
-  restingHr     Int?
-  sleepScore    Int?
-  hoursSlept    Float?
-  recoveryScore Int?
-  strainScore   Float?
-  spO2          Float?
+  id             String   @id @default(uuid())
+  userId         String
+  date           DateTime @db.Date
+  source         String
+  hrv            Float?
+  restingHr      Int?
+  sleepScore     Int?
+  hoursSlept     Float?
+  recoveryScore  Int?
+  strainScore    Float?
+  spO2           Float?
   sleepDeepSecs  Int?
   sleepRemSecs   Int?
   sleepLightSecs Int?
   sleepAwakeSecs Int?
-  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, date])
 }
 
 model Wellness {
-  id               String    @id @default(uuid())
-  userId           String
-  date             DateTime  @db.Date
-  hrv              Float?
-  hrvSdnn          Float?
-  restingHr        Int?
-  avgSleepingHr    Int?
-  sleepSecs        Int?
-  sleepHours       Float?
-  sleepScore       Int?
-  sleepQuality     Int?
-  sleepDeepSecs    Int?
-  sleepRemSecs     Int?
-  sleepLightSecs   Int?
-  sleepAwakeSecs   Int?
-  readiness        Int?
-  recoveryScore    Int?
-  soreness         Int?
-  fatigue          Int?
-  stress           Int?
-  mood             Int?
-  motivation       Int?
-  weight           Float?
-  spO2             Float?
-  ctl              Float?
-  atl              Float?
-  comments         String?
-  rawJson          Json?
-  createdAt        DateTime  @default(now())
-  updatedAt        DateTime  @updatedAt
-  abdomen          Float?
-  bloodGlucose     Float?
-  bodyFat          Float?
-  diastolic        Int?
-  hydration        String?
-  hydrationVolume  Float?
-  injury           String?
-  lactate          Float?
-  menstrualPhase   String?
-  respiration      Float?
-  skinTemp         Float?
-  systolic         Int?
-  vo2max           Float?
+  id                    String    @id @default(uuid())
+  userId                String
+  date                  DateTime  @db.Date
+  hrv                   Float?
+  hrvSdnn               Float?
+  restingHr             Int?
+  avgSleepingHr         Int?
+  sleepSecs             Int?
+  sleepHours            Float?
+  sleepScore            Int?
+  sleepQuality          Int?
+  sleepDeepSecs         Int?
+  sleepRemSecs          Int?
+  sleepLightSecs        Int?
+  sleepAwakeSecs        Int?
+  readiness             Int?
+  recoveryScore         Int?
+  soreness              Int?
+  fatigue               Int?
+  stress                Int?
+  mood                  Int?
+  motivation            Int?
+  weight                Float?
+  spO2                  Float?
+  ctl                   Float?
+  atl                   Float?
+  comments              String?
+  rawJson               Json?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+  abdomen               Float?
+  bloodGlucose          Float?
+  bodyFat               Float?
+  diastolic             Int?
+  hydration             String?
+  hydrationVolume       Float?
+  injury                String?
+  lactate               Float?
+  menstrualPhase        String?
+  respiration           Float?
+  skinTemp              Float?
+  systolic              Int?
+  vo2max                Float?
   restingCaloriesBurned Int?
   activeCaloriesBurned  Int?
   totalCaloriesBurned   Int?
-  aiAnalysis       String?
-  aiAnalysisJson   Json?
-  aiAnalysisStatus String?   @default("NOT_STARTED")
-  aiAnalyzedAt     DateTime?
-  feedback         String?
-  feedbackText     String?
-  history          Json?
-  lastSource       String?
-  tags             String? // Comma-separated tags (e.g. "Alcohol", "Sick")
-  user             User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  aiAnalysis            String?
+  aiAnalysisJson        Json?
+  aiAnalysisStatus      String?   @default("NOT_STARTED")
+  aiAnalyzedAt          DateTime?
+  feedback              String?
+  feedbackText          String?
+  history               Json?
+  lastSource            String?
+  tags                  String? // Comma-separated tags (e.g. "Alcohol", "Sick")
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, date])
   @@index([userId, date])
@@ -1357,7 +1405,7 @@ model ChatParticipant {
 }
 
 model ChatMessage {
-  id        String   @id @default(uuid())
+  id        String    @id @default(uuid())
   content   String
   roomId    String
   turnId    String?
@@ -1365,10 +1413,10 @@ model ChatMessage {
   files     Json?
   replyToId String?
   seen      Json?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
   metadata  Json?
-  room      ChatRoom @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  room      ChatRoom  @relation(fields: [roomId], references: [id], onDelete: Cascade)
   turn      ChatTurn? @relation(fields: [turnId], references: [id], onDelete: SetNull)
 
   @@index([roomId, createdAt])
@@ -1376,29 +1424,29 @@ model ChatMessage {
 }
 
 model ChatTurn {
-  id                String                  @id @default(uuid())
-  roomId            String
-  userId            String
-  userMessageId     String
+  id                 String                  @id @default(uuid())
+  roomId             String
+  userId             String
+  userMessageId      String
   assistantMessageId String?
-  status            String
-  lineageId         String
-  retryOfTurnId     String?
-  runId             String?
-  startedAt         DateTime?
-  finishedAt        DateTime?
-  failureReason     String?
-  lastHeartbeatAt   DateTime?
-  providerRequestId String?
-  metadata          Json?
-  createdAt         DateTime                @default(now())
-  updatedAt         DateTime                @updatedAt
-  room              ChatRoom                @relation(fields: [roomId], references: [id], onDelete: Cascade)
-  user              User                    @relation(fields: [userId], references: [id], onDelete: Cascade)
-  messages          ChatMessage[]
-  llmUsage          LlmUsage[]
-  events            ChatTurnEvent[]
-  toolExecutions    ChatTurnToolExecution[]
+  status             String
+  lineageId          String
+  retryOfTurnId      String?
+  runId              String?
+  startedAt          DateTime?
+  finishedAt         DateTime?
+  failureReason      String?
+  lastHeartbeatAt    DateTime?
+  providerRequestId  String?
+  metadata           Json?
+  createdAt          DateTime                @default(now())
+  updatedAt          DateTime                @updatedAt
+  room               ChatRoom                @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  user               User                    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  messages           ChatMessage[]
+  llmUsage           LlmUsage[]
+  events             ChatTurnEvent[]
+  toolExecutions     ChatTurnToolExecution[]
 
   @@index([roomId, createdAt])
   @@index([userId, createdAt])
@@ -1408,7 +1456,7 @@ model ChatTurn {
 
 model ChatTurnEvent {
   id        String   @id @default(uuid())
-  turnId     String
+  turnId    String
   type      String
   data      Json?
   createdAt DateTime @default(now())
@@ -1461,7 +1509,7 @@ model SyncQueue {
 }
 
 model LlmUsage {
-  id               String   @id @default(uuid())
+  id               String    @id @default(uuid())
   userId           String?
   turnId           String?
   provider         String
@@ -1472,25 +1520,25 @@ model LlmUsage {
   entityId         String?
   promptTokens     Int?
   completionTokens Int?
-  cachedTokens     Int?     @default(0)
-  reasoningTokens  Int?     @default(0)
+  cachedTokens     Int?      @default(0)
+  reasoningTokens  Int?      @default(0)
   totalTokens      Int?
   estimatedCost    Float?
   durationMs       Int?
   ttft             Int?
-  retryCount       Int      @default(0)
+  retryCount       Int       @default(0)
   success          Boolean
   errorType        String?
   errorMessage     String?
   promptPreview    String?
   responsePreview  String?
-  createdAt        DateTime @default(now())
+  createdAt        DateTime  @default(now())
   promptFull       String?
   responseFull     String?
   feedback         String?
   feedbackText     String?
-  counted          Boolean  @default(true)
-  user             User?    @relation(fields: [userId], references: [id])
+  counted          Boolean   @default(true)
+  user             User?     @relation(fields: [userId], references: [id])
   turn             ChatTurn? @relation(fields: [turnId], references: [id], onDelete: SetNull)
 
   @@index([userId, createdAt])
@@ -1594,6 +1642,15 @@ enum SubscriptionTier {
   PRO
 }
 
+enum WorkoutLibraryVisibility {
+  PRIVATE
+  PUBLIC
+}
+
+enum WorkoutLibraryDefaultKind {
+  AI_GENERATED
+}
+
 enum SubscriptionStatus {
   ACTIVE
   CANCELED
@@ -1627,19 +1684,19 @@ model BugReport {
 }
 
 model BugReportComment {
-  id          String      @id @default(uuid())
-  bugReportId String
-  userId      String
-  content     String
-  isAdmin     Boolean     @default(false)
-  type        CommentType @default(MESSAGE)
+  id             String      @id @default(uuid())
+  bugReportId    String
+  userId         String
+  content        String
+  isAdmin        Boolean     @default(false)
+  type           CommentType @default(MESSAGE)
   acknowledgedAt DateTime?
   acknowledgedBy String?
-  reactions   Json?
-  createdAt   DateTime    @default(now())
-  updatedAt   DateTime    @updatedAt
-  bugReport   BugReport   @relation(fields: [bugReportId], references: [id], onDelete: Cascade)
-  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  reactions      Json?
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+  bugReport      BugReport   @relation(fields: [bugReportId], references: [id], onDelete: Cascade)
+  user           User        @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([bugReportId])
   @@index([userId])
@@ -1814,22 +1871,22 @@ model EmailSuppression {
 }
 
 model MetricHistory {
-  id        String   @id @default(uuid())
-  userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
-  type      String   // LTHR, FTP, MAX_HR, THRESHOLD_PACE, PEAK_POWER_5S, etc.
-  value     Float
-  oldValue  Float?
-  
+  id     String @id @default(uuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  type     String // LTHR, FTP, MAX_HR, THRESHOLD_PACE, PEAK_POWER_5S, etc.
+  value    Float
+  oldValue Float?
+
   date      DateTime @default(now())
   workoutId String?
   workout   Workout? @relation(fields: [workoutId], references: [id], onDelete: SetNull)
-  
-  source    String   @default("AUTOMATIC") // AUTOMATIC, MANUAL
+
+  source           String  @default("AUTOMATIC") // AUTOMATIC, MANUAL
   sportProfileName String?
-  notes     String?
-  
+  notes            String?
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -1860,22 +1917,22 @@ model BodyMeasurementEntry {
 }
 
 model PersonalBest {
-  id        String   @id @default(uuid())
-  userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
-  type      String   // RUN_1K, RUN_5K, POWER_5S, POWER_20M, CLIMB_MAX, etc.
-  category  String   // RUN, CYCLE, SWIM, OTHER
-  value     Float
-  unit      String
-  
+  id     String @id @default(uuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  type     String // RUN_1K, RUN_5K, POWER_5S, POWER_20M, CLIMB_MAX, etc.
+  category String // RUN, CYCLE, SWIM, OTHER
+  value    Float
+  unit     String
+
   date      DateTime
   workoutId String?
   workout   Workout? @relation(fields: [workoutId], references: [id], onDelete: SetNull)
-  
-  notes     String?
-  metadata  Json?    // Context stats: { avgHr: 160, avgCadence: 90, etc. }
-  
+
+  notes    String?
+  metadata Json? // Context stats: { avgHr: 160, avgCadence: 90, etc. }
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
