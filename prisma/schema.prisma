@@ -649,6 +649,7 @@ model Workout {
 
   @@index([tags], type: Gin)
   streams                         WorkoutStream?
+  streamsV2                       WorkoutStreamV2?
   metricHistory                   MetricHistory[]
   personalBests                   PersonalBest[]
 
@@ -739,6 +740,42 @@ model WorkoutStream {
   torque           Json?
   extrasMeta       Json?
   workout          Workout  @relation(fields: [workoutId], references: [id], onDelete: Cascade)
+
+  @@index([workoutId])
+}
+
+model WorkoutStreamV2 {
+  id               String    @id @default(uuid())
+  workoutId        String    @unique
+  time             Int[]
+  distance         Float[]
+  velocity         Float[]
+  heartrate        Int[]
+  cadence          Int[]
+  watts            Int[]
+  altitude         Float[]
+  lat              Float[]
+  lng              Float[]
+  grade            Float[]
+  moving           Boolean[]
+  temp             Int[]
+  torque           Int[]
+  leftRightBalance Int[]
+  hrv              Float[]
+  respiration      Float[]
+  targetPower      Int[]
+  avgPacePerKm     Float?
+  paceVariability  Float?
+  lapSplits        Json?
+  paceZones        Json?
+  pacingStrategy   Json?
+  surges           Json?
+  hrZoneTimes      Json?
+  powerZoneTimes   Json?
+  extrasMeta       Json?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+  workout          Workout   @relation(fields: [workoutId], references: [id], onDelete: Cascade)
 
   @@index([workoutId])
 }

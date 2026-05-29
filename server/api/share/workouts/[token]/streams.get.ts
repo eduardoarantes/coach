@@ -1,5 +1,6 @@
 import { defineEventHandler, createError, getRouterParam } from 'h3'
 import { prisma } from '../../../../utils/db'
+import { workoutStreamRepository } from '../../../../utils/repositories/workoutStreamRepository'
 
 defineRouteMeta({
   openAPI: {
@@ -83,14 +84,7 @@ export default defineEventHandler(async (event) => {
     })
   }
 
-  // Check if we have detailed WorkoutStream data
-  const workoutStream = await prisma.workoutStream
-    .findUnique({
-      where: {
-        workoutId: workout.id
-      }
-    })
-    .catch(() => null) // Ignore errors if table doesn't exist yet
+  const workoutStream = await workoutStreamRepository.findByWorkoutId(workout.id)
 
   if (workoutStream) {
     // Return actual time-series stream data

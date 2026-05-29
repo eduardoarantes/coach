@@ -1,5 +1,6 @@
 import { logger } from '@trigger.dev/sdk/v3'
 import { prisma } from '../../server/utils/db'
+import { workoutStreamRepository } from '../../server/utils/repositories/workoutStreamRepository'
 import { fetchStravaActivityStreams } from '../../server/utils/strava'
 import {
   calculateLapSplits,
@@ -99,44 +100,22 @@ export async function ingestStravaStreamsForWorkout(payload: {
     }
   }
 
-  const workoutStream = await prisma.workoutStream.upsert({
-    where: { workoutId: payload.workoutId },
-    create: {
-      workoutId: payload.workoutId,
-      time: timeData,
-      distance: distanceData,
-      velocity: velocityData,
-      heartrate: heartrateData,
-      cadence: cadenceData,
-      watts: wattsData,
-      altitude: altitudeData,
-      latlng: latlngData,
-      grade: gradeData,
-      moving: movingData,
-      lapSplits,
-      paceVariability,
-      avgPacePerKm,
-      pacingStrategy,
-      surges
-    },
-    update: {
-      time: timeData,
-      distance: distanceData,
-      velocity: velocityData,
-      heartrate: heartrateData,
-      cadence: cadenceData,
-      watts: wattsData,
-      altitude: altitudeData,
-      latlng: latlngData,
-      grade: gradeData,
-      moving: movingData,
-      lapSplits,
-      paceVariability,
-      avgPacePerKm,
-      pacingStrategy,
-      surges,
-      updatedAt: new Date()
-    }
+  const workoutStream = await workoutStreamRepository.upsert(payload.workoutId, {
+    time: timeData,
+    distance: distanceData,
+    velocity: velocityData,
+    heartrate: heartrateData,
+    cadence: cadenceData,
+    watts: wattsData,
+    altitude: altitudeData,
+    latlng: latlngData,
+    grade: gradeData,
+    moving: movingData,
+    lapSplits,
+    paceVariability,
+    avgPacePerKm,
+    pacingStrategy,
+    surges
   })
 
   try {

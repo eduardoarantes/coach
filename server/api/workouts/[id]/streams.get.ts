@@ -1,4 +1,5 @@
 import { getServerSession } from '../../../utils/session'
+import { workoutStreamRepository } from '../../../utils/repositories/workoutStreamRepository'
 import { analyzePacingStrategy } from '../../../utils/pacing'
 import {
   getZoneIndex,
@@ -101,16 +102,7 @@ export default defineEventHandler(async (event) => {
       })
     }
 
-    // Check if we have detailed WorkoutStream data
-    const workoutStream = await prisma.workoutStream
-      .findUnique({
-        where: {
-          workoutId: workoutId
-        }
-      })
-      .catch((e) => {
-        return null
-      })
+    const workoutStream = await workoutStreamRepository.findByWorkoutId(workoutId)
 
     if (workoutStream) {
       // ON-THE-FLY ZONE CALCULATION (Backfill)

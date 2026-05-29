@@ -3,6 +3,7 @@ import { logger, task } from '@trigger.dev/sdk/v3'
 import { userIngestionQueue } from './queues'
 import { prisma } from '../server/utils/db'
 import { workoutRepository } from '../server/utils/repositories/workoutRepository'
+import { workoutStreamRepository } from '../server/utils/repositories/workoutStreamRepository'
 import {
   parseFitFile,
   normalizeFitSession,
@@ -158,27 +159,14 @@ export const ingestFitFile = task({
       })
 
       // Save streams
-      await prisma.workoutStream.upsert({
-        where: { workoutId: upsertedWorkout.id },
-        create: {
-          workoutId: upsertedWorkout.id,
-          ...streams,
-          extrasMeta,
-          lapSplits,
-          paceVariability,
-          avgPacePerKm,
-          pacingStrategy,
-          surges
-        },
-        update: {
-          ...streams,
-          extrasMeta,
-          lapSplits,
-          paceVariability,
-          avgPacePerKm,
-          pacingStrategy,
-          surges
-        }
+      await workoutStreamRepository.upsert(upsertedWorkout.id, {
+        ...streams,
+        extrasMeta,
+        lapSplits,
+        paceVariability,
+        avgPacePerKm,
+        pacingStrategy,
+        surges
       })
 
       // Calculate stress metrics

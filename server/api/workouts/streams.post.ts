@@ -1,5 +1,6 @@
 import { getServerSession } from '../../utils/session'
 import { prisma } from '../../utils/db'
+import { workoutStreamRepository } from '../../utils/repositories/workoutStreamRepository'
 
 defineRouteMeta({
   openAPI: {
@@ -116,21 +117,13 @@ export default defineEventHandler(async (event) => {
   const requestedKeys =
     keys && Array.isArray(keys) ? keys.filter((k) => allowedKeys.includes(k)) : defaultKeys
 
-  // Build Prisma select object
-  const select: Record<string, boolean> = {
-    id: true,
-    workoutId: true
-  }
-  requestedKeys.forEach((k) => {
-    select[k] = true
-  })
-
-  // Fetch streams for verified workouts with limited fields
-  const streams = await prisma.workoutStream.findMany({
-    where: {
-      workoutId: { in: verifiedIds }
-    },
-    select: select as any
+  const streamMap = await workoutStreamRepository.findManyByWorkoutIds(verifiedIds)
+  const streams = Array.from(streamMap.values()).map((stream) => {
+    const filtered: Record<string, unknown> = { id: stream.id, workoutId: stream.workoutId }
+    for (const k of requestedKeys) {
+      filtered[k] = (stream as any)[k]
+    }
+    return filtered
   })
 
   // Downsample streams to prevent large payloads (Fixes COACH-WATTS-A)

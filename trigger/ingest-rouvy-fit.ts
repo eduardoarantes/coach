@@ -2,6 +2,7 @@ import './init'
 import { logger, task } from '@trigger.dev/sdk/v3'
 import { userIngestionQueue } from './queues'
 import { prisma } from '../server/utils/db'
+import { workoutStreamRepository } from '../server/utils/repositories/workoutStreamRepository'
 import { fetchRouvyActivityFitFile } from '../server/utils/rouvy'
 import {
   parseFitFile,
@@ -107,27 +108,14 @@ export const ingestRouvyFitTask = task({
       })
 
       // Save streams
-      await prisma.workoutStream.upsert({
-        where: { workoutId },
-        create: {
-          workoutId,
-          ...streams,
-          extrasMeta,
-          lapSplits,
-          paceVariability,
-          avgPacePerKm,
-          pacingStrategy,
-          surges
-        },
-        update: {
-          ...streams,
-          extrasMeta,
-          lapSplits,
-          paceVariability,
-          avgPacePerKm,
-          pacingStrategy,
-          surges
-        }
+      await workoutStreamRepository.upsert(workoutId, {
+        ...streams,
+        extrasMeta,
+        lapSplits,
+        paceVariability,
+        avgPacePerKm,
+        pacingStrategy,
+        surges
       })
 
       // Save FIT file to DB for backup/future use

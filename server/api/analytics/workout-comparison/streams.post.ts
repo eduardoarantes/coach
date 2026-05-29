@@ -2,6 +2,7 @@ import { z } from 'zod'
 import { requireAuth } from '../../../utils/auth-guard'
 import { assertWorkoutComparisonAccess } from '../../../utils/analyticsScope'
 import { prisma } from '../../../utils/db'
+import { workoutStreamRepository } from '../../../utils/repositories/workoutStreamRepository'
 
 const schema = z.object({
   comparison: z.object({
@@ -105,34 +106,29 @@ export default defineEventHandler(async (event) => {
   const comparison = result.data.comparison
   const workoutIds = await assertWorkoutComparisonAccess(user.id, comparison.workoutIds)
 
-  const workouts = await prisma.workout.findMany({
-    where: { id: { in: workoutIds } },
-    select: {
-      id: true,
-      title: true,
-      date: true,
-      user: { select: { name: true, email: true } },
-      streams: {
-        select: {
-          time: true,
-          distance: true,
-          watts: true,
-          heartrate: true,
-          cadence: true,
-          velocity: true,
-          altitude: true,
-          grade: true
-        }
+  const [workouts, streamMap] = await Promise.all([
+    prisma.workout.findMany({
+      where: { id: { in: workoutIds } },
+      select: {
+        id: true,
+        title: true,
+        date: true,
+        user: { select: { name: true, email: true } }
       }
-    }
-  })
+    }),
+    workoutStreamRepository.findManyByWorkoutIds(workoutIds)
+  ])
 
   const byId = new Map(workouts.map((workout) => [workout.id, workout]))
   const ordered = workoutIds.map((id) => byId.get(id)).filter(Boolean)
 
   const resolvedSeries = ordered
     .map((workout: any) => {
-      const series = resolveAlignedSeries(workout.streams, comparison.field, comparison.alignment)
+      const series = resolveAlignedSeries(
+        streamMap.get(workout.id) ?? null,
+        comparison.field,
+        comparison.alignment
+      )
       if (!series) return null
 
       return {
