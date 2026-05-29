@@ -5,8 +5,8 @@ ENV PNPM_HOME="/pnpm"
 ENV PATH="$PNPM_HOME:$PATH"
 RUN corepack enable
 
-# Install system dependencies
-RUN apt-get update -y && apt-get install -y openssl ca-certificates && rm -rf /var/lib/apt/lists/*
+# Install system dependencies needed for native module builds
+RUN apt-get update -y && apt-get install -y python3 make g++ openssl ca-certificates && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
