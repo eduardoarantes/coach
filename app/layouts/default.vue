@@ -117,6 +117,28 @@
         }
       },
       {
+        label: ready ? t.value('navigation_morning_checkin') : 'Morning Check-in',
+        icon: 'i-lucide-sunrise',
+        to: {
+          path: '/dashboard',
+          query: { focus: 'checkin' }
+        },
+        onSelect: () => {
+          open.value = false
+        }
+      },
+      {
+        label: ready ? t.value('navigation_todays_wellness') : "Today's Wellness",
+        icon: 'i-lucide-heart-pulse',
+        to: {
+          path: '/dashboard',
+          query: { focus: 'wellness' }
+        },
+        onSelect: () => {
+          open.value = false
+        }
+      },
+      {
         label: ready ? t.value('navigation_activities') : 'Activities',
         icon: 'i-lucide-calendar-days',
         to: '/activities',
@@ -465,14 +487,42 @@
       })
     }
 
-    // 4. Navigation Group
+    // 4. Morning Routine Group
+    searchGroups.push({
+      id: 'morning-routine',
+      label: ready ? t.value('navigation_search_morning_routine') : 'Morning Routine',
+      items: [
+        {
+          id: 'morning-checkin',
+          label: ready ? t.value('navigation_morning_checkin') : 'Morning Check-in',
+          icon: 'i-lucide-sunrise',
+          to: {
+            path: '/dashboard',
+            query: { focus: 'checkin' }
+          },
+          onSelect: () => (open.value = false)
+        },
+        {
+          id: 'todays-wellness',
+          label: ready ? t.value('navigation_todays_wellness') : "Today's Wellness",
+          icon: 'i-lucide-heart-pulse',
+          to: {
+            path: '/dashboard',
+            query: { focus: 'wellness' }
+          },
+          onSelect: () => (open.value = false)
+        }
+      ]
+    })
+
+    // 5. Navigation Group
     searchGroups.push({
       id: 'links',
       label: ready ? t.value('navigation_search_go_to') : 'Go to',
       items: links.value.flat()
     })
 
-    // 5. Settings Group (Deep Links)
+    // 6. Settings Group (Deep Links)
     const settingsItems = [
       {
         label: ready ? t.value('navigation_settings_profile_basic') : 'Profile: Basic Settings',
@@ -577,7 +627,7 @@
       items: settingsItems
     })
 
-    // 6. Admin Group (Only for Admins)
+    // 7. Admin Group (Only for Admins)
     if ((user.value as any)?.isAdmin) {
       searchGroups.push({
         id: 'admin',
@@ -775,7 +825,10 @@
 </script>
 
 <template>
-  <UDashboardGroup unit="rem" class="print:static print:inset-auto print:block print:overflow-visible">
+  <UDashboardGroup
+    unit="rem"
+    class="print:static print:inset-auto print:block print:overflow-visible"
+  >
     <UDashboardSidebar
       id="default"
       :key="tolgee.getLanguage()"

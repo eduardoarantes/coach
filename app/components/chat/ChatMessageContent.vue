@@ -27,13 +27,16 @@
 
   // Ensure parts always exists for unified rendering
   const normalizedParts = computed(() => {
-    if (props.message.parts && props.message.parts.length) {
-      return props.message.parts
-    }
-    if (props.message.content) {
-      return [{ type: 'text', text: props.message.content }]
-    }
-    return []
+    const parts =
+      props.message.parts && props.message.parts.length
+        ? props.message.parts
+        : props.message.content
+          ? [{ type: 'text', text: props.message.content }]
+          : []
+
+    return parts.filter(
+      (part: any) => part?.type !== 'text' || (typeof part.text === 'string' && part.text.trim())
+    )
   })
 
   // Check if an approval request has been answered in subsequent messages

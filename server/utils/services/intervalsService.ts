@@ -299,6 +299,14 @@ function getIntervalsDeletedEventIds(deletedEvents: any[]): string[] {
     .filter((id: string | null): id is string => !!id)
 }
 
+function isIncompleteStravaIntervalsActivity(activity: any): boolean {
+  return (
+    activity?.source === 'STRAVA' &&
+    typeof activity?._note === 'string' &&
+    activity._note.includes('not available via the API')
+  )
+}
+
 export const IntervalsService = {
   /**
    * Get athlete profile from Intervals.icu
@@ -445,18 +453,50 @@ export const IntervalsService = {
     options: IntervalsSyncOptions = {}
   ) {
     const allActivities = await fetchIntervalsWorkouts(integration, startDate, endDate)
+    const incompleteStravaActivityIds = allActivities
+      .filter((activity) => isIncompleteStravaIntervalsActivity(activity))
+      .map((activity) => String(activity.id))
 
-    // Filter out incomplete Strava activities and Notes/Holidays
+    const [activeStravaIntegration, existingMirroredStravaWorkouts] = await Promise.all([
+      prisma.integration.findUnique({
+        where: {
+          userId_provider: {
+            userId,
+            provider: 'strava'
+          }
+        },
+        select: { id: true }
+      }),
+      incompleteStravaActivityIds.length > 0
+        ? prisma.workout.findMany({
+            where: {
+              userId,
+              externalId: { in: incompleteStravaActivityIds }
+            },
+            select: { externalId: true }
+          })
+        : Promise.resolve([])
+    ])
+    const existingMirroredStravaWorkoutIds = new Set(
+      existingMirroredStravaWorkouts.map((workout) => workout.externalId)
+    )
+
+    // Filter out Notes/Holidays. Keep mirrored Strava activities only when they are the
+    // user's only remaining source for that workout after a reconnect/reset.
     const activities = allActivities.filter((activity) => {
-      // Filter out Notes and Holidays
       if (['Note', 'Holiday'].includes(activity.type)) {
         return false
       }
 
-      const isIncompleteStrava =
-        activity.source === 'STRAVA' && activity._note?.includes('not available via the API')
-      if (isIncompleteStrava) {
-        return false
+      if (isIncompleteStravaIntervalsActivity(activity)) {
+        const activityId = String(activity.id)
+        if (activeStravaIntegration) {
+          return false
+        }
+
+        if (existingMirroredStravaWorkoutIds.has(activityId)) {
+          return false
+        }
       }
       return true
     })

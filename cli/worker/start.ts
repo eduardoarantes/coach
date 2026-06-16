@@ -12,6 +12,7 @@ import { ResendService } from '../../server/utils/services/resendService'
 import { logWebhookRequest, updateWebhookStatus } from '../../server/utils/webhook-logger'
 import { prisma } from '../../server/utils/db'
 import { webhookQueue, pingQueue } from '../../server/utils/queue'
+import { getRedisRetryDelay, isRedisConnectionError } from '../../server/utils/redis-connection'
 import { Command } from 'commander'
 import { tasks } from '@trigger.dev/sdk/v3'
 
@@ -26,10 +27,20 @@ export const startCommand = new Command('start')
     console.log(chalk.gray(`Using REDIS_URL connection string`))
 
     const connection = new IORedis(connectionString, {
-      maxRetriesPerRequest: null // Required by BullMQ
+      maxRetriesPerRequest: null, // Required by BullMQ
+      retryStrategy: (times) => getRedisRetryDelay(times)
     })
 
     const concurrency = parseInt(process.env.CW_WORKER_QUEUE_WEBHOOK_CONCURRENCY || '1')
+    let restartRequested = false
+
+    const requestRestart = (reason: string, error?: unknown) => {
+      if (restartRequested) return
+      restartRequested = true
+
+      console.error(chalk.red.bold(`[Worker] Restarting process: ${reason}`), error || '')
+      setTimeout(() => process.exit(1), 100)
+    }
 
     // --- Health Check Server ---
     const healthServer = http.createServer(async (req, res) => {
@@ -102,7 +113,10 @@ export const startCommand = new Command('start')
       console.warn(chalk.yellow.bold('⚠ Redis connection warning:'), err.message)
     )
     connection.on('reconnecting', () => console.log(chalk.yellow('↻ Redis reconnecting...')))
-    connection.on('end', () => console.log(chalk.red('Redis connection ended')))
+    connection.on('end', () => {
+      console.log(chalk.red('Redis connection ended'))
+      requestRestart('redis connection ended')
+    })
 
     // --- Webhook Worker ---
     const webhookWorker = new Worker(
@@ -543,6 +557,9 @@ export const startCommand = new Command('start')
 
     webhookWorker.on('error', (err) => {
       console.error(chalk.red.bold('Webhook Worker error:'), err)
+      if (isRedisConnectionError(err)) {
+        requestRestart('webhook worker lost redis connectivity', err)
+      }
     })
 
     // --- Webhook Log Poller ---
@@ -604,6 +621,9 @@ export const startCommand = new Command('start')
         }
       } catch (err) {
         console.error(chalk.red('[Poller] Error polling webhooks:'), err)
+        if (isRedisConnectionError(err)) {
+          requestRestart('sql-to-queue poller lost redis connectivity', err)
+        }
       }
     }
 
@@ -637,6 +657,9 @@ export const startCommand = new Command('start')
 
     pingWorker.on('error', (err) => {
       console.error(chalk.red.bold('Ping Worker error:'), err)
+      if (isRedisConnectionError(err)) {
+        requestRestart('ping worker lost redis connectivity', err)
+      }
     })
 
     // Stats Reporter
@@ -661,6 +684,9 @@ export const startCommand = new Command('start')
         )
       } catch (err) {
         console.error(chalk.red('Failed to fetch queue stats:'), err)
+        if (isRedisConnectionError(err)) {
+          requestRestart('queue stats reporter lost redis connectivity', err)
+        }
       }
     }, 30000) // Every 30 seconds
 

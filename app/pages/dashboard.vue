@@ -424,6 +424,7 @@
   })
 
   const config = useRuntimeConfig()
+  const route = useRoute()
   const buildVersionDisplay = computed(
     () =>
       (config.public.buildVersion as string) ||
@@ -671,6 +672,24 @@
   function openCheckinModal() {
     showCheckinModal.value = true
   }
+
+  watch(
+    () => route.query.focus,
+    async (focus) => {
+      if (focus !== 'checkin' && focus !== 'wellness') return
+
+      if (focus === 'checkin') {
+        openCheckinModal()
+      } else {
+        openWellnessModal()
+      }
+
+      const nextQuery = { ...route.query }
+      delete nextQuery.focus
+      await navigateTo({ path: route.path, query: nextQuery }, { replace: true })
+    },
+    { immediate: true }
+  )
 
   // Share Coach Watts modal
   const showShareCoachWattsModal = ref(false)

@@ -1,6 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { prisma } from '../../../../../server/utils/db'
-import { normalizeIntervalsWorkout } from '../../../../../server/utils/intervals'
+import {
+  normalizeIntervalsWorkout,
+  fetchIntervalsWorkouts
+} from '../../../../../server/utils/intervals'
 import { workoutRepository } from '../../../../../server/utils/repositories/workoutRepository'
 import { deduplicateWorkoutsTask } from '../../../../../trigger/deduplicate-workouts'
 import { IntervalsService } from '../../../../../server/utils/services/intervalsService'
@@ -187,6 +190,101 @@ describe('IntervalsService ACTIVITY_UPDATED', () => {
     expect(deduplicateWorkoutsTask.trigger).toHaveBeenCalledTimes(1)
 
     syncSpy.mockRestore()
+  })
+})
+
+describe('IntervalsService syncActivities batch filtering', () => {
+  const userId = 'user-1'
+
+  beforeEach(() => {
+    vi.clearAllMocks()
+    vi.mocked(prisma.workout.findMany).mockResolvedValue([])
+    vi.mocked(prisma.integration.findUnique).mockResolvedValue(null as any)
+    vi.mocked(workoutRepository.upsert).mockResolvedValue({
+      record: { id: 'w-sync' } as any,
+      isNew: true
+    })
+  })
+
+  it('ingests mirrored Strava activities from Intervals when Strava is disconnected and the workout is missing locally', async () => {
+    vi.mocked(fetchIntervalsWorkouts).mockResolvedValue([
+      {
+        id: '18280178712',
+        start_date: '2026-04-27T17:41:56Z',
+        name: 'Recovered Ride',
+        type: 'Ride',
+        moving_time: 3600,
+        source: 'STRAVA',
+        _note: 'STRAVA activities are not available via the API'
+      } as any
+    ])
+
+    const inserted = await IntervalsService._syncActivitiesBatch(
+      userId,
+      { id: 'int-1' } as any,
+      new Date('2026-04-27T00:00:00Z'),
+      new Date('2026-04-27T23:59:59Z')
+    )
+
+    expect(inserted).toBe(1)
+    expect(normalizeIntervalsWorkout).toHaveBeenCalledWith(
+      expect.objectContaining({
+        id: '18280178712',
+        source: 'STRAVA'
+      }),
+      userId
+    )
+    expect(workoutRepository.upsert).toHaveBeenCalledTimes(1)
+  })
+
+  it('skips mirrored Strava activities from Intervals when Strava is still connected', async () => {
+    vi.mocked(fetchIntervalsWorkouts).mockResolvedValue([
+      {
+        id: '18280178712',
+        start_date: '2026-04-27T17:41:56Z',
+        name: 'Recovered Ride',
+        type: 'Ride',
+        moving_time: 3600,
+        source: 'STRAVA',
+        _note: 'STRAVA activities are not available via the API'
+      } as any
+    ])
+    vi.mocked(prisma.integration.findUnique).mockResolvedValue({ id: 'strava-1' } as any)
+
+    const inserted = await IntervalsService._syncActivitiesBatch(
+      userId,
+      { id: 'int-1' } as any,
+      new Date('2026-04-27T00:00:00Z'),
+      new Date('2026-04-27T23:59:59Z')
+    )
+
+    expect(inserted).toBe(0)
+    expect(workoutRepository.upsert).not.toHaveBeenCalled()
+  })
+
+  it('skips mirrored Strava activities from Intervals when a local workout with the same external id already exists', async () => {
+    vi.mocked(fetchIntervalsWorkouts).mockResolvedValue([
+      {
+        id: '18280178712',
+        start_date: '2026-04-27T17:41:56Z',
+        name: 'Recovered Ride',
+        type: 'Ride',
+        moving_time: 3600,
+        source: 'STRAVA',
+        _note: 'STRAVA activities are not available via the API'
+      } as any
+    ])
+    vi.mocked(prisma.workout.findMany).mockResolvedValue([{ externalId: '18280178712' }] as any)
+
+    const inserted = await IntervalsService._syncActivitiesBatch(
+      userId,
+      { id: 'int-1' } as any,
+      new Date('2026-04-27T00:00:00Z'),
+      new Date('2026-04-27T23:59:59Z')
+    )
+
+    expect(inserted).toBe(0)
+    expect(workoutRepository.upsert).not.toHaveBeenCalled()
   })
 })
 
