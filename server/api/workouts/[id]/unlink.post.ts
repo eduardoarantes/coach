@@ -46,10 +46,10 @@ export default defineEventHandler(async (event) => {
   }
 
   // Fetch the workout to get the plannedWorkoutId
-  const workout = await prisma.workout.findUnique({
+  const workout = await prisma.workout.findFirst({
     where: {
       id: workoutId,
-      userId: userId
+      userId
     }
   })
 

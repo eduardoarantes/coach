@@ -44,10 +44,11 @@ export default defineEventHandler(async (event) => {
   }
 
   // Fetch the workout to be promoted
-  const workoutToPromote = await prisma.workout.findUnique({
+  const userId = (session.user as any).id
+  const workoutToPromote = await prisma.workout.findFirst({
     where: {
       id,
-      userId: (session.user as any).id
+      userId
     }
   })
 
@@ -65,10 +66,10 @@ export default defineEventHandler(async (event) => {
   const oldPrimaryId = workoutToPromote.duplicateOf
 
   // Fetch the current primary workout
-  const oldPrimaryWorkout = await prisma.workout.findUnique({
+  const oldPrimaryWorkout = await prisma.workout.findFirst({
     where: {
       id: oldPrimaryId,
-      userId: (session.user as any).id
+      userId
     }
   })
 
@@ -109,6 +110,7 @@ export default defineEventHandler(async (event) => {
       // 3. Update any OTHER duplicates that were pointing to oldPrimaryId to now point to id
       await tx.workout.updateMany({
         where: {
+          userId,
           duplicateOf: oldPrimaryId,
           id: { not: id } // Exclude the one we just promoted (though we already updated it in step 1, safe to exclude)
         },

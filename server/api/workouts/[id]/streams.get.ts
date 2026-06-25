@@ -72,9 +72,10 @@ export default defineEventHandler(async (event) => {
     }
 
     // Verify workout belongs to user
-    const workout = await prisma.workout.findUnique({
+    const workout = await prisma.workout.findFirst({
       where: {
-        id: workoutId
+        id: workoutId,
+        userId: (session.user as any).id
       },
       include: {
         user: {
@@ -94,13 +95,6 @@ export default defineEventHandler(async (event) => {
     }
 
     const user = workout.user
-
-    if (workout.userId !== (session.user as any).id) {
-      throw createError({
-        statusCode: 403,
-        message: 'Forbidden'
-      })
-    }
 
     const workoutStream = await workoutStreamRepository.findByWorkoutId(workoutId)
 

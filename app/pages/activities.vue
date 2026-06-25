@@ -590,7 +590,7 @@
                                     @click.stop="toggleWorkoutComparison(activity)"
                                   />
                                   <MiniWorkoutChart
-                                    v-if="activity.structuredWorkout"
+                                    v-if="hasActivityChartPreview(activity)"
                                     :workout="activity"
                                     :sport-settings="getActivityZones(activity)"
                                     :preference="getActivityChartPreference(activity)"
@@ -673,7 +673,7 @@
                 </template>
 
                 <template #chart-cell="{ row }">
-                  <div v-if="row.original.structuredWorkout" class="w-24 h-10">
+                  <div v-if="hasActivityChartPreview(row.original)" class="w-24 h-10">
                     <MiniWorkoutChart
                       :workout="row.original"
                       :sport-settings="getActivityZones(row.original)"
@@ -1087,6 +1087,7 @@
   import { getDefaultSportSettings, getSportSettingsForActivity } from '~/utils/sportSettings'
   import { getWorkoutChartPreference } from '~/utils/workoutChartContext'
   import { getCalendarActivityDateKey } from '~/utils/calendar'
+  import { getStructuredWorkoutObject, hasStructuredWorkoutPreviewData } from '~/utils/structuredWorkout'
   import { formatDistance as formatDist } from '~/utils/metrics'
 
   const { t } = useTranslate('activities')
@@ -1424,12 +1425,40 @@
     }
   }
 
+  function hasActivityChartPreview(activity: any) {
+    return hasStructuredWorkoutPreviewData(activity)
+  }
+
   function collectStructuredMetricAvailability(activity: any) {
-    const steps = activity?.structuredWorkout?.steps
+    const structuredWorkout = getStructuredWorkoutObject(activity)
+    const steps = Array.isArray(structuredWorkout?.steps) ? structuredWorkout.steps : []
+
+    const visit = (nodes: any[]): { hasHr: boolean; hasPower: boolean; hasPace: boolean } => {
+      let hasHr = false
+      let hasPower = false
+      let hasPace = false
+
+      nodes.forEach((step: any) => {
+        if (step?.heartRate) hasHr = true
+        if (step?.power) hasPower = true
+        if (step?.pace) hasPace = true
+
+        if (Array.isArray(step?.steps) && step.steps.length > 0) {
+          const nested = visit(step.steps)
+          hasHr = hasHr || nested.hasHr
+          hasPower = hasPower || nested.hasPower
+          hasPace = hasPace || nested.hasPace
+        }
+      })
+
+      return { hasHr, hasPower, hasPace }
+    }
+
+    const availability = visit(steps)
     return {
-      hasHr: !!steps?.some((s: any) => s.heartRate),
-      hasPower: !!steps?.some((s: any) => s.power),
-      hasPace: !!steps?.some((s: any) => s.pace)
+      hasHr: availability.hasHr,
+      hasPower: availability.hasPower,
+      hasPace: availability.hasPace
     }
   }
 

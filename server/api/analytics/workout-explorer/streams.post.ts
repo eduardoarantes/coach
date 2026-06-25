@@ -1,7 +1,6 @@
 import { z } from 'zod'
 import { requireAuth } from '../../../utils/auth-guard'
-import { assertSingleWorkoutAccess } from '../../../utils/analyticsScope'
-import { prisma } from '../../../utils/db'
+import { getAccessibleWorkout } from '../../../utils/analyticsScope'
 import { lttb } from '../../../utils/analytics/lttb'
 import { calculateVirtualStream, type VirtualField } from '../../../utils/analytics/virtual-streams'
 import { sportSettingsRepository } from '../../../utils/repositories/sportSettingsRepository'
@@ -159,11 +158,8 @@ export default defineEventHandler(async (event) => {
   }
 
   const { analysis } = result.data
-  const workoutId = await assertSingleWorkoutAccess(user.id, analysis.workoutId)
-
   // 1. Fetch Workout and Streams
-  const workout = await prisma.workout.findFirst({
-    where: { id: workoutId },
+  const workout = await getAccessibleWorkout(user.id, analysis.workoutId, {
     select: {
       title: true,
       date: true,

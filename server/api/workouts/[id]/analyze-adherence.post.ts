@@ -15,7 +15,7 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 400, message: 'Workout ID is required' })
   }
 
-  const workout = await prisma.workout.findUnique({
+  const workout = await prisma.workout.findFirst({
     where: {
       id: workoutId,
       userId: (session.user as any).id

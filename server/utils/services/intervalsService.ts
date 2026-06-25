@@ -65,6 +65,45 @@ function hasDateForActivityUpsert(activity: any): boolean {
   return !!parseIntervalsActivityDate(activity)
 }
 
+async function fetchDetailedIntervalsActivityIfNeeded(
+  userId: string,
+  activityId: string,
+  fallbackActivity: any
+) {
+  const integration = await prisma.integration.findUnique({
+    where: {
+      userId_provider: {
+        userId,
+        provider: 'intervals'
+      }
+    }
+  })
+
+  if (!integration) return fallbackActivity
+
+  try {
+    const detailedActivity = await fetchIntervalsActivity(integration, activityId)
+
+    if (hasDateForActivityUpsert(detailedActivity)) {
+      console.info(
+        `[IntervalsService] Recovered sparse activity webhook payload via detailed fetch for activity ${activityId}`
+      )
+    } else {
+      console.warn(
+        `[IntervalsService] Detailed fetch still missing usable activity date for activity ${activityId}`
+      )
+    }
+
+    return detailedActivity
+  } catch (error) {
+    console.warn(
+      `[IntervalsService] Failed to fetch detailed activity ${activityId} for webhook fallback`,
+      error
+    )
+    return fallbackActivity
+  }
+}
+
 function toRoundedOrNull(value: any): number | null {
   return typeof value === 'number' ? Math.round(value) : null
 }
@@ -1485,17 +1524,25 @@ export const IntervalsService = {
           break
         }
 
-        const activity = intervalEvent.activity
+        let activity = intervalEvent.activity
         const activityId = activity?.id ? String(activity.id) : null
-        const activityDate = parseIntervalsActivityDate(activity)
 
         if (!activity || !activityId) {
           // Delta-only worker mode: do not run range pulls on webhook events.
           console.warn(
-            `[IntervalsService] ${type} payload missing activity details; skipping without full sync`
+            `[IntervalsService] ${type} payload missing activity details for user ${userId}; skipping without full sync`
           )
           break
         }
+
+        if (!hasDateForActivityUpsert(activity)) {
+          console.warn(
+            `[IntervalsService] ${type} payload missing usable activity date for activity ${activityId}; attempting detailed fetch`
+          )
+          activity = await fetchDetailedIntervalsActivityIfNeeded(userId, activityId, activity)
+        }
+
+        const activityDate = parseIntervalsActivityDate(activity)
 
         // Fast path: payload contains enough data to upsert the workout directly.
         if (activityId && activity && hasDateForActivityUpsert(activity)) {
@@ -1557,6 +1604,9 @@ export const IntervalsService = {
             }
           }
         } else if (activityId && activity) {
+          console.warn(
+            `[IntervalsService] ${type} activity ${activityId} still lacks a usable date after fallback; applying delta-only patch path`
+          )
           // Delta path: apply only fields present in payload, avoiding full range sync.
           const existing = await workoutRepository.getByExternalId(userId, 'intervals', activityId)
 

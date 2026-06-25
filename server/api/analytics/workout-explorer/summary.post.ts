@@ -1,6 +1,6 @@
 import { z } from 'zod'
 import { requireAuth } from '../../../utils/auth-guard'
-import { assertSingleWorkoutAccess } from '../../../utils/analyticsScope'
+import { assertSingleWorkoutAccess, getAccessibleWorkout } from '../../../utils/analyticsScope'
 import { prisma } from '../../../utils/db'
 import { calculateSegmentSummary } from '../../../utils/analytics/segment-summary'
 import { computeMMP } from '../../../utils/analytics/virtual-streams'
@@ -190,8 +190,7 @@ export default defineEventHandler(async (event) => {
       })
     }
 
-    const workout = await prisma.workout.findFirst({
-      where: { id: workoutId },
+    const workout = await getAccessibleWorkout(user.id, analysis.workoutId, {
       select: {
         id: true,
         type: true,
@@ -483,8 +482,7 @@ export default defineEventHandler(async (event) => {
 
   const workout = range
     ? await calculateSegmentSummary(user.id, workoutId, range)
-    : await prisma.workout.findFirst({
-        where: { id: workoutId },
+    : await getAccessibleWorkout(user.id, analysis.workoutId, {
         select: {
           id: true,
           trainingLoad: true,

@@ -34,7 +34,7 @@ vi.mock('../../../../server/utils/intervals', () => ({
   isIntervalsEventId: vi.fn((value: string | null | undefined) => /^\d+$/.test(value || ''))
 }))
 
-describe('syncPlannedWorkoutToIntervals', () => {
+describe('intervals-sync helpers', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     vi.mocked(prisma.integration.findFirst).mockResolvedValue({
@@ -77,6 +77,45 @@ describe('syncPlannedWorkoutToIntervals', () => {
         success: true,
         synced: true,
         result: { id: '98765' }
+      })
+    )
+  })
+
+  it('hydrates queued planned workout dates before retry processing', async () => {
+    const { processSyncQueueItem } = await import('../../../../server/utils/intervals-sync')
+
+    vi.mocked(createIntervalsPlannedWorkout).mockResolvedValue({ id: '24680' } as any)
+
+    const result = await processSyncQueueItem({
+      id: 'queue-1',
+      userId: 'user-1',
+      entityType: 'planned_workout',
+      entityId: 'planned-1',
+      operation: 'CREATE',
+      payload: {
+        id: 'planned-1',
+        externalId: 'local-1',
+        date: '2026-03-12T00:00:00.000Z',
+        title: 'Tempo Ride',
+        type: 'Ride'
+      },
+      attempts: 0
+    })
+
+    expect(result).toBe(true)
+    expect(createIntervalsPlannedWorkout).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({
+        date: expect.any(Date),
+        title: 'Tempo Ride'
+      })
+    )
+    expect(prisma.syncQueue.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { id: 'queue-1' },
+        data: expect.objectContaining({
+          status: 'COMPLETED'
+        })
       })
     )
   })

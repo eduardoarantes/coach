@@ -301,7 +301,7 @@ export async function upsertIntervalsEvent(
   integration: Integration,
   data: {
     id?: string
-    date: Date
+    date: Date | string
     title: string
     description?: string
     type: string
@@ -322,6 +322,11 @@ export async function upsertIntervalsEvent(
     throw new Error(`Invalid or missing Intervals event ID for update: ${eventId}`)
   }
 
+  const normalizedDate = typeof data.date === 'string' ? new Date(data.date) : data.date
+  if (!(normalizedDate instanceof Date) || Number.isNaN(normalizedDate.getTime())) {
+    throw new Error(`Invalid Intervals event date: ${String(data.date)}`)
+  }
+
   // 1. Determine Category from Category OR Priority
   let category = data.category || 'WORKOUT'
   if (data.priority === 'A') category = 'RACE_A'
@@ -332,9 +337,9 @@ export async function upsertIntervalsEvent(
   const sport = normalizeIntervalsSportType(data.type)
 
   // 3. Format Date (start_date_local)
-  const year = data.date.getUTCFullYear()
-  const month = String(data.date.getUTCMonth() + 1).padStart(2, '0')
-  const day = String(data.date.getUTCDate()).padStart(2, '0')
+  const year = normalizedDate.getUTCFullYear()
+  const month = String(normalizedDate.getUTCMonth() + 1).padStart(2, '0')
+  const day = String(normalizedDate.getUTCDate()).padStart(2, '0')
   const timeStr = data.startTime ? `${data.startTime}:00` : '06:00:00'
   const dateStr = `${year}-${month}-${day}T${timeStr}`
 

@@ -103,6 +103,47 @@ export async function assertSingleWorkoutAccess(
   return resolvedWorkoutId
 }
 
+export async function getAccessibleWorkout(
+  userId: string,
+  workoutId: string,
+  options: {
+    include?: Record<string, unknown>
+    select?: Record<string, unknown>
+  } = {}
+) {
+  const resolvedWorkoutId = await assertSingleWorkoutAccess(userId, workoutId)
+
+  const workoutRef = await prisma.workout.findUnique({
+    where: { id: resolvedWorkoutId },
+    select: { id: true, userId: true }
+  })
+
+  if (!workoutRef) {
+    throw createError({
+      statusCode: 404,
+      statusMessage: 'Workout not found or access denied'
+    })
+  }
+
+  if (options.select) {
+    return prisma.workout.findFirst({
+      where: {
+        id: workoutRef.id,
+        userId: workoutRef.userId
+      },
+      select: options.select as any
+    })
+  }
+
+  return prisma.workout.findFirst({
+    where: {
+      id: workoutRef.id,
+      userId: workoutRef.userId
+    },
+    include: options.include as any
+  })
+}
+
 async function assertWorkoutSelectionAccess(
   userId: string,
   workoutIds: string[],

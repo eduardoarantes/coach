@@ -1,7 +1,6 @@
 import { z } from 'zod'
 import { requireAuth } from '../../../utils/auth-guard'
-import { assertSingleWorkoutAccess } from '../../../utils/analyticsScope'
-import { prisma } from '../../../utils/db'
+import { getAccessibleWorkout } from '../../../utils/analyticsScope'
 
 const schema = z.object({
   analysis: z.object({
@@ -48,10 +47,7 @@ export default defineEventHandler(async (event) => {
   }
 
   const analysis = result.data.analysis
-  const workoutId = await assertSingleWorkoutAccess(user.id, analysis.workoutId)
-
-  const workout = await prisma.workout.findFirst({
-    where: { id: workoutId },
+  const workout = await getAccessibleWorkout(user.id, analysis.workoutId, {
     select: {
       title: true,
       date: true,

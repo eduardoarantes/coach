@@ -17,6 +17,20 @@ function isIntervalsMissingEventError(error: unknown): boolean {
   return message.includes('Intervals API error: 404') || message.includes('Event not found')
 }
 
+function hydrateQueuedSyncPayload(payload: any) {
+  if (!payload || typeof payload !== 'object') return payload
+
+  const hydrated = { ...payload }
+  if (typeof hydrated.date === 'string') {
+    const parsed = new Date(hydrated.date)
+    if (!Number.isNaN(parsed.getTime())) {
+      hydrated.date = parsed
+    }
+  }
+
+  return hydrated
+}
+
 /**
  * Sync a planned workout to Intervals.icu with retry logic
  * Returns success status and any error messages
@@ -344,7 +358,7 @@ export async function processSyncQueueItem(queueItem: any): Promise<boolean> {
     }
 
     // Attempt sync
-    const payload = queueItem.payload
+    const payload = hydrateQueuedSyncPayload(queueItem.payload)
 
     if (queueItem.entityType === 'planned_workout') {
       switch (queueItem.operation) {

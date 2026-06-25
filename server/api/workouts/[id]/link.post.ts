@@ -72,16 +72,16 @@ export default defineEventHandler(async (event) => {
 
   // Verify ownership
   const [workout, plannedWorkout] = await Promise.all([
-    prisma.workout.findUnique({
+    prisma.workout.findFirst({
       where: {
         id: workoutId,
-        userId: userId
+        userId
       }
     }),
-    prisma.plannedWorkout.findUnique({
+    prisma.plannedWorkout.findFirst({
       where: {
         id: plannedWorkoutId,
-        userId: userId
+        userId
       }
     })
   ])

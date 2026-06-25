@@ -1,7 +1,13 @@
 <template>
   <div class="workout-chart-container">
-    <div v-if="normalizedSteps.length === 0" class="text-center py-8 text-muted text-sm">
-      No structured workout data available.
+    <div v-if="normalizedSteps.length === 0" class="rounded-xl border border-default/70 bg-muted/10 p-5">
+      <div class="text-sm font-semibold text-highlighted">No interval steps available</div>
+      <p class="mt-2 text-sm text-muted">
+        {{
+          structureDescription ||
+          'This workout does not currently include structured interval steps that can be rendered here.'
+        }}
+      </p>
     </div>
 
     <div v-else class="space-y-4">
@@ -532,6 +538,11 @@
       return { ...base, steps: previewSteps.value }
     }
     return base
+  })
+
+  const structureDescription = computed(() => {
+    const description = String(workoutData.value?.description || props.workout?.description || '').trim()
+    return description || null
   })
 
   const effectiveSportSettings = computed(() =>

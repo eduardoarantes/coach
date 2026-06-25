@@ -76,6 +76,14 @@
         @save="$emit('save', $event)"
       />
     </div>
+
+    <div
+      v-else-if="structureDescription"
+      class="rounded-xl border border-default/70 bg-muted/10 p-4 text-sm text-muted"
+    >
+      <div class="font-semibold text-highlighted">Workout guidance</div>
+      <p class="mt-2 leading-relaxed">{{ structureDescription }}</p>
+    </div>
   </div>
 </template>
 
@@ -104,6 +112,9 @@
   })
 
   const hasStructure = computed(() => !!props.workout.structuredWorkout?.steps?.length)
+  const structureDescription = computed(() =>
+    String(props.workout?.structuredWorkout?.description || props.workout?.description || '').trim()
+  )
 
   function hasValue(obj: any) {
     if (!obj) return false

@@ -65,7 +65,7 @@ export default defineEventHandler(async (event) => {
   const userId = (session.user as any).id
 
   // Verify ownership
-  const workout = await prisma.workout.findUnique({
+  const workout = await prisma.workout.findFirst({
     where: { id: workoutId, userId }
   })
 

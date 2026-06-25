@@ -111,17 +111,16 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 400, message: 'metricKey is required' })
   }
 
-  const workout = await prisma.workout.findUnique({
-    where: { id: workoutId },
+  const workout = await prisma.workout.findFirst({
+    where: {
+      id: workoutId,
+      userId: (session.user as any).id
+    },
     select: { id: true, userId: true, type: true, date: true }
   })
 
   if (!workout) {
     throw createError({ statusCode: 404, message: 'Workout not found' })
-  }
-
-  if (workout.userId !== (session.user as any).id) {
-    throw createError({ statusCode: 403, message: 'Forbidden' })
   }
 
   if (!workout.type) {
