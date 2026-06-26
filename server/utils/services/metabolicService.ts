@@ -1188,6 +1188,10 @@ export const metabolicService = {
     const finalCarbs = Math.round(maxDailyCarbs)
     const finalProtein = Math.round(maxDailyProtein)
     const finalFat = Math.round(maxDailyFat)
+    const macroCalories = calculateMacroTargetCalories(finalCarbs, finalProtein, finalFat)
+    const energyTarget = breakdown.totalTarget
+    const calories =
+      breakdown.activityCalories > 0 ? Math.max(energyTarget, macroCalories) : energyTarget
 
     const finalPlan = {
       windows: mergedWindows,
@@ -1196,7 +1200,7 @@ export const metabolicService = {
         carbs: finalCarbs,
         protein: finalProtein,
         fat: finalFat,
-        calories: calculateMacroTargetCalories(finalCarbs, finalProtein, finalFat),
+        calories,
         fluid: totalFluid,
         sodium: totalSodium,
         baseCalories: breakdown.baseCalories,

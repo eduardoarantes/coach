@@ -106,4 +106,24 @@ describe('calculateDailyCalorieBreakdown', () => {
     expect(breakdown.adjustmentCalories).toBe(-190)
     expect(breakdown.totalTarget).toBe(1710)
   })
+
+  it('uses sedentary BMR baseline on rest days instead of macro-only totals', () => {
+    const breakdown = calculateDailyCalorieBreakdown(
+      {
+        weight: 78,
+        ftp: 260,
+        currentCarbMax: 90,
+        bmr: 1600,
+        activityLevel: 'SEDENTARY',
+        baseCaloriesMode: 'AUTO',
+        targetAdjustmentPercent: -15
+      },
+      [{ title: 'Rest', type: 'Rest', durationHours: 0 }]
+    )
+
+    expect(breakdown.baseCalories).toBe(1920)
+    expect(breakdown.adjustmentCalories).toBe(-288)
+    expect(breakdown.totalTarget).toBe(1632)
+    expect(breakdown.totalTarget).toBeLessThan(calculateMacroTargetCalories(281, 163, 92))
+  })
 })
