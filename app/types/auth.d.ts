@@ -7,10 +7,12 @@ declare module 'next-auth' {
       isAdmin: boolean
       termsAcceptedAt: string | null
       timezone: string | null
+      deactivatedAt: string | null
     } & DefaultSession['user']
   }
 
   interface User {
     isAdmin: boolean
+    deactivatedAt: Date | null
   }
 }

@@ -12,6 +12,7 @@ export interface CustomSession {
     timezone?: string | null
     language?: string | null
     uiLanguage?: string | null
+    deactivatedAt?: string | Date | null
     id: string
     isAdmin: boolean
     isImpersonating?: boolean
@@ -32,6 +33,20 @@ export async function getServerSession(event: H3Event): Promise<CustomSession | 
 
   if (!session || !session.user) {
     return null
+  }
+
+  const baseUserId = (session.user as any).id
+  if (baseUserId) {
+    const baseUser = await prisma.user.findUnique({
+      where: { id: baseUserId },
+      select: {
+        deactivatedAt: true
+      }
+    })
+
+    if (!baseUser || baseUser.deactivatedAt) {
+      return null
+    }
   }
 
   // 2. Handle Admin Impersonation
@@ -55,6 +70,7 @@ export async function getServerSession(event: H3Event): Promise<CustomSession | 
           timezone: targetUser.timezone ?? null,
           language: targetUser.language ?? null,
           uiLanguage: targetUser.uiLanguage ?? null,
+          deactivatedAt: targetUser.deactivatedAt ?? null,
           isAdmin: (targetUser as any).isAdmin || false,
           isImpersonating: true,
           originalUserId: (session.user as any).id,
@@ -90,6 +106,7 @@ export async function getServerSession(event: H3Event): Promise<CustomSession | 
             timezone: targetUser.timezone ?? null,
             language: targetUser.language ?? null,
             uiLanguage: targetUser.uiLanguage ?? null,
+            deactivatedAt: targetUser.deactivatedAt ?? null,
             isAdmin: (targetUser as any).isAdmin || false,
             isCoaching: true,
             originalUserId: currentUserId,

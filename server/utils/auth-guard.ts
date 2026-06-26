@@ -1,3 +1,4 @@
+import { createError, getHeader } from 'h3'
 import type { H3Event } from 'h3'
 import { oauthRepository } from './repositories/oauthRepository'
 import { validateApiKey } from './auth-api-key'
@@ -47,6 +48,15 @@ export async function validateOAuthToken(event: H3Event) {
  * @param requiredScopes - Optional scopes for OAuth tokens (Sessions and API keys are assumed to have all scopes)
  */
 export async function requireAuth(event: H3Event, requiredScopes?: string[]) {
+  const ensureActiveUser = (user: { deactivatedAt?: Date | null } | null) => {
+    if (user?.deactivatedAt) {
+      throw createError({
+        statusCode: 403,
+        message: 'Account deactivated'
+      })
+    }
+  }
+
   // 1. Try Session (NuxtAuth) - Full access
   const session = await getServerSession(event)
   if ((session?.user as any)?.id) {
@@ -54,6 +64,7 @@ export async function requireAuth(event: H3Event, requiredScopes?: string[]) {
       where: { id: (session!.user as any).id }
     })
     if (user) {
+      ensureActiveUser(user)
       event.context.user = user
       event.context.session = session
       event.context.authType = 'session'
@@ -64,6 +75,7 @@ export async function requireAuth(event: H3Event, requiredScopes?: string[]) {
   // 2. Try API Key - Full access
   const apiKeyUser = await validateApiKey(event)
   if (apiKeyUser) {
+    ensureActiveUser(apiKeyUser)
     event.context.user = apiKeyUser
     event.context.authType = 'api_key'
     return apiKeyUser
@@ -72,6 +84,7 @@ export async function requireAuth(event: H3Event, requiredScopes?: string[]) {
   // 3. Try OAuth Bearer Token - Scoped access
   const oauth = await validateOAuthToken(event)
   if (oauth) {
+    ensureActiveUser(oauth.user)
     // Check scopes if required
     if (requiredScopes && requiredScopes.length > 0) {
       const hasScopes = requiredScopes.every((s) => oauth.scopes.includes(s))

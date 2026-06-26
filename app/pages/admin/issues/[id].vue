@@ -15,6 +15,7 @@
   const route = useRoute()
   const id = route.params.id as string
   const toast = useToast()
+  const supportActionLoading = ref<'deactivate' | 'reactivate' | 'delete' | null>(null)
 
   const { data: report, refresh: refreshReport } = await useFetch(`/api/admin/issues/${id}`)
   const { data: comments, refresh: refreshComments } = await useFetch(
@@ -248,6 +249,14 @@
   const commonEmojis = ['👍', '❤️', '👀', '🚀']
   const session = useAuth() as any
   const userId = computed(() => session.data.value?.user?.id)
+  const actorId = computed(() => {
+    const currentUser = session.data.value?.user as any
+    return currentUser?.originalUserId || currentUser?.id || null
+  })
+  const canRunUserSupportActions = computed(() => {
+    return !!report.value?.user?.id && actorId.value !== report.value?.user?.id
+  })
+  const isReportedUserDeactivated = computed(() => !!report.value?.user?.deactivatedAt)
 
   async function deleteIssue() {
     deletingIssue.value = true
@@ -260,6 +269,65 @@
     } finally {
       deletingIssue.value = false
       showDeleteIssueModal.value = false
+    }
+  }
+
+  async function addSupportActionNote(content: string) {
+    await $fetch(`/api/admin/issues/${id}/comments`, {
+      method: 'POST',
+      body: { content, type: 'NOTE' }
+    })
+  }
+
+  async function runSupportAction(action: 'deactivate' | 'reactivate' | 'delete') {
+    if (!report.value?.user?.id || !canRunUserSupportActions.value) return
+
+    supportActionLoading.value = action
+    try {
+      if (action === 'delete') {
+        await $fetch(`/api/admin/users/${report.value.user.id}`, {
+          method: 'DELETE'
+        })
+        await addSupportActionNote('Admin scheduled account deletion from the ticket workspace.')
+      } else if (action === 'deactivate') {
+        await $fetch(`/api/admin/users/${report.value.user.id}/deactivate`, {
+          method: 'POST',
+          body: {
+            reason: `Requested from support ticket ${report.value.id}: ${report.value.title}`
+          }
+        })
+        await addSupportActionNote('Admin deactivated the account from the ticket workspace.')
+      } else {
+        await $fetch(`/api/admin/users/${report.value.user.id}/reactivate`, {
+          method: 'POST'
+        })
+        await addSupportActionNote('Admin reactivated the account from the ticket workspace.')
+      }
+
+      await $fetch(`/api/admin/issues/${id}`, {
+        method: 'PUT',
+        body: { status: 'RESOLVED' }
+      })
+
+      await Promise.all([refreshReport(), refreshComments()])
+
+      toast.add({
+        title:
+          action === 'delete'
+            ? 'Account deletion scheduled'
+            : action === 'deactivate'
+              ? 'Account deactivated'
+              : 'Account reactivated',
+        color: action === 'deactivate' ? 'warning' : 'success'
+      })
+    } catch (error: any) {
+      toast.add({
+        title: 'Support action failed',
+        description: getApiErrorMessage(error, 'Something went wrong.'),
+        color: 'error'
+      })
+    } finally {
+      supportActionLoading.value = null
     }
   }
 
@@ -978,8 +1046,55 @@
                       <span class="text-gray-400 uppercase font-black tracking-tighter block"
                         >Status</span
                       >
-                      <span class="font-bold">{{ report?.user.subscriptionStatus || 'NONE' }}</span>
+                      <span class="font-bold">{{
+                        isReportedUserDeactivated
+                          ? 'DEACTIVATED'
+                          : report?.user.subscriptionStatus || 'NONE'
+                      }}</span>
                     </div>
+                  </div>
+                </div>
+
+                <div class="space-y-2 pt-2 border-t border-gray-100 dark:border-gray-800">
+                  <p class="text-[10px] font-black uppercase text-gray-400 tracking-tighter">
+                    Account Support Actions
+                  </p>
+                  <div class="flex flex-col gap-2">
+                    <UButton
+                      v-if="isReportedUserDeactivated"
+                      color="warning"
+                      variant="soft"
+                      size="xs"
+                      icon="i-lucide-user-check"
+                      label="Reactivate Account"
+                      :disabled="!canRunUserSupportActions"
+                      :loading="supportActionLoading === 'reactivate'"
+                      @click="runSupportAction('reactivate')"
+                    />
+                    <UButton
+                      v-else
+                      color="warning"
+                      variant="soft"
+                      size="xs"
+                      icon="i-lucide-user-x"
+                      label="Deactivate Account"
+                      :disabled="!canRunUserSupportActions"
+                      :loading="supportActionLoading === 'deactivate'"
+                      @click="runSupportAction('deactivate')"
+                    />
+                    <UButton
+                      color="error"
+                      variant="soft"
+                      size="xs"
+                      icon="i-lucide-trash-2"
+                      label="Schedule Deletion"
+                      :disabled="!canRunUserSupportActions"
+                      :loading="supportActionLoading === 'delete'"
+                      @click="runSupportAction('delete')"
+                    />
+                    <p v-if="!canRunUserSupportActions" class="text-[11px] text-gray-500">
+                      Support actions are unavailable for your own account.
+                    </p>
                   </div>
                 </div>
 

@@ -112,6 +112,8 @@ model User {
   aiTtsAutoReadMessages              Boolean                      @default(false)
   emailStatus                        String                       @default("VALID")
   emailError                         String?
+  deactivatedAt                      DateTime?
+  deactivationReason                 String?
   accounts                           Account[]
   activityRecommendations            ActivityRecommendation[]
   apiKeys                            ApiKey[]
@@ -180,6 +182,7 @@ model User {
   coachAthleteInvitesSent            CoachAthleteInvite[]
 
   @@index([createdAt])
+  @@index([deactivatedAt])
   @@index([subscriptionTier])
 }
 

@@ -15,8 +15,11 @@
 
   const impersonating = ref(false)
   const deletingUser = ref(false)
+  const togglingDeactivation = ref(false)
   const sendingEmailIds = ref<string[]>([])
   const isDeleteModalOpen = ref(false)
+  const isDeactivationModalOpen = ref(false)
+  const deactivationReason = ref('')
 
   const isOwnAdminAccount = computed(() => {
     const sessionUser = session.value?.user as any
@@ -127,6 +130,63 @@
     }
   }
 
+  const isDeactivated = computed(() => !!data.value?.profile.deactivatedAt)
+
+  async function deactivateUserAccount() {
+    if (togglingDeactivation.value || isOwnAdminAccount.value) return
+
+    togglingDeactivation.value = true
+    try {
+      await $fetch(`/api/admin/users/${userId}/deactivate`, {
+        method: 'POST',
+        body: {
+          reason: deactivationReason.value.trim() || undefined
+        }
+      })
+      toast.add({
+        title: 'Account deactivated',
+        description: 'The user was signed out and future logins are now blocked.',
+        color: 'warning'
+      })
+      deactivationReason.value = ''
+      isDeactivationModalOpen.value = false
+      await refresh()
+    } catch (error: any) {
+      toast.add({
+        title: 'Error',
+        description: error?.data?.message || error?.message || 'Failed to deactivate account',
+        color: 'error'
+      })
+    } finally {
+      togglingDeactivation.value = false
+    }
+  }
+
+  async function reactivateUserAccount() {
+    if (togglingDeactivation.value) return
+
+    togglingDeactivation.value = true
+    try {
+      await $fetch(`/api/admin/users/${userId}/reactivate`, {
+        method: 'POST'
+      })
+      toast.add({
+        title: 'Account reactivated',
+        description: 'The user can sign in again immediately.',
+        color: 'success'
+      })
+      await refresh()
+    } catch (error: any) {
+      toast.add({
+        title: 'Error',
+        description: error?.data?.message || error?.message || 'Failed to reactivate account',
+        color: 'error'
+      })
+    } finally {
+      togglingDeactivation.value = false
+    }
+  }
+
   useHead({
     title: computed(() => `User: ${data.value?.profile.name || 'Unknown'}`)
   })
@@ -141,6 +201,25 @@
         </template>
         <template #right>
           <div class="flex items-center gap-2">
+            <UButton
+              v-if="isDeactivated"
+              color="warning"
+              variant="soft"
+              icon="i-lucide-user-check"
+              label="Reactivate"
+              :loading="togglingDeactivation"
+              @click="reactivateUserAccount"
+            />
+            <UButton
+              v-else
+              color="warning"
+              variant="soft"
+              icon="i-lucide-user-x"
+              label="Deactivate"
+              :disabled="isOwnAdminAccount"
+              :loading="togglingDeactivation"
+              @click="isDeactivationModalOpen = true"
+            />
             <UButton
               color="neutral"
               variant="soft"
@@ -257,6 +336,24 @@
                           {{ data.profile.isAdmin ? 'Admin' : 'User' }}
                         </UBadge>
                       </dd>
+                    </div>
+                    <div class="flex justify-between">
+                      <dt class="text-gray-500">Account</dt>
+                      <dd>
+                        <UBadge :color="isDeactivated ? 'warning' : 'success'" size="xs">
+                          {{ isDeactivated ? 'Deactivated' : 'Active' }}
+                        </UBadge>
+                      </dd>
+                    </div>
+                    <div v-if="data.profile.deactivatedAt" class="flex justify-between gap-4">
+                      <dt class="text-gray-500">Deactivated</dt>
+                      <dd class="text-right">
+                        {{ new Date(data.profile.deactivatedAt).toLocaleString() }}
+                      </dd>
+                    </div>
+                    <div v-if="data.profile.deactivationReason" class="flex justify-between gap-4">
+                      <dt class="text-gray-500">Reason</dt>
+                      <dd class="text-right">{{ data.profile.deactivationReason }}</dd>
                     </div>
                     <div class="flex justify-between">
                       <dt class="text-gray-500">Auth Provider</dt>
@@ -565,6 +662,46 @@
       </div>
     </template>
   </UDashboardPanel>
+
+  <UModal
+    v-model:open="isDeactivationModalOpen"
+    title="Deactivate User Account"
+    description="This disables future logins while preserving the account for possible reactivation."
+  >
+    <template #body>
+      <p class="text-warning font-semibold mb-2">The user will be signed out immediately.</p>
+      <p v-if="isOwnAdminAccount" class="text-sm text-warning mb-4">
+        You cannot deactivate your own account from the admin panel.
+      </p>
+      <p v-else class="mb-4">
+        This will block sign-in for <strong>{{ data?.profile.email }}</strong> until the account is
+        reactivated.
+      </p>
+      <UFormField label="Reason" help="Optional note for audit history and support context.">
+        <UTextarea
+          v-model="deactivationReason"
+          :rows="4"
+          placeholder="Requested by support ticket, fraud concern, temporary pause, etc."
+        />
+      </UFormField>
+    </template>
+
+    <template #footer>
+      <div class="flex gap-2 justify-end w-full">
+        <UButton color="neutral" variant="ghost" @click="isDeactivationModalOpen = false">
+          Cancel
+        </UButton>
+        <UButton
+          color="warning"
+          :loading="togglingDeactivation"
+          :disabled="isOwnAdminAccount"
+          @click="deactivateUserAccount"
+        >
+          Deactivate Account
+        </UButton>
+      </div>
+    </template>
+  </UModal>
 
   <UModal
     v-model:open="isDeleteModalOpen"

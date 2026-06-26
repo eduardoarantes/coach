@@ -232,7 +232,20 @@ export default NuxtAuthHandler({
   ],
   secret: process.env.NUXT_AUTH_SECRET,
   callbacks: {
-    async signIn() {
+    async signIn({ user }: any) {
+      const existingUser = user?.id
+        ? await prisma.user.findUnique({
+            where: { id: user.id },
+            select: {
+              deactivatedAt: true
+            }
+          })
+        : null
+
+      if (existingUser?.deactivatedAt) {
+        return false
+      }
+
       return true
     },
     async session({ session, user }: any) {
@@ -243,6 +256,7 @@ export default NuxtAuthHandler({
         session.user.language = user.language || 'English'
         session.user.uiLanguage = user.uiLanguage || 'en'
         session.user.termsAcceptedAt = user.termsAcceptedAt || null
+        session.user.deactivatedAt = user.deactivatedAt || null
       }
       return session
     }

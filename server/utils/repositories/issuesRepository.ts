@@ -31,6 +31,7 @@ export const issuesRepository = {
             timezone: true,
             country: true,
             dob: true,
+            deactivatedAt: true,
             subscriptionTier: true,
             subscriptionStatus: true,
             _count: {
