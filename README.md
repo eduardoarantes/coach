@@ -97,7 +97,7 @@ We use **Tolgee** for managing translations. If you'd like to help translate Coa
 
 ### Prerequisites
 
-- Node.js 22+ (LTS)
+- Node.js 24 (Active LTS — see `.nvmrc`)
 - Docker (for PostgreSQL)
 - Google Cloud Account (for Auth & Gemini API)
 
