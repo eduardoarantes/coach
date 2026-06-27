@@ -208,9 +208,11 @@ Current findings:
 Applied in code:
 
 - activity-page mini workout charts now render only when the workout has previewable structure data
+- calendar day cells now use the same preview guard as the activities list/table views (`CalendarDayCell.vue`, 2026-06-26)
 - chart-preference detection now traverses step trees more defensively
 - workout chart empty states now show the structured workout description when interval steps are missing
 - run workout detail views now show narrative workout guidance when no interval-step structure exists
+- production revalidation on 2026-06-26 shows Dzmitry (`49dadbeb`) still has 8 planned workouts since May with description-only `structuredWorkout` payloads (`step_count = 0`); these should no longer attempt mini-chart rendering after deploy
 
 Next steps:
 

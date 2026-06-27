@@ -313,7 +313,7 @@
 
               <!-- Mini Workout Chart (Structured Planned) -->
               <div
-                v-if="activity.source === 'planned' && activity.structuredWorkout"
+                v-if="activity.source === 'planned' && hasActivityChartPreview(activity)"
                 class="mt-1.5"
               >
                 <MiniWorkoutChart
@@ -452,6 +452,10 @@
   import MiniZoneChart from '~/components/MiniZoneChart.vue'
   import { getSportSettingsForActivity } from '~/utils/sportSettings'
   import { getWorkoutChartPreference } from '~/utils/workoutChartContext'
+  import {
+    getStructuredWorkoutObject,
+    hasStructuredWorkoutPreviewData
+  } from '~/utils/structuredWorkout'
   import { formatDistance as formatDist } from '~/utils/metrics'
 
   const { formatDate, formatDateUTC, formatTime, getUserLocalDate, formatWeight } = useFormat()
@@ -499,11 +503,36 @@
     }
   }
 
+  function hasActivityChartPreview(activity: CalendarActivity) {
+    return hasStructuredWorkoutPreviewData(activity)
+  }
+
   function collectStructuredMetricAvailability(activity: CalendarActivity) {
-    const hasHr = !!activity.structuredWorkout?.steps?.some((s: any) => s.heartRate)
-    const hasPower = !!activity.structuredWorkout?.steps?.some((s: any) => s.power)
-    const hasPace = !!activity.structuredWorkout?.steps?.some((s: any) => s.pace)
-    return { hasHr, hasPower, hasPace }
+    const structuredWorkout = getStructuredWorkoutObject(activity)
+    const steps = Array.isArray(structuredWorkout?.steps) ? structuredWorkout.steps : []
+
+    const visit = (nodes: any[]): { hasHr: boolean; hasPower: boolean; hasPace: boolean } => {
+      let hasHr = false
+      let hasPower = false
+      let hasPace = false
+
+      nodes.forEach((step: any) => {
+        if (step?.heartRate) hasHr = true
+        if (step?.power) hasPower = true
+        if (step?.pace) hasPace = true
+
+        if (Array.isArray(step?.steps) && step.steps.length > 0) {
+          const nested = visit(step.steps)
+          hasHr = hasHr || nested.hasHr
+          hasPower = hasPower || nested.hasPower
+          hasPace = hasPace || nested.hasPace
+        }
+      })
+
+      return { hasHr, hasPower, hasPace }
+    }
+
+    return visit(steps)
   }
 
   function getActivityChartPreference(activity: CalendarActivity): 'hr' | 'power' | 'pace' {
