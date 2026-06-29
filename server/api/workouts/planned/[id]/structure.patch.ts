@@ -133,12 +133,14 @@ export default defineEventHandler(async (event) => {
     workoutType: workout.type || ''
   })
 
-  console.log('[StructurePatch] Normalized sample step metrics:', {
-    power: normalized.steps[0].power,
-    heartRate: normalized.steps[0].heartRate,
-    pace: normalized.steps[0].pace,
-    primaryTarget: normalized.steps[0].primaryTarget
-  })
+  if ((normalized.steps?.length ?? 0) > 0) {
+    console.log('[StructurePatch] Normalized sample step metrics:', {
+      power: normalized.steps[0].power,
+      heartRate: normalized.steps[0].heartRate,
+      pace: normalized.steps[0].pace,
+      primaryTarget: normalized.steps[0].primaryTarget
+    })
+  }
 
   const metrics = computeStructuredWorkoutMetrics(normalized, {
     refs,
