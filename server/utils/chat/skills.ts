@@ -180,7 +180,10 @@ const CHAT_SKILL_MANIFESTS: Record<ChatSkillId, ChatSkillManifest> = {
 - Never ask for approval in plain text without first invoking the relevant planning mutation tool.
 - If the user approves a prepared planning action, immediately execute that exact approved planning tool call.
 - After approval, do not just acknowledge the action in text. Execute the tool first, then report the result.
-- Do not claim a workout was created, updated, moved, published, or deleted unless the planning tool actually ran successfully.`,
+- Do not claim a workout was created, updated, moved, published, or deleted unless the planning tool actually ran successfully.
+- After \`create_planned_workout\` with default structure generation, do **not** call \`generate_planned_workout_structure\` for the same workout in the same turn — creation already enqueues one structure job.
+- On \`update_planned_workout\`, omit \`generate_structure\` or set it to \`false\` for metadata-only edits (title, description, reschedule). Set \`generate_structure: true\` only when duration, type, intensity, or structure must be rebuilt, or the user explicitly asked to regenerate intervals.
+- Do not chain \`create_planned_workout\` and \`update_planned_workout\` in one turn unless the user asked for separate follow-up edits; prefer passing complete details into a single create call.`,
     contextFlags: ['planning', 'date_context', 'time'],
     approvalToolNames: [
       'update_training_availability',

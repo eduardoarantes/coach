@@ -37,6 +37,8 @@ describe('chat turn helpers', () => {
 
   it('detects mutating chat tools', () => {
     expect(isMutatingChatTool('create_planned_workout')).toBe(true)
+    expect(isMutatingChatTool('generate_planned_workout_structure')).toBe(true)
+    expect(isMutatingChatTool('adjust_planned_workout')).toBe(true)
     expect(isMutatingChatTool('log_nutrition_meal')).toBe(true)
     expect(isMutatingChatTool('log_hydration_intake')).toBe(true)
     expect(isMutatingChatTool('lock_meal_to_plan')).toBe(true)
