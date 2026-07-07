@@ -3,7 +3,7 @@
 **Type:** Bug  
 **Priority:** Medium  
 **Area:** `ui/ux`, `workouts`  
-**Status:** Open
+**Status:** In Progress ([PR #220](https://github.com/hdkiller/coach/pull/220))
 
 ## Description
 
@@ -33,14 +33,18 @@ On mount (and when `runs` updates):
 ## Suggested Fix
 
 ```typescript
-watch(activeStructureRun, (run) => {
-  if (!run) {
-    // Don't clear generating here — wait for completion/failure handlers
-    return
-  }
-  if (run.taskIdentifier === 'adjust-structured-workout') adjusting.value = true
-  else generating.value = true
-}, { immediate: true })
+watch(
+  activeStructureRun,
+  (run) => {
+    if (!run) {
+      // Don't clear generating here — wait for completion/failure handlers
+      return
+    }
+    if (run.taskIdentifier === 'adjust-structured-workout') adjusting.value = true
+    else generating.value = true
+  },
+  { immediate: true }
+)
 ```
 
 Requires [002](./002-missing-planned-workout-run-tags.md) for manual API paths.

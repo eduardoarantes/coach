@@ -1,6 +1,6 @@
 # Workout Details Generation — Issue Tracker
 
-Last reviewed: 2026-07-07 (implementation in progress — see PRs #214–#218)
+Last reviewed: 2026-07-07 (implementation in progress — see PRs #214–#220)
 
 This tracker documents bugs, UX gaps, and architectural concerns found during a code review of **planned workout structure generation** (the AI pipeline that produces interval steps, strength blocks, coach instructions, and related metadata for the Planned Workout Details page).
 
@@ -70,8 +70,8 @@ Anchor support tickets: `0d62fa04-884d-4fcd-a328-2226f2eb4ad5`, `a232e0ab-245e-4
 | [001](./001-zero-step-structure-persistence.md)              | Empty structures can persist as successful generation           | Critical | Bug          | In Progress ([PR #214](https://github.com/hdkiller/coach/pull/214)) |
 | [002](./002-missing-planned-workout-run-tags.md)             | Manual/API triggers missing `planned-workout:` run tags         | High     | Bug          | In Progress ([PR #217](https://github.com/hdkiller/coach/pull/217)) |
 | [003](./003-free-tier-skip-reports-success.md)               | Free-tier skip returns `success: true` → misleading toast       | Medium   | Bug          | Open                                                                |
-| [004](./004-no-task-failure-handling.md)                     | No `onTaskFailed` handler — stuck "Generating..." state         | High     | Bug          | Open                                                                |
-| [005](./005-page-reload-loses-generation-state.md)           | Page reload does not restore in-progress generation UI          | Medium   | Bug          | Open                                                                |
+| [004](./004-no-task-failure-handling.md)                     | No `onTaskFailed` handler — stuck "Generating..." state         | High     | Bug          | In Progress ([PR #220](https://github.com/hdkiller/coach/pull/220)) |
+| [005](./005-page-reload-loses-generation-state.md)           | Page reload does not restore in-progress generation UI          | Medium   | Bug          | In Progress ([PR #220](https://github.com/hdkiller/coach/pull/220)) |
 | [006](./006-ui-timeout-messaging-mismatch.md)                | UI says "30 seconds" but task can take up to ~180s              | Low      | Bug          | Open                                                                |
 | [007](./007-workout-messages-no-ai-timeout.md)               | `generate-workout-messages` has no explicit AI timeout          | Medium   | Bug          | Open                                                                |
 | [008](./008-chat-silent-trigger-failures.md)                 | Chat tools swallow structure trigger failures                   | High     | Bug          | In Progress ([PR #219](https://github.com/hdkiller/coach/pull/219)) |
