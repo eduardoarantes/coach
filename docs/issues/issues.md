@@ -1,6 +1,6 @@
 # Workout Details Generation — Issue Tracker
 
-Last reviewed: 2026-07-07 (second pass — chat + structure generation)
+Last reviewed: 2026-07-07 (third pass — trigger tags & monitor)
 
 This tracker documents bugs, UX gaps, and architectural concerns found during a code review of **planned workout structure generation** (the AI pipeline that produces interval steps, strength blocks, coach instructions, and related metadata for the Planned Workout Details page).
 
@@ -93,6 +93,42 @@ Anchor support tickets: `0d62fa04-884d-4fcd-a328-2226f2eb4ad5`, `a232e0ab-245e-4
 | [024](./024-chat-card-wrong-workout-fallback.md) | Chat card fuzzy ID fallback attaches wrong workout | Medium | Bug | Open |
 | [025](./025-planned-workout-details-context-bloat.md) | `get_planned_workout_details` bloats LLM context | Low | Bug | Open |
 | [026](./026-structure-tools-missing-preflight.md) | Generate/adjust tools skip sync workout existence check | Medium | Bug | Open |
+| [027](./027-cross-user-runs-on-identity-switch.md) | Monitor shows other user's runs after act-as / impersonation | Critical | Bug | Open |
+| [028](./028-trigger-monitor-stale-run-merge.md) | Client merge never evicts stale completed runs | Medium | Bug | Open |
+| [029](./029-triggers-missing-user-tags.md) | Some triggers omit required `user:{userId}` tag | High | Bug | Open |
+| [030](./030-library-run-tags-template-owner.md) | Library jobs tag template owner, not session actor | Medium | Bug | Open |
+| [031](./031-websocket-not-reauth-on-identity-switch.md) | WebSocket not re-authenticated on identity switch | Medium | Bug | Open |
+| [032](./032-trigger-tag-taxonomy-inconsistent.md) | Inconsistent secondary tags for structure jobs | Medium | Maintenance | Open |
+
+## Trigger Monitor & Tags — Issue Clusters
+
+Reports of “seeing other users' triggers” in the in-app monitor are **usually explainable by bugs/UX gaps below**, not by Trigger.dev API returning cross-tenant data (the API filters by `user:${session.user.id}` tag).
+
+### Cross-user or “wrong user” runs in monitor
+
+- [027](./027-cross-user-runs-on-identity-switch.md) — **most likely** if you use coaching **Act As** or admin impersonation: client merge keeps prior user's runs when identity switches
+- [031](./031-websocket-not-reauth-on-identity-switch.md) — WS stays authenticated as original user after act-as
+- [030](./030-library-run-tags-template-owner.md) — coach triggers library job tagged for athlete → invisible or mismatched
+
+### Also looks like “someone else's job” but isn't
+
+- **Background webhooks** (Strava, Withings, etc.) enqueue ingest tasks tagged for your account while you aren't actively clicking anything
+- **Plan activation / training block** fans out many `generate-structured-workout` jobs — monitor shows a burst of similar tasks
+- [028](./028-trigger-monitor-stale-run-merge.md) — old completed runs linger in UI up to 50 entries
+
+### Tagging gaps (monitor + workout UI)
+
+- [002](./002-missing-planned-workout-run-tags.md) + [032](./032-trigger-tag-taxonomy-inconsistent.md) — structure jobs missing `planned-workout:` entity tags
+- [029](./029-triggers-missing-user-tags.md) — some tasks untagged entirely
+
+### How ownership is enforced (today)
+
+| Layer | Behavior |
+|-------|----------|
+| `/api/runs/active` | Lists runs filtered by `tags: [user:{sessionUserId}]` |
+| `/api/runs/[id]` GET/DELETE | 404 unless run.tags includes `user:{sessionUserId}` |
+| WebSocket `run_update` | Routed via `sendToUser(userId, …)` per peer auth |
+| **Client `useUserRuns`** | **Does not re-check tags** on merge/WS update ([027](./027-cross-user-runs-on-identity-switch.md)) |
 
 ## Chat + Structure Generation — Issue Clusters
 
@@ -125,14 +161,16 @@ These groups help explain user-reported symptoms like “multiple workout detail
 
 ## Recommended Fix Order
 
-1. **001** — Add a hard pre-persist guard rejecting empty/non-renderable structures (blocks the production zero-step pattern).
-2. **017** — Fix `planService` import (runtime crash on plan structure edits via chat).
-3. **013 + 015 + 023** — Stop duplicate structure triggers and duplicate workouts from chat.
-4. **008 + 014 + 016** — Failed enqueue recovery (server errors + chat card terminal states).
-5. **002 + 004 + 005** — Fix run tagging and failure/state recovery on the Planned Workout Details page.
-6. **018** — Align approval policy for expensive structure tools.
-7. **012** — Align timeout policy; persisted generation status on `PlannedWorkout`.
-8. Remaining medium/low items (019–022, 020–021, 024–026).
+1. **027 + 028 + 031** — Fix trigger monitor identity/stale-state bugs (cross-user run display).
+2. **001** — Add a hard pre-persist guard rejecting empty/non-renderable structures (blocks the production zero-step pattern).
+3. **017** — Fix `planService` import (runtime crash on plan structure edits via chat).
+4. **032 + 002 + 029** — Standardize trigger tags (`user:` + entity tags on all enqueue sites).
+5. **013 + 015 + 023** — Stop duplicate structure triggers and duplicate workouts from chat.
+6. **008 + 014 + 016** — Failed enqueue recovery (server errors + chat card terminal states).
+7. **004 + 005** — Failure/state recovery on the Planned Workout Details page.
+8. **018** — Align approval policy for expensive structure tools.
+9. **012** — Align timeout policy; persisted generation status on `PlannedWorkout`.
+10. Remaining medium/low items.
 
 ## Key Files
 
@@ -144,7 +182,10 @@ These groups help explain user-reported symptoms like “multiple workout detail
 | Manual trigger API | `server/api/workouts/planned/[id]/generate-structure.post.ts` |
 | Chat planning tools | `server/utils/ai-tools/planning.ts` |
 | Details page UI | `app/pages/workouts/planned/[id]/index.vue` |
-| Run monitoring | `app/composables/useUserRuns.ts` |
+| Run monitoring | `app/composables/useUserRuns.ts`, `app/components/dashboard/TriggerMonitor.vue` |
+| Run API / ownership | `server/api/runs/active.get.ts`, `server/api/runs/[id].get.ts` |
+| Run WS publish | `server/utils/task-run-events.ts`, `server/utils/ws-state.ts` |
+| Session / act-as | `server/utils/session.ts` |
 | Chat turn timeouts | `server/utils/chat/turns.ts`, `server/utils/chat/turn-executor.ts` |
 
 ## Chat / Trigger Timeout Notes
