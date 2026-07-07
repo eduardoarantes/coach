@@ -3,7 +3,7 @@
 **Type:** Bug  
 **Priority:** High  
 **Area:** `ai`, `backend`, `workouts`  
-**Status:** Open
+**Status:** In Progress ([PR #219](https://github.com/hdkiller/coach/pull/219))
 
 ## Description
 
