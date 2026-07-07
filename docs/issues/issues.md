@@ -1,6 +1,6 @@
 # Workout Details Generation — Issue Tracker
 
-Last reviewed: 2026-07-07 (third pass — trigger tags & monitor)
+Last reviewed: 2026-07-07 (fourth pass — structure prompt / speed)
 
 This tracker documents bugs, UX gaps, and architectural concerns found during a code review of **planned workout structure generation** (the AI pipeline that produces interval steps, strength blocks, coach instructions, and related metadata for the Planned Workout Details page).
 
@@ -99,6 +99,36 @@ Anchor support tickets: `0d62fa04-884d-4fcd-a328-2226f2eb4ad5`, `a232e0ab-245e-4
 | [030](./030-library-run-tags-template-owner.md) | Library jobs tag template owner, not session actor | Medium | Bug | Open |
 | [031](./031-websocket-not-reauth-on-identity-switch.md) | WebSocket not re-authenticated on identity switch | Medium | Bug | Open |
 | [032](./032-trigger-tag-taxonomy-inconsistent.md) | Inconsistent secondary tags for structure jobs | Medium | Maintenance | Open |
+| [033](./033-retire-legacy-structure-generator.md) | Retire `legacy_json` generator for ride/run/swim | Medium | Performance | Open |
+| [034](./034-deduplicate-structure-prompt-targeting.md) | Deduplicate targeting instructions in structure prompts | Medium | Performance | Open |
+| [035](./035-remove-unused-streams-from-structure-context.md) | Remove unused stream fetch from structure context | Low | Performance | Open |
+| [036](./036-bound-aicontext-in-structure-generation.md) | Bound `aiContext` in structure-generation prompts | Medium | Performance | Open |
+| [037](./037-structure-generation-lightweight-retries.md) | Lightweight corrective retries for structure generation | High | Performance | Open |
+| [038](./038-disable-thinking-flash-structure-generation.md) | Disable/minimize Flash thinking for structure generation | Medium | Performance | Open |
+
+## Structure Generation Speed & Prompt — Issue Clusters
+
+User-selected improvements from prompt/context review (2026-07-07). Goal: reduce tokens, DB load, and retry cost without changing the async Trigger.dev architecture.
+
+### Prompt slimming (do first — low risk)
+
+- [033](./033-retire-legacy-structure-generator.md) — one schema path for ride/run/swim
+- [034](./034-deduplicate-structure-prompt-targeting.md) — targeting rules stated once
+- [035](./035-remove-unused-streams-from-structure-context.md) — drop dead streams query
+- [036](./036-bound-aicontext-in-structure-generation.md) — cap global user context
+
+### Model call efficiency
+
+- [038](./038-disable-thinking-flash-structure-generation.md) — no thinking on attempt-1 Flash
+- [037](./037-structure-generation-lightweight-retries.md) — small patch retries instead of full prompt + Pro/high thinking
+
+### Suggested implementation order
+
+1. **035** — trivial DB win, no prompt behavior change
+2. **038** — one-line flag change per task; validate via LLM ops `reasoningTokens`
+3. **034 + 036** — prompt builder refactor
+4. **033** — remove legacy branch after draft parity check
+5. **037** — retry redesign (depends on compact base prompt from 033–034)
 
 ## Trigger Monitor & Tags — Issue Clusters
 
@@ -170,7 +200,8 @@ These groups help explain user-reported symptoms like “multiple workout detail
 7. **004 + 005** — Failure/state recovery on the Planned Workout Details page.
 8. **018** — Align approval policy for expensive structure tools.
 9. **012** — Align timeout policy; persisted generation status on `PlannedWorkout`.
-10. Remaining medium/low items.
+10. **035 + 038 + 034 + 036 + 033 + 037** — Structure prompt/speed cluster (see above).
+11. Remaining medium/low items.
 
 ## Key Files
 
