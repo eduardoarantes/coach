@@ -629,9 +629,9 @@ export function computeStructuredWorkoutMetrics(
 
     for (const step of steps || []) {
       const reps = toPositiveInt(step?.reps) || 1
-      let stepDuration = 0
-      let stepTss = 0
-      let stepDistance = 0
+      let stepDuration: number
+      let stepTss: number
+      let stepDistance: number
 
       if (Array.isArray(step?.steps) && step.steps.length > 0) {
         const nested = walk(step.steps)
@@ -643,9 +643,7 @@ export function computeStructuredWorkoutMetrics(
         stepDistance = estimateStepDistanceMeters(step, context)
 
         const intensity = selectStepIntensity(step, context.refs, context.fallbackOrder)
-        if (stepDuration > 0) {
-          stepTss = ((stepDuration * intensity * intensity) / 3600) * 100
-        }
+        stepTss = stepDuration > 0 ? ((stepDuration * intensity * intensity) / 3600) * 100 : 0
       }
 
       duration += stepDuration * reps
@@ -682,4 +680,22 @@ export function computeStructuredWorkoutDurationSec(structuredWorkout: any) {
 
 export function getPendingSyncStatus(syncStatus: string | null | undefined) {
   return syncStatus === 'LOCAL_ONLY' ? 'LOCAL_ONLY' : 'PENDING'
+}
+
+export function hasRenderableStructure(structuredWorkout: unknown): boolean {
+  if (!structuredWorkout || typeof structuredWorkout !== 'object') return false
+
+  const structure = structuredWorkout as Record<string, unknown>
+  if (Array.isArray(structure.steps) && structure.steps.length > 0) return true
+  if (Array.isArray(structure.exercises) && structure.exercises.length > 0) return true
+
+  if (Array.isArray(structure.blocks) && structure.blocks.length > 0) {
+    return structure.blocks.some((block) => {
+      if (!block || typeof block !== 'object') return false
+      const steps = (block as Record<string, unknown>).steps
+      return Array.isArray(steps) && steps.length > 0
+    })
+  }
+
+  return false
 }

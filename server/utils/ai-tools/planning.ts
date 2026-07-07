@@ -42,9 +42,15 @@ import {
 import {
   normalizeStructuredWorkoutForPersistence,
   computeStructuredWorkoutMetrics,
-  getPendingSyncStatus
+  getPendingSyncStatus,
+  hasRenderableStructure
 } from '../structured-workout-persistence'
 import { publishTaskRunStartedEvent } from '../task-run-events'
+import {
+  buildStructureGenerationMessage,
+  enqueuePlannedWorkoutStructureGeneration,
+  type StructureGenerationStatus
+} from '../planned-workout-structure-trigger'
 
 const STEP_INTENT_VALUES = [
   'warmup',
@@ -865,13 +871,50 @@ export const planningTools = (userId: string, timezone: string, aiSettings: AiSe
       })
 
       if (existingByExternalId) {
+        const shouldGenerate = args.generate_structure !== false
+        let structureStatus: StructureGenerationStatus = 'skipped'
+        let runId: string | undefined
+        let structureError: string | undefined
+
+        if (shouldGenerate) {
+          const existingWorkout = await plannedWorkoutRepository.getById(
+            existingByExternalId.id,
+            userId,
+            {
+              select: { id: true, structuredWorkout: true }
+            }
+          )
+
+          if (existingWorkout && hasRenderableStructure(existingWorkout.structuredWorkout)) {
+            structureStatus = 'exists'
+          } else {
+            const enqueue = await enqueuePlannedWorkoutStructureGeneration({
+              userId,
+              plannedWorkoutId: existingByExternalId.id,
+              targetingOverride: args.targeting_override || null
+            })
+            if (enqueue.status === 'queued') {
+              structureStatus = 'queued'
+              runId = enqueue.runId
+            } else {
+              structureStatus = 'failed'
+              structureError = enqueue.error
+            }
+          }
+        }
+
         return {
           success: true,
           workout_id: existingByExternalId.id,
-          message:
-            args.generate_structure !== false
-              ? 'Planned workout already exists for this chat turn.'
-              : 'Planned workout already exists.'
+          outcome: 'already_exists',
+          ...(shouldGenerate ? { structure_generation: structureStatus } : {}),
+          ...(runId ? { run_id: runId } : {}),
+          ...(structureError ? { structure_error: structureError } : {}),
+          message: buildStructureGenerationMessage({
+            outcome: 'already_exists',
+            requested: shouldGenerate,
+            status: structureStatus
+          })
         }
       }
 
@@ -904,37 +947,38 @@ export const planningTools = (userId: string, timezone: string, aiSettings: AiSe
         managedBy: workout.managedBy
       })
 
-      // Trigger structured workout generation
+      const shouldGenerate = args.generate_structure !== false
+      let structureStatus: StructureGenerationStatus = 'skipped'
       let runId: string | undefined
-      if (args.generate_structure !== false) {
-        try {
-          const handle = await generateStructuredWorkoutTask.trigger(
-            {
-              plannedWorkoutId: workout.id, // Pass plannedWorkoutId
-              targetingOverride: args.targeting_override || null
-            },
-            {
-              tags: [`user:${userId}`, `planned-workout:${workout.id}`],
-              concurrencyKey: userId
-            }
-          )
-          await publishTaskRunStartedEvent(userId, 'generate-structured-workout', handle, {
-            tags: [`user:${userId}`, `planned-workout:${workout.id}`]
-          })
-          runId = handle.id
-        } catch (e) {
-          console.error('Failed to trigger structured workout generation:', e)
+      let structureError: string | undefined
+
+      if (shouldGenerate) {
+        const enqueue = await enqueuePlannedWorkoutStructureGeneration({
+          userId,
+          plannedWorkoutId: workout.id,
+          targetingOverride: args.targeting_override || null
+        })
+        if (enqueue.status === 'queued') {
+          structureStatus = 'queued'
+          runId = enqueue.runId
+        } else {
+          structureStatus = 'failed'
+          structureError = enqueue.error
         }
       }
 
       return {
         success: true,
         workout_id: workout.id,
+        outcome: 'created',
+        ...(shouldGenerate ? { structure_generation: structureStatus } : {}),
         ...(runId ? { run_id: runId } : {}),
-        message:
-          args.generate_structure !== false
-            ? 'Planned workout created and structured generation started.'
-            : 'Planned workout created.'
+        ...(structureError ? { structure_error: structureError } : {}),
+        message: buildStructureGenerationMessage({
+          outcome: 'created',
+          requested: shouldGenerate,
+          status: structureStatus
+        })
       }
     }
   }),
@@ -994,33 +1038,32 @@ export const planningTools = (userId: string, timezone: string, aiSettings: AiSe
 
       const workout = await plannedWorkoutRepository.update(args.workout_id, userId, data)
 
-      // Trigger regeneration of structured intervals
+      const shouldRegenerateStructure = args.generate_structure !== false
+      let structureStatus: StructureGenerationStatus = 'skipped'
       let runId: string | undefined
-      if (args.generate_structure !== false) {
-        try {
-          const handle = await generateStructuredWorkoutTask.trigger(
-            {
-              plannedWorkoutId: workout.id,
-              targetingOverride: args.targeting_override || null
-            },
-            {
-              tags: [`user:${userId}`, `planned-workout:${workout.id}`],
-              concurrencyKey: userId
-            }
-          )
-          await publishTaskRunStartedEvent(userId, 'generate-structured-workout', handle, {
-            tags: [`user:${userId}`, `planned-workout:${workout.id}`]
-          })
-          runId = handle.id
-        } catch (e) {
-          console.error('Failed to trigger structured workout regeneration:', e)
+      let structureError: string | undefined
+
+      if (shouldRegenerateStructure) {
+        const enqueue = await enqueuePlannedWorkoutStructureGeneration({
+          userId,
+          plannedWorkoutId: workout.id,
+          targetingOverride: args.targeting_override || null
+        })
+        if (enqueue.status === 'queued') {
+          structureStatus = 'queued'
+          runId = enqueue.runId
+        } else {
+          structureStatus = 'failed'
+          structureError = enqueue.error
         }
       }
 
       return {
         success: true,
         workout_id: workout.id,
+        ...(shouldRegenerateStructure ? { structure_generation: structureStatus } : {}),
         ...(runId ? { run_id: runId } : {}),
+        ...(structureError ? { structure_error: structureError } : {}),
         status: nextSyncStatus === 'LOCAL_ONLY' ? 'LOCAL_ONLY' : 'QUEUED_FOR_SYNC'
       }
     }
@@ -1434,7 +1477,7 @@ export const planningTools = (userId: string, timezone: string, aiSettings: AiSe
           const existingWorkout = await workoutRepository.getById(args.workout_id, userId, {
             select: { id: true, date: true }
           })
-          if (!existingWorkout) throw new Error('Workout not found')
+          if (!existingWorkout) throw new Error('Workout not found', { cause: e })
 
           await workoutRepository.delete(args.workout_id, userId)
 

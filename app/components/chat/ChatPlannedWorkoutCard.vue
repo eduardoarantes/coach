@@ -29,6 +29,7 @@
     'SYSTEM_FAILURE'
   ])
   const SYNC_PENDING_STATUSES = new Set(['PENDING', 'QUEUED_FOR_SYNC'])
+  const STRUCTURE_WAIT_TIMEOUT_MS = 120_000
   const EXPECTS_STRUCTURE_TOOL_NAMES = new Set([
     'create_planned_workout',
     'update_planned_workout',
@@ -50,6 +51,7 @@
   const pollError = ref<string | null>(null)
   const isPolling = ref(false)
   const fallbackWorkoutId = ref<string | null>(null)
+  const pollStartedAt = ref<number | null>(null)
 
   const directWorkoutId = computed(() => {
     const response = props.response || {}
@@ -63,8 +65,32 @@
     return response.run_id || response.taskId || null
   })
 
+  const structureEnqueueFailed = computed(() => {
+    return (
+      props.response?.structure_generation === 'failed' || Boolean(props.response?.structure_error)
+    )
+  })
+
   const expectsStructure = computed(() => {
-    return EXPECTS_STRUCTURE_TOOL_NAMES.has(props.toolName)
+    if (structureEnqueueFailed.value) return false
+    if (!EXPECTS_STRUCTURE_TOOL_NAMES.has(props.toolName)) return false
+
+    if (props.toolName === 'create_planned_workout') {
+      return (
+        props.args?.generate_structure !== false &&
+        props.response?.structure_generation !== 'exists' &&
+        props.response?.structure_generation !== 'skipped'
+      )
+    }
+
+    if (props.toolName === 'update_planned_workout') {
+      return (
+        props.args?.generate_structure !== false &&
+        props.response?.structure_generation !== 'skipped'
+      )
+    }
+
+    return true
   })
 
   const runStatusLabel = computed(() => {
@@ -148,7 +174,11 @@
     if (!structured || typeof structured !== 'object') return false
     return (
       (Array.isArray(structured.steps) && structured.steps.length > 0) ||
-      (Array.isArray(structured.exercises) && structured.exercises.length > 0)
+      (Array.isArray(structured.exercises) && structured.exercises.length > 0) ||
+      (Array.isArray(structured.blocks) &&
+        structured.blocks.some(
+          (block: any) => Array.isArray(block?.steps) && block.steps.length > 0
+        ))
     )
   })
 
@@ -224,6 +254,11 @@
       return props.response?.error || 'Operation failed'
     }
 
+    if (props.response?.structure_error) return props.response.structure_error
+    if (props.response?.structure_generation === 'failed') {
+      return 'Structure generation failed to start'
+    }
+
     if (runError.value) return runError.value
     if (pollError.value) return pollError.value
     if (syncStatusLabel.value === 'Structure generation running') return syncStatusLabel.value
@@ -241,6 +276,7 @@
 
   const isOperationComplete = computed(() => {
     if (props.response?.success === false) return false
+    if (structureEnqueueFailed.value) return true
     if (runError.value || pollError.value) return false
     if (runStatus.value && ACTIVE_RUN_STATUSES.has(runStatus.value)) return false
     if (SYNC_PENDING_STATUSES.has(currentSyncStatus.value)) return false
@@ -251,6 +287,7 @@
 
   const showStatusLine = computed(() => {
     if (props.response?.success === false) return true
+    if (structureEnqueueFailed.value) return true
     if (runError.value || pollError.value) return true
     if (runStatus.value && ACTIVE_RUN_STATUSES.has(runStatus.value)) return true
     if (SYNC_PENDING_STATUSES.has(currentSyncStatus.value)) return true
@@ -465,8 +502,23 @@
     }
   }
 
+  const checkStructureWaitTimeout = () => {
+    if (
+      runId.value ||
+      !expectsStructure.value ||
+      hasVisualization.value ||
+      structureEnqueueFailed.value ||
+      !pollStartedAt.value
+    ) {
+      return false
+    }
+
+    return Date.now() - pollStartedAt.value > STRUCTURE_WAIT_TIMEOUT_MS
+  }
+
   const startPolling = async () => {
     clearPolling()
+    pollStartedAt.value = Date.now()
 
     await resolveWorkoutIdFromCreateArgs()
 
@@ -479,6 +531,13 @@
     if (hasWorkout) {
       await fetchWorkout()
       workoutPollTimer = setInterval(async () => {
+        if (checkStructureWaitTimeout()) {
+          pollError.value =
+            'Structure generation did not start. Open the workout page and use Build Structure to retry.'
+          clearPolling()
+          return
+        }
+
         await fetchWorkout()
 
         const syncStatus = String(liveWorkout.value?.syncStatus || '').toUpperCase()
@@ -622,7 +681,7 @@
           v-if="showStatusLine && (operationStatusText || isPolling)"
           class="text-xs mt-1"
           :class="
-            props.response?.success === false
+            props.response?.success === false || structureEnqueueFailed
               ? 'text-red-500'
               : 'text-emerald-600 dark:text-emerald-400'
           "
