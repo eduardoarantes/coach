@@ -2,6 +2,7 @@
   import { computed, onUnmounted, ref, watch } from 'vue'
   import MiniWorkoutChart from '~/components/workouts/MiniWorkoutChart.vue'
   import WorkoutMessagesTimeline from '~/components/workouts/WorkoutMessagesTimeline.vue'
+  import { hasStructuredWorkoutPreviewData } from '~/utils/structuredWorkout'
 
   const props = defineProps<{
     toolName: string
@@ -50,15 +51,13 @@
   const runError = ref<string | null>(null)
   const pollError = ref<string | null>(null)
   const isPolling = ref(false)
-  const fallbackWorkoutId = ref<string | null>(null)
-  const pollStartedAt = ref<number | null>(null)
 
   const directWorkoutId = computed(() => {
     const response = props.response || {}
     return response.workout_id || props.args?.workout_id
   })
 
-  const workoutId = computed(() => directWorkoutId.value || fallbackWorkoutId.value)
+  const workoutId = computed(() => directWorkoutId.value)
 
   const runId = computed(() => {
     const response = props.response || {}
@@ -170,16 +169,7 @@
   })
 
   const hasVisualization = computed(() => {
-    const structured = plannedWorkout.value?.structuredWorkout
-    if (!structured || typeof structured !== 'object') return false
-    return (
-      (Array.isArray(structured.steps) && structured.steps.length > 0) ||
-      (Array.isArray(structured.exercises) && structured.exercises.length > 0) ||
-      (Array.isArray(structured.blocks) &&
-        structured.blocks.some(
-          (block: any) => Array.isArray(block?.steps) && block.steps.length > 0
-        ))
-    )
+    return hasStructuredWorkoutPreviewData(plannedWorkout.value)
   })
 
   const chartPreference = computed<'power' | 'hr' | 'pace'>(() => {
@@ -421,70 +411,6 @@
     }
   }
 
-  const resolveWorkoutIdFromCreateArgs = async () => {
-    if (directWorkoutId.value || fallbackWorkoutId.value) return
-    if (props.toolName !== 'create_planned_workout') return
-    const date = String(props.args?.date || '').slice(0, 10)
-    if (!date) return
-
-    try {
-      const data = (await ($fetch as any)(
-        `/api/workouts/planned/range?start=${date}&end=${date}`
-      )) as { workouts?: any[] }
-      const workouts = Array.isArray(data?.workouts) ? data.workouts : []
-      if (!workouts.length) return
-
-      const title = String(props.args?.title || '')
-        .trim()
-        .toLowerCase()
-      const type = String(props.args?.type || '')
-        .trim()
-        .toLowerCase()
-      const durationMinutes =
-        typeof props.args?.duration_minutes === 'number' ? props.args.duration_minutes : null
-
-      const byScore = [...workouts]
-        .map((w) => {
-          let score = 0
-          if (
-            title &&
-            String(w.title || '')
-              .trim()
-              .toLowerCase() === title
-          )
-            score += 4
-          else if (
-            title &&
-            String(w.title || '')
-              .trim()
-              .toLowerCase()
-              .includes(title)
-          )
-            score += 2
-          if (
-            type &&
-            String(w.type || '')
-              .trim()
-              .toLowerCase() === type
-          )
-            score += 2
-          if (durationMinutes && typeof w.durationSec === 'number') {
-            const minutes = Math.round(w.durationSec / 60)
-            if (minutes === durationMinutes) score += 2
-          }
-          return { workout: w, score }
-        })
-        .sort((a, b) => b.score - a.score)
-
-      const best = byScore[0]?.workout
-      if (best?.id) {
-        fallbackWorkoutId.value = best.id
-      }
-    } catch {
-      // Ignore and keep generic card state.
-    }
-  }
-
   const fetchRunStatus = async () => {
     if (!runId.value) return
 
@@ -520,7 +446,11 @@
     clearPolling()
     pollStartedAt.value = Date.now()
 
-    await resolveWorkoutIdFromCreateArgs()
+    if (props.toolName === 'create_planned_workout' && !workoutId.value) {
+      pollError.value =
+        'Workout ID was not returned from create_planned_workout. Refresh the chat or open the calendar to find the workout.'
+      return
+    }
 
     const hasRun = Boolean(runId.value)
     const hasWorkout = Boolean(workoutId.value)

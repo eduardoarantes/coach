@@ -53,8 +53,13 @@ import {
   estimateStepDurationSeconds,
   normalizeStructuredWorkoutForPersistence,
   selectStepIntensity,
-  computeStrengthExerciseMetrics
+  computeStrengthExerciseMetrics,
+  hasRenderableStructure
 } from '../server/utils/structured-workout-persistence'
+import {
+  WORKOUT_STRUCTURE_AI_MAX_RETRIES,
+  WORKOUT_STRUCTURE_AI_TIMEOUT_MS
+} from '../server/utils/workout-ai-timeouts'
 
 const workoutStructureSchema = {
   type: 'object',
@@ -624,6 +629,8 @@ export const adjustStructuredWorkoutTask = task({
     workoutTemplateId?: string
     adjustments: any
     targetingOverride?: WorkoutTargetingOverride | null
+    generatorOverride?: StructuredWorkoutGeneratorMode | null
+    quotaCheckedAtEnqueue?: boolean
   }) => {
     const { plannedWorkoutId, workoutTemplateId, adjustments } = payload
     const entityId = plannedWorkoutId || workoutTemplateId
@@ -631,7 +638,6 @@ export const adjustStructuredWorkoutTask = task({
     if (!entityId) throw new Error('Planned workout ID or workout template ID is required')
     const startedAtMs = Date.now()
     const MAX_DURATION_MS = 180_000
-    const STRUCTURED_WORKOUT_TIMEOUT_MS = 45_000
     const logStage = (stage: string, meta: Record<string, any> = {}) => {
       const elapsedMs = Date.now() - startedAtMs
       logger.log(`[AdjustStructuredWorkout] ${stage}`, {
@@ -918,7 +924,16 @@ OUTPUT JSON matching the schema.`
             promptForAttempt,
             workoutPlanDraftSchema,
             'flash',
-            aiOptions
+            {
+              userId: workout.userId,
+              operation: 'adjust_structured_workout',
+              entityType,
+              entityId: entityId!,
+              maxRetries: WORKOUT_STRUCTURE_AI_MAX_RETRIES,
+              timeoutMs: WORKOUT_STRUCTURE_AI_TIMEOUT_MS,
+              modelOverride: isRetry ? 'gemini-3-pro-preview' : undefined,
+              thinkingLevelOverride: isRetry ? 'high' : undefined
+            }
           )
           lastAiOutputForRetry = draft
           console.log('[AdjustStructuredWorkout] Compact draft generated', {
@@ -939,7 +954,16 @@ OUTPUT JSON matching the schema.`
             promptForAttempt,
             workoutStructureSchema,
             'flash',
-            aiOptions
+            {
+              userId: workout.userId,
+              operation: 'adjust_structured_workout',
+              entityType,
+              entityId: entityId!,
+              maxRetries: WORKOUT_STRUCTURE_AI_MAX_RETRIES,
+              timeoutMs: WORKOUT_STRUCTURE_AI_TIMEOUT_MS,
+              modelOverride: isRetry ? 'gemini-3-pro-preview' : undefined,
+              thinkingLevelOverride: isRetry ? 'high' : undefined
+            }
           )) as any
           lastAiOutputForRetry = structure
         }
@@ -1302,26 +1326,34 @@ OUTPUT JSON matching the schema.`
       totalDuration += strengthMetrics.durationSec
       totalTSS += strengthMetrics.tss
     }
+    if (Array.isArray(structure.blocks) && structure.blocks.length > 0) {
+      let blockDuration = 0
+      for (const block of structure.blocks) {
+        const blockSteps = Array.isArray(block?.steps) ? block.steps : []
+        for (const step of blockSteps) {
+          blockDuration += Number(step?.durationSeconds || step?.duration || 0)
+        }
+      }
+      totalDuration += blockDuration
+      if (blockDuration > 0 && totalTSS === 0) {
+        totalTSS += (blockDuration / 3600) * 40
+      }
+    }
     logStage('structure-normalized', {
       totalDistance,
       totalDuration,
       totalTSS: Math.round(totalTSS * 100) / 100
     })
 
-    const renderableValidation = assertRenderableStructure(structure, workout.type)
-    if (!renderableValidation.valid) {
-      throw new Error(
-        `Adjusted structured workout failed renderable validation: ${renderableValidation.reason}`
-      )
-    }
-
-    const hasSteps = Array.isArray(structure.steps) && structure.steps.length > 0
-    const hasExercises = Array.isArray(structure.exercises) && structure.exercises.length > 0
-    if ((hasSteps || hasExercises) && totalDuration <= 0) {
+    const renderable = hasRenderableStructure(structure)
+    if (renderable && totalDuration <= 0) {
       throw new Error('Adjusted structured workout has zero total duration')
     }
-    if ((hasSteps || hasExercises) && totalTSS <= 0) {
+    if (renderable && totalTSS <= 0) {
       throw new Error('Adjusted structured workout has zero total TSS')
+    }
+    if (!renderable) {
+      throw new Error('Adjusted structured workout has no renderable steps, exercises, or blocks')
     }
 
     const settingsSnapshot = buildPlannedWorkoutSettingsSnapshot(

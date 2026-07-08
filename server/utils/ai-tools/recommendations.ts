@@ -1,6 +1,72 @@
 import { tool } from 'ai'
 import { z } from 'zod'
 import { recommendationRepository } from '../repositories/recommendationRepository'
+import { activityRecommendationRepository } from '../repositories/activityRecommendationRepository'
+import { getUserLocalDate } from '../date'
+
+function formatActivityRecommendation(rec: {
+  id: string
+  recommendation: string
+  confidence: number
+  reasoning: string
+  analysisJson?: unknown
+  plannedWorkout?: {
+    id: string
+    title: string
+    type: string | null
+    durationSec: number | null
+    tss: number | null
+    description: string | null
+  } | null
+}) {
+  const analysis = (rec.analysisJson || {}) as Record<string, any>
+  const planned = rec.plannedWorkout
+  const modifications = analysis.suggested_modifications
+
+  if (planned) {
+    return {
+      source: 'activity_recommendation' as const,
+      recommendation_id: rec.id,
+      title: planned.title,
+      type: planned.type || 'Ride',
+      duration_minutes: planned.durationSec ? Math.round(planned.durationSec / 60) : undefined,
+      tss: planned.tss ?? undefined,
+      description: planned.description || rec.recommendation,
+      decision: rec.recommendation,
+      confidence: rec.confidence,
+      reasoning: rec.reasoning,
+      planned_workout_id: planned.id
+    }
+  }
+
+  if (modifications && typeof modifications === 'object') {
+    return {
+      source: 'activity_recommendation' as const,
+      recommendation_id: rec.id,
+      title: modifications.new_title || 'Suggested workout',
+      type: analysis.suggested_type || analysis.workout_type || undefined,
+      duration_minutes:
+        typeof modifications.new_duration_min === 'number'
+          ? modifications.new_duration_min
+          : undefined,
+      tss: typeof modifications.new_tss === 'number' ? modifications.new_tss : undefined,
+      description: modifications.description || rec.recommendation,
+      decision: rec.recommendation,
+      confidence: rec.confidence,
+      reasoning: rec.reasoning
+    }
+  }
+
+  return {
+    source: 'activity_recommendation' as const,
+    recommendation_id: rec.id,
+    title: rec.recommendation,
+    description: rec.reasoning,
+    decision: rec.recommendation,
+    confidence: rec.confidence,
+    reasoning: rec.reasoning
+  }
+}
 
 export const recommendationTools = (userId: string, timezone: string) => ({
   recommend_workout: tool({
@@ -17,18 +83,53 @@ export const recommendationTools = (userId: string, timezone: string) => ({
       notes: z.string().optional()
     }),
     execute: async (args) => {
-      // Logic to select a workout from a library or generate one
+      const today = getUserLocalDate(timezone)
+      const activityRec = await activityRecommendationRepository.findToday(userId, today)
+
+      if (activityRec && activityRec.status === 'COMPLETED') {
+        return {
+          created: false,
+          synced: false,
+          next_action:
+            'This is only a recommendation. To put it on the calendar or publish it to Intervals.icu, call create_planned_workout with these details.',
+          recommendation: formatActivityRecommendation(activityRec)
+        }
+      }
+
+      const recs = await recommendationRepository.list(userId, {
+        status: 'ACTIVE',
+        limit: 10
+      })
+
+      if (recs.length > 0) {
+        const pinned = recs.find((rec) => rec.isPinned)
+        const selected = pinned || recs[0]
+        return {
+          created: false,
+          synced: false,
+          next_action:
+            'This is only a recommendation. To put it on the calendar or publish it to Intervals.icu, call create_planned_workout with these details.',
+          recommendation: {
+            source: 'profile_recommendation' as const,
+            recommendation_id: selected.id,
+            title: selected.title,
+            description: selected.description,
+            category: selected.category,
+            metric: selected.metric,
+            priority: selected.priority,
+            notes: args.notes || undefined
+          }
+        }
+      }
+
       return {
         created: false,
         synced: false,
+        success: false,
+        error:
+          'No workout recommendation is available yet. Use list_pending_recommendations or wait for the daily readiness analysis to complete.',
         next_action:
-          'This is only a recommendation. To put it on the calendar or publish it to Intervals.icu, call create_planned_workout with these details.',
-        recommendation: {
-          title: 'Zone 2 Endurance Ride',
-          duration_minutes: 90,
-          description: 'Steady state ride at 65-75% FTP.',
-          tss: 60
-        }
+          'If the user wants a workout on the calendar, ask clarifying questions and use create_planned_workout once sport, duration, and date are clear.'
       }
     }
   }),

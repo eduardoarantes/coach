@@ -1438,6 +1438,17 @@
     generating.value = false
 
     const output = run.output as any
+    if (output?.skipped || output?.reason === 'FREE_TIER_LIMIT') {
+      toast.add({
+        title: 'Generation Skipped',
+        description:
+          output?.message ||
+          'Structured workout generation is limited to 4 weeks in advance on the free plan.',
+        color: 'warning',
+        icon: 'i-heroicons-exclamation-triangle'
+      })
+      return
+    }
     if (output?.success === false) {
       if (output.reason === 'QUOTA_EXCEEDED') {
         handleQuotaError(
@@ -2445,7 +2456,7 @@
 
       toast.add({
         title: 'Generation Started',
-        description: 'AI is generating the workout structure. This may take up to 30 seconds.',
+        description: 'AI is generating the workout structure. This may take up to 2 minutes.',
         color: 'success'
       })
     } catch (error: any) {

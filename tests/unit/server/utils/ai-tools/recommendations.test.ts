@@ -1,11 +1,18 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { recommendationTools } from '../../../../../server/utils/ai-tools/recommendations'
 import { recommendationRepository } from '../../../../../server/utils/repositories/recommendationRepository'
+import { activityRecommendationRepository } from '../../../../../server/utils/repositories/activityRecommendationRepository'
 
 vi.mock('../../../../../server/utils/repositories/recommendationRepository', () => ({
   recommendationRepository: {
     findById: vi.fn(),
     list: vi.fn()
+  }
+}))
+
+vi.mock('../../../../../server/utils/repositories/activityRecommendationRepository', () => ({
+  activityRecommendationRepository: {
+    findToday: vi.fn()
   }
 }))
 
@@ -16,6 +23,8 @@ describe('recommendationTools', () => {
 
   beforeEach(() => {
     vi.clearAllMocks()
+    vi.mocked(activityRecommendationRepository.findToday).mockResolvedValue(null)
+    vi.mocked(recommendationRepository.list).mockResolvedValue([])
   })
 
   it('makes workout recommendations explicit that they are not scheduled or synced', async () => {
@@ -35,7 +44,41 @@ describe('recommendationTools', () => {
       expect.objectContaining({
         created: false,
         synced: false,
+        success: false,
         next_action: expect.stringContaining('create_planned_workout')
+      })
+    )
+  })
+
+  it('returns today activity recommendation when available', async () => {
+    vi.mocked(activityRecommendationRepository.findToday).mockResolvedValue({
+      id: 'act-rec-1',
+      recommendation: 'proceed',
+      confidence: 0.9,
+      reasoning: 'Readiness is good.',
+      status: 'COMPLETED',
+      analysisJson: null,
+      plannedWorkout: {
+        id: 'pw-1',
+        title: 'Easy Run',
+        type: 'Run',
+        durationSec: 3600,
+        tss: 45,
+        description: 'Zone 2 aerobic run.'
+      }
+    } as any)
+
+    const result = await tools.recommend_workout.execute(
+      { day_of_week: 2 },
+      { toolCallId: 'tool-1', messages: [] }
+    )
+
+    expect(result.recommendation).toEqual(
+      expect.objectContaining({
+        source: 'activity_recommendation',
+        title: 'Easy Run',
+        type: 'Run',
+        planned_workout_id: 'pw-1'
       })
     )
   })

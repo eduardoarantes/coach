@@ -1009,6 +1009,7 @@
   const generatingBlockId = ref<string | null>(null)
   const generatingStructureForWorkoutId = ref<string | null>(null)
   const generatingAllStructures = ref(false)
+  const pendingBatchStructureWorkoutIds = ref<Set<string>>(new Set())
   const adapting = ref<string | null>(null)
   const draggingId = ref<string | null>(null)
   const mobileDropTargetId = ref<string | null>(null)
@@ -1200,7 +1201,22 @@
 
   const { refresh: refreshRuns } = useUserRuns()
 
-  const { onTaskCompleted } = useUserRunsState()
+  const { onTaskCompleted, onTaskFailed } = useUserRunsState()
+
+  const plannedWorkoutIdFromRun = (run: { tags?: string[] }) => {
+    const tag = run.tags?.find((entry) => entry.startsWith('planned-workout:'))
+    return tag ? tag.slice('planned-workout:'.length) : null
+  }
+
+  const finishBatchStructureWorkout = (workoutId: string | null) => {
+    if (!workoutId || !pendingBatchStructureWorkoutIds.value.has(workoutId)) return
+    const next = new Set(pendingBatchStructureWorkoutIds.value)
+    next.delete(workoutId)
+    pendingBatchStructureWorkoutIds.value = next
+    if (next.size === 0) {
+      generatingAllStructures.value = false
+    }
+  }
 
   // Listeners
 
@@ -1218,6 +1234,14 @@
     emit('refresh')
 
     generatingStructureForWorkoutId.value = null
+    finishBatchStructureWorkout(plannedWorkoutIdFromRun(run))
+  })
+
+  onTaskFailed('generate-structured-workout', async (run) => {
+    emit('refresh')
+
+    generatingStructureForWorkoutId.value = null
+    finishBatchStructureWorkout(plannedWorkoutIdFromRun(run))
   })
 
   onTaskCompleted('adapt-training-plan', async (run) => {
@@ -1588,6 +1612,9 @@
     if (pendingWorkouts.length === 0) return
 
     generatingAllStructures.value = true
+    pendingBatchStructureWorkoutIds.value = new Set(
+      pendingWorkouts.map((w: { id: string }) => w.id)
+    )
     toast.add({
       title: 'Batch Generation Started',
       description: `Designing ${pendingWorkouts.length} workouts. This will take a minute...`,
@@ -1615,6 +1642,8 @@
               'You have reached your daily limit for generating AI-structured workouts.'
             )
           ) {
+            pendingBatchStructureWorkoutIds.value = new Set()
+            generatingAllStructures.value = false
             return // Stop completely on quota error
           }
           // For other errors, we might want to log and continue or stop.
@@ -1631,6 +1660,8 @@
       })
     } catch (error: any) {
       console.error('Batch generation failed', error)
+      pendingBatchStructureWorkoutIds.value = new Set()
+      generatingAllStructures.value = false
       if (
         !handleQuotaError(
           error,
@@ -1644,8 +1675,6 @@
           color: 'error'
         })
       }
-    } finally {
-      generatingAllStructures.value = false
     }
   }
 

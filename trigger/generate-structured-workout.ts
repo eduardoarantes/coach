@@ -9,6 +9,18 @@ import { workoutRepository } from '../server/utils/repositories/workoutRepositor
 import { sportSettingsRepository } from '../server/utils/repositories/sportSettingsRepository'
 import { getUserTimezone, getUserLocalDate } from '../server/utils/date'
 import { checkQuota } from '../server/utils/quotas/engine'
+import {
+  hasRenderableStructure,
+  estimateStepDistanceMeters,
+  estimateStepDurationSeconds,
+  normalizeStructuredWorkoutForPersistence,
+  selectStepIntensity,
+  computeStrengthExerciseMetrics
+} from '../server/utils/structured-workout-persistence'
+import {
+  WORKOUT_STRUCTURE_AI_MAX_RETRIES,
+  WORKOUT_STRUCTURE_AI_TIMEOUT_MS
+} from '../server/utils/workout-ai-timeouts'
 import { enforceCyclingCadenceVariation, resolveCyclingCadence } from './utils/cadence'
 import {
   resolveWorkoutTargeting,
@@ -38,25 +50,6 @@ import {
   compileWorkoutPlanDraftToStructure,
   workoutPlanDraftSchema
 } from '../server/utils/structured-workout-draft'
-import {
-  buildCompactZoneDefinitions,
-  buildCorrectiveStructureRetryPrompt,
-  buildDraftOutputRules,
-  buildSportSpecificInstructions,
-  buildStructureAiCallOptions,
-  buildStructureGoalContextBlock,
-  formatAiContextForStructureGen,
-  looksLikeIntervalWorkout,
-  resolveStructureContextProfile
-} from './utils/structure-generation-prompt'
-import { assertRenderableStructure } from '../server/utils/structured-workout-validation'
-import {
-  estimateStepDistanceMeters,
-  estimateStepDurationSeconds,
-  normalizeStructuredWorkoutForPersistence,
-  selectStepIntensity,
-  computeStrengthExerciseMetrics
-} from '../server/utils/structured-workout-persistence'
 
 const workoutStructureSchema = {
   type: 'object',
@@ -758,6 +751,8 @@ export const generateStructuredWorkoutTask = task({
     plannedWorkoutId?: string
     workoutTemplateId?: string
     targetingOverride?: WorkoutTargetingOverride | null
+    generatorOverride?: StructuredWorkoutGeneratorMode | null
+    quotaCheckedAtEnqueue?: boolean
   }) => {
     const { plannedWorkoutId, workoutTemplateId } = payload
     const entityId = plannedWorkoutId || workoutTemplateId
@@ -871,18 +866,20 @@ export const generateStructuredWorkoutTask = task({
       })
     }
 
-    // Check Quota
-    try {
-      await checkQuota(workout.userId, 'generate_structured_workout')
-    } catch (quotaError: any) {
-      if (quotaError.statusCode === 429) {
-        logger.warn('Structured workout generation quota exceeded', {
-          userId: workout.userId,
-          entityId
-        })
-        return { success: false, reason: 'QUOTA_EXCEEDED' }
+    // Check Quota (skip when already validated at enqueue time)
+    if (!payload.quotaCheckedAtEnqueue) {
+      try {
+        await checkQuota(workout.userId, 'generate_structured_workout')
+      } catch (quotaError: any) {
+        if (quotaError.statusCode === 429) {
+          logger.warn('Structured workout generation quota exceeded', {
+            userId: workout.userId,
+            entityId
+          })
+          return { success: false, reason: 'QUOTA_EXCEEDED' }
+        }
+        throw quotaError
       }
-      throw quotaError
     }
     logStage('quota-check-passed')
 
@@ -957,8 +954,9 @@ export const generateStructuredWorkoutTask = task({
           limitDate: fourWeeksFromNow
         })
         return {
-          success: true,
+          success: false,
           skipped: true,
+          reason: 'FREE_TIER_LIMIT',
           message: 'Structured workout generation is limited to 4 weeks in advance for free users.'
         }
       }
@@ -1526,26 +1524,35 @@ OUTPUT JSON matching the schema.`
         totalTSS += (gymDuration / 3600) * 40
       }
     }
+
+    if (Array.isArray(structure.blocks) && structure.blocks.length > 0) {
+      let blockDuration = 0
+      for (const block of structure.blocks) {
+        const blockSteps = Array.isArray(block?.steps) ? block.steps : []
+        for (const step of blockSteps) {
+          blockDuration += Number(step?.durationSeconds || step?.duration || 0)
+        }
+      }
+      totalDuration += blockDuration
+      if (blockDuration > 0 && totalTSS === 0) {
+        totalTSS += (blockDuration / 3600) * 40
+      }
+    }
     logStage('structure-normalized', {
       totalDistance,
       totalDuration,
       totalTSS: Math.round(totalTSS * 100) / 100
     })
 
-    const renderableValidation = assertRenderableStructure(structure, workout.type)
-    if (!renderableValidation.valid) {
-      throw new Error(
-        `Generated structured workout failed renderable validation: ${renderableValidation.reason}`
-      )
-    }
-
-    const hasSteps = Array.isArray(structure.steps) && structure.steps.length > 0
-    const hasExercises = Array.isArray(structure.exercises) && structure.exercises.length > 0
-    if ((hasSteps || hasExercises) && totalDuration <= 0) {
+    const renderable = hasRenderableStructure(structure)
+    if (renderable && totalDuration <= 0) {
       throw new Error('Generated structured workout has zero total duration')
     }
-    if ((hasSteps || hasExercises) && totalTSS <= 0) {
+    if (renderable && totalTSS <= 0) {
       throw new Error('Generated structured workout has zero total TSS')
+    }
+    if (!renderable) {
+      throw new Error('Generated structured workout has no renderable steps, exercises, or blocks')
     }
 
     const settingsSnapshot = buildPlannedWorkoutSettingsSnapshot(

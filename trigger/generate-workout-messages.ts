@@ -1,6 +1,10 @@
 import './init'
 import { logger, task } from '@trigger.dev/sdk/v3'
 import { generateStructuredAnalysis } from '../server/utils/gemini'
+import {
+  WORKOUT_STRUCTURE_AI_MAX_RETRIES,
+  WORKOUT_STRUCTURE_AI_TIMEOUT_MS
+} from '../server/utils/workout-ai-timeouts'
 import { prisma } from '../server/utils/db'
 import { userReportsQueue } from './queues'
 import { publishActivityEvent } from '../server/utils/activity-realtime'
@@ -81,7 +85,9 @@ export const generateWorkoutMessagesTask = task({
         userId: workout.userId,
         operation: 'generate_workout_messages',
         entityType: 'PlannedWorkout',
-        entityId: plannedWorkoutId
+        entityId: plannedWorkoutId,
+        timeoutMs: WORKOUT_STRUCTURE_AI_TIMEOUT_MS,
+        maxRetries: WORKOUT_STRUCTURE_AI_MAX_RETRIES
       }
     )
 

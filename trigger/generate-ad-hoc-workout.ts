@@ -1,6 +1,10 @@
 import './init'
 import { logger, task, tasks } from '@trigger.dev/sdk/v3'
 import { generateStructuredAnalysis, buildWorkoutSummary } from '../server/utils/gemini'
+import {
+  WORKOUT_STRUCTURE_AI_MAX_RETRIES,
+  WORKOUT_STRUCTURE_AI_TIMEOUT_MS
+} from '../server/utils/workout-ai-timeouts'
 import { prisma } from '../server/utils/db'
 import { workoutRepository } from '../server/utils/repositories/workoutRepository'
 import { wellnessRepository } from '../server/utils/repositories/wellnessRepository'
@@ -182,7 +186,9 @@ export const generateAdHocWorkoutTask = task({
     const suggestion = await generateStructuredAnalysis(prompt, adHocWorkoutSchema, 'flash', {
       userId,
       operation: 'generate_ad_hoc_workout',
-      entityType: 'PlannedWorkout'
+      entityType: 'PlannedWorkout',
+      timeoutMs: WORKOUT_STRUCTURE_AI_TIMEOUT_MS,
+      maxRetries: WORKOUT_STRUCTURE_AI_MAX_RETRIES
     })
 
     // Create Planned Workout

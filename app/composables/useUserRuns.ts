@@ -267,17 +267,19 @@ export function useUserRuns() {
 
   if (import.meta.client) {
     watch(
-      () => getSessionUserId(session.value),
-      (newId) => {
-        if (newId) {
-          if (trackedUserId !== newId) {
-            trackedUserId = newId
-            resetRunsForIdentityChange()
-            void init()
-          }
+      () => (session.value?.user as any)?.id,
+      (newId, oldId) => {
+        if (newId && newId !== oldId) {
+          cleanupUserRunsConnection()
+          runs.value = []
+          initPromise = null
+          init()
+        } else if (newId) {
+          init()
         } else {
-          trackedUserId = null
-          resetRunsForIdentityChange()
+          cleanupUserRunsConnection()
+          runs.value = []
+          initPromise = null
         }
       }
     )

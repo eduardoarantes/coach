@@ -6,7 +6,7 @@ import {
   getReadableLibraryOwnerIds,
   parseLibraryScope
 } from '../../../../utils/library-access'
-import { structureGenerationRunTags } from '../../../../utils/trigger-run-tags'
+import { publishTaskRunStartedEvent } from '../../../../utils/task-run-events'
 
 export default defineEventHandler(async (event) => {
   const session = await getServerSession(event)
@@ -14,6 +14,7 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 401, message: 'Unauthorized' })
   }
 
+  const sessionUserId = session.user.id
   const id = getRouterParam(event, 'id')
   if (!id) {
     throw createError({ statusCode: 400, message: 'Missing workout template ID' })
@@ -33,21 +34,26 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 404, message: 'Workout template not found' })
   }
 
-  const tags = structureGenerationRunTags({
-    userId: template.userId,
-    workoutTemplateId: id,
-    source: 'library'
-  })
+  const runTags = [
+    `user:${sessionUserId}`,
+    `workout-template:${id}`,
+    `template-owner:${template.userId}`
+  ]
+
   const handle = await tasks.trigger(
     'generate-structured-workout',
     {
       workoutTemplateId: id
     },
     {
-      tags,
+      tags: runTags,
       concurrencyKey: template.userId
     }
   )
+
+  await publishTaskRunStartedEvent(sessionUserId, 'generate-structured-workout', handle, {
+    tags: runTags
+  })
 
   return {
     success: true,

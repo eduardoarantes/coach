@@ -84,7 +84,8 @@ export default defineEventHandler(async (event) => {
     const handle = await tasks.trigger(
       'generate-structured-workout',
       {
-        plannedWorkoutId: id
+        plannedWorkoutId: id,
+        quotaCheckedAtEnqueue: true
       },
       {
         concurrencyKey: userId,
