@@ -983,7 +983,7 @@ export const planningTools = (userId: string, timezone: string, aiSettings: AiSe
       }
 
       const shouldGenerate = args.generate_structure !== false
-      let structureStatus: StructureGenerationStatus = 'skipped'
+      const structureStatus: StructureGenerationStatus = 'skipped'
       let runId: string | undefined
       if (args.generate_structure !== false) {
         try {
@@ -1080,10 +1080,10 @@ export const planningTools = (userId: string, timezone: string, aiSettings: AiSe
 
       const workout = await plannedWorkoutRepository.update(args.workout_id, userId, data)
 
-      const shouldRegenerateStructure = args.generate_structure !== false
       let structureStatus: StructureGenerationStatus = 'skipped'
+      let structureError: string | undefined
       let runId: string | undefined
-      if (args.generate_structure !== false) {
+      if (shouldRegenerateStructure) {
         try {
           const handle = await generateStructuredWorkoutTask.trigger(
             {
@@ -1099,9 +1099,12 @@ export const planningTools = (userId: string, timezone: string, aiSettings: AiSe
           await publishTaskRunStartedEvent(userId, 'generate-structured-workout', handle, {
             tags: [`user:${userId}`, `planned-workout:${workout.id}`]
           })
+          structureStatus = 'queued'
           runId = handle.id
         } catch (e) {
           console.error('Failed to trigger structured workout regeneration:', e)
+          structureStatus = 'failed'
+          structureError = e instanceof Error ? e.message : String(e)
         }
       }
 

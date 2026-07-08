@@ -3,6 +3,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { getServerSession } from '../../../../../server/utils/session'
 import { reactivateAccount } from '../../../../../server/utils/services/accountDeactivationService'
 
+vi.stubGlobal('defineEventHandler', (fn: any) => fn)
+
 vi.mock('h3', () => ({
   defineEventHandler: (fn: any) => fn,
   getRouterParam: (event: any, key: string) => event.context?.params?.[key],

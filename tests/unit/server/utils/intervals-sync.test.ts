@@ -34,6 +34,12 @@ vi.mock('../../../../server/utils/intervals', () => ({
   isIntervalsEventId: vi.fn((value: string | null | undefined) => /^\d+$/.test(value || ''))
 }))
 
+vi.mock('../../../../server/utils/repositories/plannedWorkoutPublishRepository', () => ({
+  plannedWorkoutPublishRepository: {
+    upsert: vi.fn().mockResolvedValue(undefined)
+  }
+}))
+
 describe('intervals-sync helpers', () => {
   beforeEach(() => {
     vi.clearAllMocks()

@@ -3,8 +3,11 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { getServerSession } from '../../../../../server/utils/session'
 import { prisma } from '../../../../../server/utils/db'
 import {
+  formatDateUTC,
   getEndOfDayUTC,
+  getEndOfLocalDateUTC,
   getStartOfDayUTC,
+  getStartOfLocalDateUTC,
   getTimestampDateKey,
   getUserLocalDate
 } from '../../../../../server/utils/date'
@@ -50,10 +53,13 @@ vi.mock('../../../../../server/utils/db', () => ({
 }))
 
 vi.mock('../../../../../server/utils/date', () => ({
+  formatDateUTC: vi.fn((date: Date, _format?: string) => date.toISOString().split('T')[0]),
   getUserLocalDate: vi.fn(),
   getTimestampDateKey: vi.fn(),
   getStartOfDayUTC: vi.fn(),
-  getEndOfDayUTC: vi.fn()
+  getEndOfDayUTC: vi.fn(),
+  getStartOfLocalDateUTC: vi.fn(),
+  getEndOfLocalDateUTC: vi.fn()
 }))
 
 vi.mock('../../../../../server/utils/repositories/nutritionRepository', () => ({
@@ -119,6 +125,12 @@ describe('GET /api/calendar threshold milestones', () => {
     vi.mocked(getUserLocalDate).mockReturnValue(new Date('2026-03-12T00:00:00Z'))
     vi.mocked(getStartOfDayUTC).mockImplementation((_tz: string, date: Date) => date)
     vi.mocked(getEndOfDayUTC).mockImplementation((_tz: string, date: Date) => date)
+    vi.mocked(getStartOfLocalDateUTC).mockImplementation((_tz: string, dateStr: string) => {
+      return new Date(`${dateStr}T00:00:00.000Z`)
+    })
+    vi.mocked(getEndOfLocalDateUTC).mockImplementation((_tz: string, dateStr: string) => {
+      return new Date(`${dateStr}T23:59:59.999Z`)
+    })
     vi.mocked(getTimestampDateKey).mockImplementation(
       (date: Date) => date.toISOString().split('T')[0]
     )

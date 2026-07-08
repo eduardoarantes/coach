@@ -5,7 +5,7 @@ import {
   pruneRunsForCurrentUser,
   runBelongsToUser,
   type TriggerRun
-} from '../../../app/utils/user-runs-client'
+} from '../../../../app/utils/user-runs-client'
 
 describe('user-runs-client', () => {
   it('matches runs to the current user tag', () => {

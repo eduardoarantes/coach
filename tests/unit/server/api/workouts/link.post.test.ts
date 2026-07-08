@@ -23,10 +23,10 @@ vi.mock('../../../../../server/utils/session', () => ({
 vi.mock('../../../../../server/utils/db', () => ({
   prisma: {
     workout: {
-      findUnique: vi.fn()
+      findFirst: vi.fn()
     },
     plannedWorkout: {
-      findUnique: vi.fn()
+      findFirst: vi.fn()
     },
     $transaction: vi.fn()
   }
@@ -64,12 +64,12 @@ describe('POST /api/workouts/[id]/link', () => {
   it('rejects linking workouts from different local days', async () => {
     const handler = await getHandler()
 
-    vi.mocked(prisma.workout.findUnique).mockResolvedValue({
+    vi.mocked(prisma.workout.findFirst).mockResolvedValue({
       id: 'workout-1',
       userId: 'user-1',
       date: new Date('2026-03-28T18:22:47Z')
     } as any)
-    vi.mocked(prisma.plannedWorkout.findUnique).mockResolvedValue({
+    vi.mocked(prisma.plannedWorkout.findFirst).mockResolvedValue({
       id: 'planned-1',
       userId: 'user-1',
       date: new Date('2026-03-29T00:00:00Z')

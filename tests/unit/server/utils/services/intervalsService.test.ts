@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { prisma } from '../../../../../server/utils/db'
 import {
   normalizeIntervalsWorkout,
+  fetchIntervalsActivity,
   fetchIntervalsWorkouts
 } from '../../../../../server/utils/intervals'
 import { workoutRepository } from '../../../../../server/utils/repositories/workoutRepository'
@@ -19,7 +20,13 @@ vi.mock('../../../../../server/utils/db', () => ({
       upsert: vi.fn()
     },
     user: { findUnique: vi.fn(), update: vi.fn() },
-    workout: { findUnique: vi.fn(), update: vi.fn(), findFirst: vi.fn(), delete: vi.fn() },
+    workout: {
+      findUnique: vi.fn(),
+      update: vi.fn(),
+      findFirst: vi.fn(),
+      findMany: vi.fn(),
+      delete: vi.fn()
+    },
     workoutStream: { upsert: vi.fn() }
   }
 }))
@@ -200,6 +207,14 @@ describe('IntervalsService syncActivities batch filtering', () => {
     vi.clearAllMocks()
     vi.mocked(prisma.workout.findMany).mockResolvedValue([])
     vi.mocked(prisma.integration.findUnique).mockResolvedValue(null as any)
+    vi.mocked(fetchIntervalsActivity).mockImplementation(async (_integration, id) => ({
+      id,
+      start_date: '2026-04-27T17:41:56Z',
+      name: 'Recovered Ride',
+      type: 'Ride',
+      moving_time: 3600,
+      source: 'STRAVA'
+    }))
     vi.mocked(workoutRepository.upsert).mockResolvedValue({
       record: { id: 'w-sync' } as any,
       isNew: true
