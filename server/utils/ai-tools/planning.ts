@@ -22,6 +22,7 @@ import { plannedWorkoutPublishRepository } from '../repositories/plannedWorkoutP
 import { trainingPlanRepository } from '../repositories/trainingPlanRepository'
 import { trainingWeekRepository } from '../repositories/trainingWeekRepository'
 import { metabolicService } from '../services/metabolicService'
+import { planService } from '../services/planService'
 import type { AiSettings } from '../ai-user-settings'
 import {
   getUserLocalDate,
@@ -1434,7 +1435,7 @@ export const planningTools = (userId: string, timezone: string, aiSettings: AiSe
           const existingWorkout = await workoutRepository.getById(args.workout_id, userId, {
             select: { id: true, date: true }
           })
-          if (!existingWorkout) throw new Error('Workout not found')
+          if (!existingWorkout) throw new Error('Workout not found', { cause: e })
 
           await workoutRepository.delete(args.workout_id, userId)
 
