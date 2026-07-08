@@ -3,7 +3,8 @@
 **Type:** Bug  
 **Priority:** High  
 **Area:** `integrations, backend`  
-**Status:** Open
+**Status:** Postponed
+> **Postponed (2026-07-08):** Whoop async webhook route must be coordinated with Whoop (deprecate or align verification). Skipped for now to avoid breaking ingest or integration flows until third-party systems are adjusted.
 
 ## Description
 

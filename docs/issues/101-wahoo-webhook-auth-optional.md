@@ -3,7 +3,8 @@
 **Type:** Bug  
 **Priority:** High  
 **Area:** `integrations, backend`  
-**Status:** Open
+**Status:** Postponed
+> **Postponed (2026-07-08):** Wahoo webhook token requires WAHOO_WEBHOOK_KEY and Wahoo dashboard configuration. Skipped for now to avoid breaking ingest or integration flows until third-party systems are adjusted.
 
 ## Description
 

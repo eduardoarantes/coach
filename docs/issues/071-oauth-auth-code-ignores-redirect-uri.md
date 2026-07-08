@@ -3,7 +3,8 @@
 **Type:** Bug  
 **Priority:** High  
 **Area:** `integrations, backend`  
-**Status:** Open
+**Status:** Postponed
+> **Postponed (2026-07-08):** redirect_uri validation must match registered URIs on all third-party OAuth apps. Skipped for now to avoid breaking ingest or integration flows until third-party systems are adjusted.
 
 ## Description
 

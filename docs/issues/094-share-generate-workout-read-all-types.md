@@ -3,7 +3,8 @@
 **Type:** Bug  
 **Priority:** Medium  
 **Area:** `integrations, backend`  
-**Status:** Open
+**Status:** Postponed
+> **Postponed (2026-07-08):** Share-generate per-resource scopes may break OAuth apps using workout:read only. Skipped for now to avoid breaking ingest or integration flows until third-party systems are adjusted.
 
 ## Description
 

@@ -3,7 +3,8 @@
 **Type:** Bug  
 **Priority:** High  
 **Area:** `integrations, backend`  
-**Status:** Open
+**Status:** Postponed
+> **Postponed (2026-07-08):** Disabling dangerous email linking affects Google/Strava/Intervals login behavior. Skipped for now to avoid breaking ingest or integration flows until third-party systems are adjusted.
 
 ## Description
 

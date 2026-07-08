@@ -3,7 +3,8 @@
 **Type:** Bug  
 **Priority:** High  
 **Area:** `infra`, `backend`, `admin`  
-**Status:** Open
+**Status:** Postponed
+> **Postponed (2026-07-08):** Admin queue auth is internal; deferred with auth-gaps batch. Skipped for now to avoid breaking ingest or integration flows until third-party systems are adjusted.
 
 ## Description
 

@@ -6,23 +6,25 @@ Documents **180 app-wide issues** (039–218) from systematic codebase review. C
 
 **Progress:** [REVIEW-PROGRESS.md](./REVIEW-PROGRESS.md) (~90% complete)
 
+**Postponed:** 20 issues deferred (auth gaps + third-party webhook/OAuth coordination) — do not implement until provider systems are adjusted. See [Postponed cluster](#postponed-auth--third-party-deferred).
+
 ## Summary by priority
 
-| Priority | Count (039–218) |
-| -------- | --------------- |
-| Critical | 3 |
-| High | 52 |
-| Medium | 108 |
-| Low | 37 |
+| Priority | Count (039–218) | Active (excl. postponed) |
+| -------- | --------------- | ------------------------ |
+| Critical | 3 | 2 |
+| High | 52 | 44 |
+| Medium | 108 | 100 |
+| Low | 37 | 36 |
 
 ## Top clusters (fix these first)
 
-### P0 — Critical runtime & security
+### P0 — Critical runtime & security (active)
 | ID | Title |
 | -- | ----- |
 | [062](./062-chat-planned-workout-pollstartedat-crash.md) | Chat planned-workout card `pollStartedAt` crash |
-| [069](./069-garmin-webhook-unauthenticated.md) | Garmin webhook unauthenticated (+ deregistration risk) |
-| [058](./058-oauth-refresh-weak-client-binding.md) | OAuth refresh token weak client binding |
+| ~~[069](./069-garmin-webhook-unauthenticated.md)~~ | Garmin webhook — **Postponed** |
+| ~~[058](./058-oauth-refresh-weak-client-binding.md)~~ | OAuth refresh — **Postponed** |
 
 ### P1 — High-impact user flows
 | ID | Title |
@@ -45,15 +47,43 @@ Documents **180 app-wide issues** (039–218) from systematic codebase review. C
 ### P2 — Recurring pattern: stuck loading spinners
 039, 049–051, 064–065, 073–074, 080–082, 119, 138 — all need `onTaskFailed` handlers.
 
-### P3 — Webhook & integration security
-059, 069–072, 099–101, 105–108, 161–162
-
-### P4 — Share/privacy over-exposure
-066, 094–096, 135–137, 155–160, 157, 158
+### P3 — Webhook & integration security (postponed)
+059, 069, 072, 098, 099, 100, 101, 105, 058, 071, 093, 094, 110, 111, 125, 126, 129, 057, 063, 102 — **deferred** until third-party/provider coordination. Ingest-safe fixes (060, 108, 106, 197, etc.) remain active.
 
 ---
 
-## Issues 039–061 (session 1)
+## Postponed: auth & third-party (deferred)
+
+> Do not implement until provider webhooks, OAuth apps, or ops config are aligned. Risk: breaking ingest or integration flows.
+
+| ID | Title |
+| -- | ----- |
+| [057](./057-unauthenticated-debug-endpoints.md) | Unauthenticated debug endpoints |
+| [058](./058-oauth-refresh-weak-client-binding.md) | OAuth refresh weak binding |
+| [059](./059-withings-webhook-unauthenticated.md) | Withings webhook unauthenticated |
+| [063](./063-admin-queue-api-unauthenticated.md) | Admin queue API unauthenticated |
+| [069](./069-garmin-webhook-unauthenticated.md) | Garmin webhook unauthenticated |
+| [071](./071-oauth-auth-code-ignores-redirect-uri.md) | OAuth redirect_uri ignored |
+| [072](./072-whoop-async-webhook-auth-bypass.md) | Whoop async webhook bypass |
+| [094](./094-share-generate-workout-read-all-types.md) | Share-generate scope escalation |
+| [098](./098-polar-webhook-missing-userid.md) | Polar webhook missing userId |
+| [099](./099-oauth-generic-webhook-ignores-secret.md) | OAuth generic webhook ignores secret |
+| [100](./100-strava-webhook-post-unauthenticated.md) | Strava POST unauthenticated |
+| [101](./101-wahoo-webhook-auth-optional.md) | Wahoo webhook auth optional |
+| [102](./102-monitoring-trigger-public-without-secret.md) | Monitoring endpoint public |
+| [105](./105-withings-webhook-no-idempotency.md) | Withings webhook no idempotency |
+| [110](./110-oauth-login-open-redirect.md) | OAuth login open redirect |
+| [111](./111-oauth-consent-csrf.md) | OAuth consent CSRF |
+| [125](./125-oauth-dangerous-email-account-linking.md) | Dangerous email linking |
+| [126](./126-oauth-authorize-no-scope-validation.md) | OAuth no scope validation |
+| [129](./129-oauth-revoke-no-client-auth.md) | OAuth revoke no client auth |
+
+---
+### P4 — Share/privacy over-exposure (active)
+
+066, 095–096, 135–137, 155–160, 157, 158
+
+---
 
 | ID | Title | Priority | Type |
 | -- | ----- | -------- | ---- |
@@ -279,17 +309,17 @@ Documents **180 app-wide issues** (039–218) from systematic codebase review. C
 
 ## Recommended fix order (app review)
 
-1. **062, 069, 058** — Critical crash + webhook auth + OAuth refresh
+1. **062** — Critical chat crash (069/058 postponed)
 2. **187, 190, 197** — Profile settings crash + autodetect + failed integrations (Sentry-linked)
 3. **064–065, 141, 186** — Route param / tab navigation refetch pattern
 4. **145–147, 041, 136, 146** — Logout/account-switch data hygiene
 5. **039, 049–051, 064–065, 073–074, 080–082, 119, 138, 216** — `onTaskFailed` sweep
-6. **171–172, 175–177** — Trigger ingest/quota/stuck PROCESSING
+6. **171–172, 175–177** — Trigger ingest/quota/stuck PROCESSING (ingest-safe)
 7. **066, 155–160, 157, 158** — Share/privacy hardening
-8. **069–072, 099–101** — Webhook verification
+8. ~~Webhook/OAuth auth (057–129 subset)~~ — **Postponed** until third-party coordination
 9. **152–154** — Join/onboarding flow
 10. **199–215** — i18n/a11y (incremental, low risk)
-11. Remaining medium/low
+11. Remaining active medium/low
 
 ## How issues are managed
 

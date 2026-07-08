@@ -10,6 +10,8 @@
 | ------ | ----- |
 | Structure-generation issues | 001–038 ([issues.md](./issues.md)) |
 | App-review issues filed | 039–218 |
+| **Postponed** (auth / third-party) | **20** — see [Postponed cluster](#postponed-auth--third-party-deferred) |
+| **Active (Open)** | **198** |
 | **Total documented issues** | **218** |
 | Review phases complete | 5 / 5 (core) |
 | **Overall review progress** | **~90%** |
@@ -68,8 +70,8 @@
 - [x] Share tokens, join/onboarding, developer portal, admin panel
 
 ### Phase 4 — Backend sweep ✅
-- [x] Webhook auth audit (most providers)
-- [x] API auth samples (admin, oauth, share, join)
+- [x] Webhook auth audit (most providers) — **fixes postponed** pending third-party coordination
+- [x] API auth samples (admin, oauth, share, join) — **auth hardening postponed**
 - [x] Trigger tasks deep pass (ingest, analyze, generate, messaging)
 - [x] Automated API auth grep (with delegated-auth awareness)
 
@@ -88,6 +90,33 @@
 | 2026-07-08 | 1 | Initial broad review | 039–061 |
 | 2026-07-08 | 2 | Multi-area review (workouts, nutrition, coaching, auth, share, admin, stores, feed, events, triggers) | 062–170 |
 | 2026-07-08 | 3 | Triggers deep pass, profile/settings, i18n/a11y, Sentry cross-ref | 171–218 |
+| 2026-07-08 | 3b | Postponed 20 auth/webhook/OAuth issues (ingest-safe deferral) | — |
+
+## Postponed: auth & third-party (deferred 2026-07-08)
+
+Skipped for now — auth/integration hardening may break ingest or requires provider-side configuration before implementation.
+
+| ID | Title | Why deferred |
+| -- | ----- | ------------ |
+| 057 | Unauthenticated debug endpoints | Internal auth batch |
+| 058 | OAuth refresh weak binding | OAuth client breakage |
+| 059 | Withings webhook unauthenticated | Withings signature setup |
+| 063 | Admin queue API unauthenticated | Internal auth batch |
+| 069 | Garmin webhook unauthenticated | Garmin verification config |
+| 071 | OAuth redirect_uri ignored | Third-party OAuth apps |
+| 072 | Whoop async webhook bypass | Whoop endpoint coordination |
+| 094 | Share-generate scope escalation | OAuth app scope contracts |
+| 098 | Polar webhook missing userId | Polar payload/worker mapping |
+| 099 | OAuth generic webhook ignores secret | Third-party app webhooks |
+| 100 | Strava POST unauthenticated | Strava has no signature API |
+| 101 | Wahoo webhook auth optional | Wahoo dashboard + env key |
+| 102 | Monitoring endpoint public | Ops MONITORING_SECRET rollout |
+| 105 | Withings webhook no idempotency | Provider retry behavior |
+| 110 | OAuth login open redirect | OAuth callback allowlist |
+| 111 | OAuth consent CSRF | OAuth flow changes |
+| 125 | Dangerous email account linking | Provider login behavior |
+| 126 | OAuth authorize no scope validation | Registered app scopes |
+| 129 | OAuth revoke no client auth | Public OAuth clients |
 
 ## Next issue ID: 219
 

@@ -3,7 +3,8 @@
 **Type:** Bug  
 **Priority:** High  
 **Area:** `infra, backend`  
-**Status:** Open
+**Status:** Postponed
+> **Postponed (2026-07-08):** Monitoring endpoint auth requires ops/env coordination (MONITORING_SECRET). Skipped for now to avoid breaking ingest or integration flows until third-party systems are adjusted.
 
 ## Description
 

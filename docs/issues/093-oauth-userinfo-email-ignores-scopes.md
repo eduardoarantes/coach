@@ -3,7 +3,8 @@
 **Type:** Bug  
 **Priority:** Medium  
 **Area:** `integrations, backend`  
-**Status:** Open
+**Status:** Postponed
+> **Postponed (2026-07-08):** OAuth userinfo scope gating may break apps relying on email without profile:read. Skipped for now to avoid breaking ingest or integration flows until third-party systems are adjusted.
 
 ## Description
 

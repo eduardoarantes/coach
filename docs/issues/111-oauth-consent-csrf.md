@@ -3,7 +3,8 @@
 **Type:** Bug  
 **Priority:** Medium  
 **Area:** `integrations, ui/ux`  
-**Status:** Open
+**Status:** Postponed
+> **Postponed (2026-07-08):** OAuth consent CSRF tokens require flow changes for third-party OAuth consumers. Skipped for now to avoid breaking ingest or integration flows until third-party systems are adjusted.
 
 ## Description
 

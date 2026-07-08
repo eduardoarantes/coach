@@ -3,7 +3,8 @@
 **Type:** Bug  
 **Priority:** High  
 **Area:** `integrations`, `backend`, `data`  
-**Status:** Open
+**Status:** Postponed
+> **Postponed (2026-07-08):** Withings webhook verification requires provider-side signature setup before enforcement. Skipped for now to avoid breaking ingest or integration flows until third-party systems are adjusted.
 
 ## Description
 

@@ -3,7 +3,8 @@
 **Type:** Bug  
 **Priority:** Critical  
 **Area:** `backend`, `integrations`, `infra`  
-**Status:** Open
+**Status:** Postponed
+> **Postponed (2026-07-08):** OAuth refresh-token hardening may break existing OAuth clients until they send client_secret. Skipped for now to avoid breaking ingest or integration flows until third-party systems are adjusted.
 
 ## Description
 

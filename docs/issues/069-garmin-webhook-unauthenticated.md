@@ -3,7 +3,8 @@
 **Type:** Bug  
 **Priority:** Critical  
 **Area:** `integrations, backend`  
-**Status:** Open
+**Status:** Postponed
+> **Postponed (2026-07-08):** Garmin webhook auth requires Garmin developer console / signature configuration. Skipped for now to avoid breaking ingest or integration flows until third-party systems are adjusted.
 
 ## Description
 
