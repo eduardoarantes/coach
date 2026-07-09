@@ -1,7 +1,7 @@
 # Systematic App Review — Progress Tracker
 
 **Started:** 2026-07-08  
-**Last updated:** 2026-07-08 (session 6 — ingest/quota batch PR 6)  
+**Last updated:** 2026-07-09 (merge campaign — PRs #226–#237)  
 **Goal:** Comprehensive bug/UI/security audit across the full Coach Watts codebase. Documentation only — no refactors.
 
 ## Summary
@@ -11,7 +11,7 @@
 | Structure-generation issues                        | 001–038 ([issues.md](./issues.md))                                      |
 | App-review issues filed                            | 039–218                                                                 |
 | **Postponed** (auth / third-party / OAuth / Yazio) | **21** — see [Postponed cluster](#postponed-auth--third-party-deferred) |
-| **Active (Open)**                                  | **189** (057, 062, 064–065, 141, 186, 187, 190, 197 fixed)              |
+| **Active (Open)**                                  | **92** (67 fixed in PRs #226–#237; 057 fixed earlier)                   |
 | **Total documented issues**                        | **218**                                                                 |
 | Review phases complete                             | 5 / 5 (core)                                                            |
 | **Overall review progress**                        | **~90%**                                                                |
@@ -90,16 +90,17 @@
 
 ## Session log
 
-| Date       | Session | Work                                                                                                  | New issues |
-| ---------- | ------- | ----------------------------------------------------------------------------------------------------- | ---------- |
-| 2026-07-08 | 1       | Initial broad review                                                                                  | 039–061    |
-| 2026-07-08 | 2       | Multi-area review (workouts, nutrition, coaching, auth, share, admin, stores, feed, events, triggers) | 062–170    |
-| 2026-07-08 | 3       | Triggers deep pass, profile/settings, i18n/a11y, Sentry cross-ref                                     | 171–218    |
-| 2026-07-08 | 3c      | Postpone 070 Yazio + 158 OAuth developer; confirm OAuth batch deferred                                | —          |
-| 2026-07-08 | 4       | Fix 057 — requireAdmin on debug API routes + admin middleware on debug pages                          | —          |
-| 2026-07-08 | 5       | Fix 062 — declare pollStartedAt ref in ChatPlannedWorkoutCard polling                                 | —          |
-| 2026-07-08 | 6       | Fix 187/190/197 — profile tab popper, autodetect thresholds, FAILED integrations UI                   | —          |
-| 2026-07-08 | 7       | Fix 064/065/141/186 — refetch on route param change; profile tab URL sync                           | —          |
+| Date       | Session | Work                                                                                                                                     | New issues |
+| ---------- | ------- | ---------------------------------------------------------------------------------------------------------------------------------------- | ---------- |
+| 2026-07-08 | 1       | Initial broad review                                                                                                                     | 039–061    |
+| 2026-07-08 | 2       | Multi-area review (workouts, nutrition, coaching, auth, share, admin, stores, feed, events, triggers)                                    | 062–170    |
+| 2026-07-08 | 3       | Triggers deep pass, profile/settings, i18n/a11y, Sentry cross-ref                                                                        | 171–218    |
+| 2026-07-08 | 3c      | Postpone 070 Yazio + 158 OAuth developer; confirm OAuth batch deferred                                                                   | —          |
+| 2026-07-08 | 4       | Fix 057 — requireAdmin on debug API routes + admin middleware on debug pages                                                             | —          |
+| 2026-07-08 | 5       | Fix 062 — declare pollStartedAt ref in ChatPlannedWorkoutCard polling                                                                    | —          |
+| 2026-07-08 | 6       | Fix 187/190/197 — profile tab popper, autodetect thresholds, FAILED integrations UI                                                      | —          |
+| 2026-07-08 | 7       | Fix 064/065/141/186 — refetch on route param change; profile tab URL sync                                                                | —          |
+| 2026-07-09 | 8       | Merge PRs #226–#237 — 67 app-review issues fixed (chat, profile, nav, logout, tasks, share, ingest, onboarding, feed, user flows, quota) | —          |
 
 ## Postponed: auth & third-party (deferred 2026-07-08)
 

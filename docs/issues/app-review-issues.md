@@ -1,21 +1,21 @@
 # App Review — Issue Tracker
 
-Last reviewed: 2026-07-08 (systematic review session 3)
+Last reviewed: 2026-07-09 (merge campaign — PRs #226–#237 landed on develop)
 
 Documents **180 app-wide issues** (039–218) from systematic codebase review. Complements structure-generation tracker [issues.md](./issues.md) (001–038).
 
 **Progress:** [REVIEW-PROGRESS.md](./REVIEW-PROGRESS.md) (~90% complete)
 
-**Postponed:** 22 issues deferred (auth, webhooks, OAuth, Yazio credential storage) — ingest/integration flows unchanged until coordinated.
+**Postponed:** 21 issues deferred (auth, webhooks, OAuth, Yazio credential storage) — ingest/integration flows unchanged until coordinated.
 
 ## Summary by priority
 
 | Priority | Count (039–218) | Active (excl. postponed) |
 | -------- | --------------- | ------------------------ |
-| Critical | 3               | 1                        |
-| High     | 52              | 39                       |
-| Medium   | 108             | 100                      |
-| Low      | 37              | 36                       |
+| Critical | 3               | 0                        |
+| High     | 45              | 6                        |
+| Medium   | 108             | 62                       |
+| Low      | 24              | 24                       |
 
 ## Top clusters (fix these first)
 
@@ -31,7 +31,7 @@ Documents **180 app-wide issues** (039–218) from systematic codebase review. C
 
 | ID                                                                                                             | Title                                                      |
 | -------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------- |
-| [064](./064-workout-detail-stale-on-nav.md) / [065](./065-planned-workout-stale-on-nav.md)                     | ~~Workout pages stale on neighbor navigation~~ **Fixed** |
+| [064](./064-workout-detail-stale-on-nav.md) / [065](./065-planned-workout-stale-on-nav.md)                     | ~~Workout pages stale on neighbor navigation~~ **Fixed**   |
 | [067](./067-nutrition-estimate-missing-id.md)                                                                  | Nutrition estimate days break mutations                    |
 | [068](./068-coaching-overview-wrong-workout-links.md)                                                          | Coaching feed links wrong workout route                    |
 | [076](./076-analytics-dashboard-autosave-silent-fail.md)                                                       | Analytics dashboard save fails silently                    |
@@ -42,9 +42,9 @@ Documents **180 app-wide issues** (039–218) from systematic codebase review. C
 | [152](./152-onboarding-blocks-join-callback.md)                                                                | Onboarding blocks post-signup join                         |
 | [171](./171-ingest-hevy-no-date-window.md) / [172](./172-garmin-ingest-clamps-24h-window.md)                   | Ingest date window bugs                                    |
 | [175](./175-wellness-analysis-no-quota-check.md) / [177](./177-recommend-today-processing-stuck-on-failure.md) | AI quota / stuck PROCESSING                                |
-| [187](./187-profile-tab-unmount-popper-crash.md)                                                               | ~~Profile settings popper crash (Sentry 18A)~~ **Fixed** |
-| [190](./190-autodetect-drops-ftp-hr-thresholds.md)                                                             | ~~Autodetect drops FTP/HR thresholds~~ **Fixed**         |
-| [197](./197-connected-apps-hides-failed-status.md)                                                             | ~~Connected apps hides FAILED integrations~~ **Fixed**   |
+| [187](./187-profile-tab-unmount-popper-crash.md)                                                               | ~~Profile settings popper crash (Sentry 18A)~~ **Fixed**   |
+| [190](./190-autodetect-drops-ftp-hr-thresholds.md)                                                             | ~~Autodetect drops FTP/HR thresholds~~ **Fixed**           |
+| [197](./197-connected-apps-hides-failed-status.md)                                                             | ~~Connected apps hides FAILED integrations~~ **Fixed**     |
 
 ### P2 — Recurring pattern: stuck loading spinners
 
