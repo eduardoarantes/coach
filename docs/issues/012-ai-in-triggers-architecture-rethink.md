@@ -3,47 +3,47 @@
 **Type:** Architecture  
 **Priority:** High  
 **Area:** `ai`, `backend`, `infra`, `workouts`  
-**Status:** Open
+**Status:** Open (partial — shared AI timeouts in PR #222; durable generation status model still TODO)
 
 ## Summary
 
 The current design offloads heavy work to Trigger.dev (correct), but still runs **synchronous, multi-attempt AI calls inside task bodies**. Timeout configuration is **inconsistent** across tasks, and the UI has **no durable generation status model** on the workout record itself. This combination causes timeouts, stuck UI states, and silent partial failures — especially when generation is triggered from chat or batch plan flows.
 
-This issue captures the user's concern: *"Sometimes I have AI generation in triggers which times out — maybe we need to rethink how we will do this."*
+This issue captures the user's concern: _"Sometimes I have AI generation in triggers which times out — maybe we need to rethink how we will do this."_
 
 ## Current State
 
 ### What works well
 
-| Pattern | Detail |
-|---------|--------|
-| Chat → async trigger | Planning tools enqueue `generate-structured-workout` instead of blocking the 60s chat turn |
-| Two-stage planning | `generate-training-block` creates workout shells; structure is a separate task |
-| Retry with model upgrade | 45s timeout, attempt 1 Flash → attempt 2 Pro + high thinking |
-| WebSocket run updates | `useUserRuns` + `publishTaskRunStartedEvent` for live status |
+| Pattern                  | Detail                                                                                     |
+| ------------------------ | ------------------------------------------------------------------------------------------ |
+| Chat → async trigger     | Planning tools enqueue `generate-structured-workout` instead of blocking the 60s chat turn |
+| Two-stage planning       | `generate-training-block` creates workout shells; structure is a separate task             |
+| Retry with model upgrade | 45s timeout, attempt 1 Flash → attempt 2 Pro + high thinking                               |
+| WebSocket run updates    | `useUserRuns` + `publishTaskRunStartedEvent` for live status                               |
 
 ### What causes pain
 
-| Problem | Detail |
-|---------|--------|
-| **Synchronous AI in long tasks** | Up to 2×45s AI + strength matching + coverage retries + DB + Intervals sync in one 180s task |
-| **Inconsistent timeouts** | `generate-structured-workout`: 45s explicit; `generate-ad-hoc-workout`, `generate-workout-messages`: no `timeoutMs` |
-| **Task timeout vs AI timeout** | Task fails at 180s with unclear user message; UI may stay stuck ([004](./004-no-task-failure-handling.md)) |
+| Problem                            | Detail                                                                                                                                                     |
+| ---------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Synchronous AI in long tasks**   | Up to 2×45s AI + strength matching + coverage retries + DB + Intervals sync in one 180s task                                                               |
+| **Inconsistent timeouts**          | `generate-structured-workout`: 45s explicit; `generate-ad-hoc-workout`, `generate-workout-messages`: no `timeoutMs`                                        |
+| **Task timeout vs AI timeout**     | Task fails at 180s with unclear user message; UI may stay stuck ([004](./004-no-task-failure-handling.md))                                                 |
 | **No persisted generation status** | UI infers state from Trigger.dev run tags — fragile ([002](./002-missing-planned-workout-run-tags.md), [005](./005-page-reload-loses-generation-state.md)) |
-| **Chat success without structure** | Workout created, trigger fails silently ([008](./008-chat-silent-trigger-failures.md)) |
-| **Batch fan-out** | `generate-training-block` loops `tasks.trigger` for many workouts — queue pressure, no per-block progress |
-| **Validation after AI spend** | Empty or invalid structures can still persist in edge cases ([001](./001-zero-step-structure-persistence.md)) |
+| **Chat success without structure** | Workout created, trigger fails silently ([008](./008-chat-silent-trigger-failures.md))                                                                     |
+| **Batch fan-out**                  | `generate-training-block` loops `tasks.trigger` for many workouts — queue pressure, no per-block progress                                                  |
+| **Validation after AI spend**      | Empty or invalid structures can still persist in edge cases ([001](./001-zero-step-structure-persistence.md))                                              |
 
 ### Timeout matrix (workout-related triggers)
 
-| Task | maxDuration | AI timeoutMs | Notes |
-|------|-------------|--------------|-------|
-| `generate-structured-workout` | 180s | 45s × 2 attempts | Manual retry at task level |
-| `adjust-structured-workout` | 180s | 45s × 2 attempts | Same |
-| `generate-workout-messages` | 300s | **None** | Default SDK retries |
-| `generate-ad-hoc-workout` | 300s | **None** on first AI call | Then chains structure task |
-| `generate-training-block` | 600s | 40s DB tx timeout | Fans out N structure tasks |
-| `execute-chat-turn` | 300s | 60s execution abort | Separate from structure gen |
+| Task                          | maxDuration | AI timeoutMs              | Notes                       |
+| ----------------------------- | ----------- | ------------------------- | --------------------------- |
+| `generate-structured-workout` | 180s        | 45s × 2 attempts          | Manual retry at task level  |
+| `adjust-structured-workout`   | 180s        | 45s × 2 attempts          | Same                        |
+| `generate-workout-messages`   | 300s        | **None**                  | Default SDK retries         |
+| `generate-ad-hoc-workout`     | 300s        | **None** on first AI call | Then chains structure task  |
+| `generate-training-block`     | 600s        | 40s DB tx timeout         | Fans out N structure tasks  |
+| `execute-chat-turn`           | 300s        | 60s execution abort       | Separate from structure gen |
 
 Chat turn limits (`server/utils/chat/turns.ts`):
 

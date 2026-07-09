@@ -3,7 +3,7 @@
 **Type:** UI  
 **Priority:** Low  
 **Area:** `ui/ux, settings`  
-**Status:** Open
+**Status:** Fixed
 
 ## Description
 

@@ -3,7 +3,7 @@
 **Type:** Performance  
 **Priority:** High  
 **Area:** `ai`, `backend`, `workouts`  
-**Status:** Open
+**Status:** Fixed
 
 ## Description
 
@@ -35,12 +35,12 @@ Strength validation uses the same full-prompt pattern.
 
 ## Why This Hurts
 
-| Issue | Effect |
-|-------|--------|
-| Full prompt on retry | Pays full input tokens again (~4k–10k+ chars) |
+| Issue                            | Effect                                                                         |
+| -------------------------------- | ------------------------------------------------------------------------------ |
+| Full prompt on retry             | Pays full input tokens again (~4k–10k+ chars)                                  |
 | Pro + high thinking on attempt 2 | Slowest model tier for what is often a small fix (duration trim, add main set) |
-| No failed draft in retry | Model cannot patch; must regenerate entire structure |
-| Generic feedback | Does not tell model *which* steps failed coverage or strength rules |
+| No failed draft in retry         | Model cannot patch; must regenerate entire structure                           |
+| Generic feedback                 | Does not tell model _which_ steps failed coverage or strength rules            |
 
 ## Suggested Fix
 
@@ -62,12 +62,12 @@ On attempt 2+, send a **short corrective prompt**:
 
 ### Failure-type routing
 
-| Failure | Retry strategy |
-|---------|----------------|
-| Timeout | Smaller prompt + same model, or split coach copy from steps (future) |
-| Coverage under/over | Patch prompt with computed duration delta |
-| Empty steps | Full regen but still compact prompt |
-| Strength blocks invalid | Strength-specific corrective block only |
+| Failure                 | Retry strategy                                                       |
+| ----------------------- | -------------------------------------------------------------------- |
+| Timeout                 | Smaller prompt + same model, or split coach copy from steps (future) |
+| Coverage under/over     | Patch prompt with computed duration delta                            |
+| Empty steps             | Full regen but still compact prompt                                  |
+| Strength blocks invalid | Strength-specific corrective block only                              |
 
 Store last draft in task scope between attempts (in-memory; no DB required).
 

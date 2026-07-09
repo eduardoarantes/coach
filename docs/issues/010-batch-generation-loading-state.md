@@ -3,7 +3,7 @@
 **Type:** Bug  
 **Priority:** Medium  
 **Area:** `ui/ux`, `planning`  
-**Status:** Open
+**Status:** Fixed
 
 ## Description
 

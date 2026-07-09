@@ -3,7 +3,7 @@
 **Type:** Bug  
 **Priority:** Medium  
 **Area:** `ui/ux`  
-**Status:** In Progress — [PR #215](https://github.com/hdkiller/coach/pull/215)
+**Status:** Fixed
 
 ## Description
 

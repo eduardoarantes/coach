@@ -3,7 +3,7 @@
 **Type:** UI  
 **Priority:** Low  
 **Area:** `profile, ui/ux`  
-**Status:** Open
+**Status:** Fixed
 
 ## Description
 

@@ -3,7 +3,7 @@
 **Type:** UI  
 **Priority:** Medium  
 **Area:** `planning, workouts`  
-**Status:** Open
+**Status:** Fixed
 
 ## Description
 

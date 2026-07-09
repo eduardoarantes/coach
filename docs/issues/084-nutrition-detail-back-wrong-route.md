@@ -3,7 +3,7 @@
 **Type:** UI  
 **Priority:** Medium  
 **Area:** `nutrition, ui/ux`  
-**Status:** Open
+**Status:** Fixed
 
 ## Description
 

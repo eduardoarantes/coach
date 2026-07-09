@@ -3,7 +3,7 @@
 **Type:** Performance  
 **Priority:** Medium  
 **Area:** `ai`, `backend`, `workouts`  
-**Status:** Open
+**Status:** Fixed
 
 ## Description
 
@@ -34,12 +34,12 @@ The same dual-path logic is duplicated in `trigger/adjust-structured-workout.ts`
 
 ## Why This Hurts
 
-| Problem | Detail |
-|---------|--------|
-| **Token bloat** | Legacy schema is ~400+ lines with nested property descriptions sent to structured-output API |
-| **Prompt duplication** | Two full prompt templates (`prompt` + `draftPrompt`) maintained in sync |
-| **Retry cost** | Validation/coverage retries on legacy resend the larger prompt ([037](./037-structure-generation-lightweight-retries.md)) |
-| **Drift risk** | Sport rules and targeting instructions must be edited in two places |
+| Problem                | Detail                                                                                                                    |
+| ---------------------- | ------------------------------------------------------------------------------------------------------------------------- |
+| **Token bloat**        | Legacy schema is ~400+ lines with nested property descriptions sent to structured-output API                              |
+| **Prompt duplication** | Two full prompt templates (`prompt` + `draftPrompt`) maintained in sync                                                   |
+| **Retry cost**         | Validation/coverage retries on legacy resend the larger prompt ([037](./037-structure-generation-lightweight-retries.md)) |
+| **Drift risk**         | Sport rules and targeting instructions must be edited in two places                                                       |
 
 ## Suggested Fix
 

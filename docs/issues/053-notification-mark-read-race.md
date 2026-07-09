@@ -3,7 +3,7 @@
 **Type:** Bug  
 **Priority:** Low  
 **Area:** `ui/ux`, `notifications`  
-**Status:** Open
+**Status:** Fixed
 
 ## Description
 

@@ -3,7 +3,7 @@
 **Type:** Bug  
 **Priority:** Medium  
 **Area:** `integrations`, `workouts`, `ai`  
-**Status:** Open
+**Status:** Fixed
 
 ## Description
 

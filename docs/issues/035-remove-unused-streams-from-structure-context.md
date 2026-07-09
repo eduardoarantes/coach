@@ -3,7 +3,7 @@
 **Type:** Performance  
 **Priority:** Low  
 **Area:** `backend`, `workouts`  
-**Status:** Open
+**Status:** Fixed
 
 ## Description
 

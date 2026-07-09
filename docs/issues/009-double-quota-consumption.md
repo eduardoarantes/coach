@@ -3,7 +3,7 @@
 **Type:** Maintenance  
 **Priority:** Medium  
 **Area:** `backend`, `workouts`  
-**Status:** Open
+**Status:** Fixed
 
 ## Description
 

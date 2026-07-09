@@ -3,7 +3,7 @@
 **Type:** UI  
 **Priority:** Low  
 **Area:** `ui/ux, dashboard`  
-**Status:** Open
+**Status:** Fixed
 
 ## Description
 

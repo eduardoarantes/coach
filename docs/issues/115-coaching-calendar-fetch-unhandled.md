@@ -3,7 +3,7 @@
 **Type:** Bug  
 **Priority:** Medium  
 **Area:** `coaching, ui/ux`  
-**Status:** Open
+**Status:** Fixed
 
 ## Description
 

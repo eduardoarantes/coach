@@ -3,7 +3,7 @@
 **Type:** Bug  
 **Priority:** Critical  
 **Area:** `ai`, `workouts`, `backend`  
-**Status:** In Progress — partial fix in [PR #214](https://github.com/hdkiller/coach/pull/214) (`assertRenderableStructure` pre-persist gate)
+**Status:** Fixed
 
 ## Description
 

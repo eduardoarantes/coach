@@ -3,7 +3,7 @@
 **Type:** Bug  
 **Priority:** Medium  
 **Area:** `infra`, `ui/ux`  
-**Status:** Open  
+**Status:** Fixed
 **Related:** [027](./027-cross-user-runs-on-identity-switch.md)
 
 ## Description

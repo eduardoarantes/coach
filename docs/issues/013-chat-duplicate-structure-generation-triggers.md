@@ -3,7 +3,7 @@
 **Type:** Bug  
 **Priority:** High  
 **Area:** `ai`, `workouts`, `backend`, `ui/ux`  
-**Status:** In Progress ([PR #218](https://github.com/hdkiller/coach/pull/218))  
+**Status:** Fixed
 **Reported:** User observed multiple workout-details/structure generation jobs when asking chat to create a running workout.
 
 ## Summary

@@ -3,7 +3,7 @@
 **Type:** UI  
 **Priority:** Low  
 **Area:** `ui/ux, infra`  
-**Status:** Open
+**Status:** Fixed
 
 ## Description
 

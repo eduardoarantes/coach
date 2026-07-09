@@ -3,7 +3,7 @@
 **Type:** Bug  
 **Priority:** Medium  
 **Area:** `ai`, `backend`  
-**Status:** In Progress ([PR #218](https://github.com/hdkiller/coach/pull/218))  
+**Status:** Fixed
 **Related:** [013](./013-chat-duplicate-structure-generation-triggers.md)
 
 ## Description

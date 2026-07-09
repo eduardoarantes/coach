@@ -3,7 +3,7 @@
 **Type:** Bug  
 **Priority:** Medium  
 **Area:** `ai`, `backend`, `workouts`  
-**Status:** Open  
+**Status:** Fixed
 **Related:** [013](./013-chat-duplicate-structure-generation-triggers.md)
 
 ## Description

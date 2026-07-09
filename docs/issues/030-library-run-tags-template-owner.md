@@ -3,7 +3,7 @@
 **Type:** Bug  
 **Priority:** Medium  
 **Area:** `backend`, `workouts`, `ui/ux`  
-**Status:** Open
+**Status:** Fixed
 
 ## Description
 
@@ -26,12 +26,12 @@ No `publishTaskRunStartedEvent` is called — monitor relies on polling `/api/ru
 
 ## Scenarios
 
-| Actor | Template owner | Who sees run in monitor |
-|-------|----------------|-------------------------|
-| Athlete | Self | Athlete ✓ |
-| Coach (act-as athlete) | Athlete | Athlete session ✓ |
-| Coach (own account, library scope `all`) | Athlete | **Nobody** (tagged athlete, session is coach) |
-| Coach generating own template | Coach | Coach ✓ |
+| Actor                                    | Template owner | Who sees run in monitor                       |
+| ---------------------------------------- | -------------- | --------------------------------------------- |
+| Athlete                                  | Self           | Athlete ✓                                     |
+| Coach (act-as athlete)                   | Athlete        | Athlete session ✓                             |
+| Coach (own account, library scope `all`) | Athlete        | **Nobody** (tagged athlete, session is coach) |
+| Coach generating own template            | Coach          | Coach ✓                                       |
 
 ## Expected Behavior
 

@@ -3,7 +3,7 @@
 **Type:** Bug  
 **Priority:** Low  
 **Area:** `infra, backend`  
-**Status:** Open
+**Status:** Fixed
 
 ## Description
 
@@ -19,5 +19,5 @@ Outlook Safe Links inflates Sentry error volume.
 
 ## Acceptance Criteria
 
-- [ ] Issue no longer reproducible
-- [ ] Appropriate fix verified
+- [x] Issue no longer reproducible — filtered via `ignoreErrors` in `sentry.client.config.ts`
+- [x] Appropriate fix verified — see [SENTRY-ISSUES.md](../../SENTRY-ISSUES.md) (Known Noise)

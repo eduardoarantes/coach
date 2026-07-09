@@ -3,7 +3,7 @@
 **Type:** Bug  
 **Priority:** Medium  
 **Area:** `ui/ux`, `workouts`  
-**Status:** Open  
+**Status:** Fixed
 **Related:** [011](./011-strength-blocks-validation-gap.md) (backend validation)
 
 ## Description

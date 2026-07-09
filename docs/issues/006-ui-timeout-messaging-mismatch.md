@@ -3,7 +3,7 @@
 **Type:** Bug  
 **Priority:** Low  
 **Area:** `ui/ux`, `workouts`  
-**Status:** Open
+**Status:** Fixed
 
 ## Description
 
@@ -11,13 +11,13 @@ The Planned Workout Details page tells users structure generation "may take up t
 
 ## Actual Timings
 
-| Layer | Limit |
-|-------|-------|
-| AI call per attempt | 45s (`STRUCTURED_WORKOUT_TIMEOUT_MS`) |
-| Retry attempts | Up to 2 (Flash → Pro with high thinking) |
-| Coverage/strength validation retries | Additional loop iterations inside attempt budget |
-| Trigger.dev task `maxDuration` | 180s |
-| Post-AI processing | Strength library matching, normalization, Intervals sync |
+| Layer                                | Limit                                                    |
+| ------------------------------------ | -------------------------------------------------------- |
+| AI call per attempt                  | 45s (`STRUCTURED_WORKOUT_TIMEOUT_MS`)                    |
+| Retry attempts                       | Up to 2 (Flash → Pro with high thinking)                 |
+| Coverage/strength validation retries | Additional loop iterations inside attempt budget         |
+| Trigger.dev task `maxDuration`       | 180s                                                     |
+| Post-AI processing                   | Strength library matching, normalization, Intervals sync |
 
 Worst case: ~90s+ of AI time alone, plus processing — up to the **180s task cap**.
 

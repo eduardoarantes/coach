@@ -3,7 +3,7 @@
 **Type:** UI  
 **Priority:** Medium  
 **Area:** `analytics, workouts`  
-**Status:** Open
+**Status:** Fixed
 
 ## Description
 

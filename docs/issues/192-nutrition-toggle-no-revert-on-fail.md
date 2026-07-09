@@ -3,7 +3,7 @@
 **Type:** Bug  
 **Priority:** Medium  
 **Area:** `profile, nutrition`  
-**Status:** Open
+**Status:** Fixed
 
 ## Description
 

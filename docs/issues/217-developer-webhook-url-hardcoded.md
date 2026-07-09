@@ -3,7 +3,7 @@
 **Type:** Bug  
 **Priority:** Low  
 **Area:** `integrations, ui/ux`  
-**Status:** Open
+**Status:** Fixed
 
 ## Description
 

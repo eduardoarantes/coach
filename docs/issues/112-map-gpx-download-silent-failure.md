@@ -3,7 +3,7 @@
 **Type:** UI  
 **Priority:** Medium  
 **Area:** `workouts, ui/ux`  
-**Status:** Open
+**Status:** Fixed
 
 ## Description
 

@@ -3,7 +3,7 @@
 **Type:** Maintenance  
 **Priority:** Medium  
 **Area:** `backend`, `workouts`, `infra`  
-**Status:** In Progress ([PR #217](https://github.com/hdkiller/coach/pull/217))  
+**Status:** Fixed
 **Related:** [002](./002-missing-planned-workout-run-tags.md), [013](./013-chat-duplicate-structure-generation-triggers.md)
 
 ## Description

@@ -3,7 +3,7 @@
 **Type:** Bug  
 **Priority:** High  
 **Area:** `ui/ux`, `workouts`  
-**Status:** In Progress ([PR #220](https://github.com/hdkiller/coach/pull/220))
+**Status:** Fixed
 
 ## Description
 

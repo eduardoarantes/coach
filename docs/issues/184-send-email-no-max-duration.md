@@ -3,7 +3,7 @@
 **Type:** Bug  
 **Priority:** Low  
 **Area:** `infra, backend`  
-**Status:** Open
+**Status:** Fixed
 
 ## Description
 

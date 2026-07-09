@@ -3,7 +3,7 @@
 **Type:** UI  
 **Priority:** Medium  
 **Area:** `admin, ui/ux`  
-**Status:** Open
+**Status:** Fixed
 
 ## Description
 

@@ -3,7 +3,7 @@
 **Type:** UI  
 **Priority:** Medium  
 **Area:** `workouts, activities`  
-**Status:** Open
+**Status:** Fixed
 
 ## Description
 

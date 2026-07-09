@@ -3,7 +3,7 @@
 **Type:** UI  
 **Priority:** Low  
 **Area:** `wellness, dashboard`  
-**Status:** Open
+**Status:** Fixed
 
 ## Description
 

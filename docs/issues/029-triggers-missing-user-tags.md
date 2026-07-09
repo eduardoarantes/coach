@@ -3,7 +3,7 @@
 **Type:** Bug  
 **Priority:** High  
 **Area:** `backend`, `infra`  
-**Status:** In Progress ([PR #217](https://github.com/hdkiller/coach/pull/217))
+**Status:** Fixed
 
 ## Description
 

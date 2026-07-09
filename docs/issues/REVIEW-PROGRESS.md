@@ -1,20 +1,20 @@
 # Systematic App Review — Progress Tracker
 
 **Started:** 2026-07-08  
-**Last updated:** 2026-07-09 (merge campaign — PRs #226–#237)  
+**Last updated:** 2026-07-09 (merge campaigns — PRs #214–#222 structure-gen; PRs #226–#237 app-review)  
 **Goal:** Comprehensive bug/UI/security audit across the full Coach Watts codebase. Documentation only — no refactors.
 
 ## Summary
 
 | Metric                                             | Value                                                                   |
 | -------------------------------------------------- | ----------------------------------------------------------------------- |
-| Structure-generation issues                        | 001–038 ([issues.md](./issues.md))                                      |
+| Structure-generation issues                        | 001–038 ([issues.md](./issues.md)) — **37 / 38 fixed** (only 012 open)  |
 | App-review issues filed                            | 039–218                                                                 |
 | **Postponed** (auth / third-party / OAuth / Yazio) | **21** — see [Postponed cluster](#postponed-auth--third-party-deferred) |
-| **Active (Open)**                                  | **92** (67 fixed in PRs #226–#237; 057 fixed earlier)                   |
-| **Total documented issues**                        | **218**                                                                 |
+| **Active (Open)**                                  | **54** (143 fixed total; 21 postponed)                                  |
+| **Total documented issues**                        | **223**                                                                 |
 | Review phases complete                             | 5 / 5 (core)                                                            |
-| **Overall review progress**                        | **~90%**                                                                |
+| **Overall review progress**                        | **~95%**                                                                |
 
 ## Methodology
 
@@ -101,6 +101,10 @@
 | 2026-07-08 | 6       | Fix 187/190/197 — profile tab popper, autodetect thresholds, FAILED integrations UI                                                      | —          |
 | 2026-07-08 | 7       | Fix 064/065/141/186 — refetch on route param change; profile tab URL sync                                                                | —          |
 | 2026-07-09 | 8       | Merge PRs #226–#237 — 67 app-review issues fixed (chat, profile, nav, logout, tasks, share, ingest, onboarding, feed, user flows, quota) | —          |
+| 2026-07-09 | 9       | Sync issue tracker docs — mark structure-gen batch #214–#222 merged (37 issues fixed; 012 partial)                                       | —          |
+| 2026-07-09 | 10      | Fix low-risk open issues — a11y, toasts, export, webhook URL, Sentry filter, send-email timeout, notifications, fitness pagination       | —          |
+| 2026-07-09 | 11      | Fix low-risk batch 2 — help-center card a11y, data page i18n/a11y, daily check-in i18n, admin chart labels, issues index i18n            | —          |
+| 2026-07-09 | 12      | Chat resilience review — send state, room-load races, WebSocket cleanup, stale-turn recovery, direct-send retry                          | 219–223    |
 
 ## Postponed: auth & third-party (deferred 2026-07-08)
 
@@ -129,14 +133,15 @@ Skipped for now — auth/integration hardening may break ingest or requires prov
 | 070 | Yazio password plaintext storage     | Accepted for now; Yazio ingest works |
 | 158 | Developer GET leaks webhook secret   | OAuth developer portal batch         |
 
-## Next issue ID: 219
+## Next issue ID: 224
 
-## Remaining optional work (~10%)
+## Remaining optional work (~5%)
 
-1. Exhaustive i18n grep on all 150 pages (many low-priority gaps remain beyond 199–207)
-2. `delete-user-account` trigger cleanup audit
-3. Chat attachment URL validation (candidate 219)
-4. Map outstanding Sentry issues to fixes after 187/196/197 ship
+1. **012** — Durable generation status model on `PlannedWorkout` (architecture)
+2. Exhaustive i18n grep on all 150 pages (many low-priority gaps remain beyond 199–207)
+3. `delete-user-account` trigger cleanup audit
+4. Chat attachment URL validation (candidate 224)
+5. Map outstanding Sentry issues to fixes after 187/196/197 ship
 
 ## Related docs
 

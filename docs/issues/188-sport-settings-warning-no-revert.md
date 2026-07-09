@@ -3,7 +3,7 @@
 **Type:** Bug  
 **Priority:** Medium  
 **Area:** `profile, ui/ux`  
-**Status:** Open
+**Status:** Fixed
 
 ## Description
 
