@@ -122,6 +122,8 @@ ${formatConversation(normalizedMessages)}`
           index === array.findIndex((entry) => entry.normalizedKey === candidate.normalizedKey)
       )
 
+    const promptTokens = usage.inputTokens || 0
+    const completionTokens = usage.outputTokens || 0
     await prisma.llmUsage
       .create({
         data: {
@@ -133,17 +135,15 @@ ${formatConversation(normalizedMessages)}`
           operation: input.operation || 'memory-extract',
           entityType: input.entityType || 'ChatMessage',
           entityId: input.entityId || input.roomId || null,
-          inputTokens: usage.inputTokens || 0,
-          outputTokens: usage.outputTokens || 0,
+          promptTokens,
+          completionTokens,
           cachedTokens: usage.inputTokenDetails?.cacheReadTokens || 0,
-          reasoningTokens:
-            (usage as any).outputTokenDetails.outputTokenDetails.reasoningTokens || 0,
-          totalTokens: (usage.inputTokens || 0) + (usage.outputTokens || 0),
+          reasoningTokens: (usage as any).outputTokenDetails?.reasoningTokens || 0,
+          totalTokens: promptTokens + completionTokens,
           estimatedCost: calculateLlmCost(
             input.modelId || MEMORY_EXTRACTION_MODEL_ID,
-            usage.inputTokens || 0,
-            (usage.outputTokens || 0) +
-              ((usage as any).outputTokenDetails.outputTokenDetails.reasoningTokens || 0),
+            promptTokens,
+            completionTokens + ((usage as any).outputTokenDetails?.reasoningTokens || 0),
             usage.inputTokenDetails?.cacheReadTokens || 0
           ),
           durationMs: Date.now() - startedAt,

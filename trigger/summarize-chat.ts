@@ -127,6 +127,8 @@ export const summarizeChatTask = task({
       summarizedNewMessages = true
 
       // Log Summary Usage
+      const summaryPromptTokens = summaryUsage.inputTokens || 0
+      const summaryCompletionTokens = summaryUsage.outputTokens || 0
       await prisma.llmUsage.create({
         data: {
           userId,
@@ -135,13 +137,13 @@ export const summarizeChatTask = task({
           operation: 'summarize-chat',
           entityType: 'ChatRoom',
           entityId: roomId,
-          inputTokens: summaryUsage.inputTokens || 0,
-          outputTokens: summaryUsage.outputTokens || 0,
-          totalTokens: (summaryUsage.inputTokens || 0) + (summaryUsage.outputTokens || 0),
+          promptTokens: summaryPromptTokens,
+          completionTokens: summaryCompletionTokens,
+          totalTokens: summaryPromptTokens + summaryCompletionTokens,
           estimatedCost: calculateLlmCost(
             'gemini-flash-lite-latest',
-            summaryUsage.inputTokens || 0,
-            summaryUsage.outputTokens || 0
+            summaryPromptTokens,
+            summaryCompletionTokens
           ),
           success: true
         }
@@ -162,6 +164,8 @@ export const summarizeChatTask = task({
       newTitle = title.trim().replace(/^"|"$/g, '')
 
       // Log Title Usage
+      const titlePromptTokens = titleUsage.inputTokens || 0
+      const titleCompletionTokens = titleUsage.outputTokens || 0
       await prisma.llmUsage.create({
         data: {
           userId,
@@ -170,13 +174,13 @@ export const summarizeChatTask = task({
           operation: 'rename-chat',
           entityType: 'ChatRoom',
           entityId: roomId,
-          inputTokens: titleUsage.inputTokens || 0,
-          outputTokens: titleUsage.outputTokens || 0,
-          totalTokens: (titleUsage.inputTokens || 0) + (titleUsage.outputTokens || 0),
+          promptTokens: titlePromptTokens,
+          completionTokens: titleCompletionTokens,
+          totalTokens: titlePromptTokens + titleCompletionTokens,
           estimatedCost: calculateLlmCost(
             'gemini-flash-lite-latest',
-            titleUsage.inputTokens || 0,
-            titleUsage.outputTokens || 0
+            titlePromptTokens,
+            titleCompletionTokens
           ),
           success: true
         }

@@ -867,8 +867,7 @@ export async function executeChatTurn(turnId: string, expectedRunId?: string | n
       const promptTokens = params.usage?.inputTokens || 0
       const completionTokens = params.usage?.outputTokens || 0
       const cachedTokens = params.usage?.inputTokenDetails?.cacheReadTokens || 0
-      const reasoningTokens =
-        params.usage?.outputTokenDetails.outputTokenDetails.reasoningTokens || 0
+      const reasoningTokens = params.usage?.outputTokenDetails?.reasoningTokens || 0
       const estimatedCost = calculateLlmCost(
         modelName,
         promptTokens,
@@ -886,8 +885,8 @@ export async function executeChatTurn(turnId: string, expectedRunId?: string | n
           operation: 'chat_attempt',
           entityType: 'ChatTurn',
           entityId: activeTurn.id,
-          inputTokens,
-          outputTokens,
+          promptTokens,
+          completionTokens,
           cachedTokens,
           reasoningTokens,
           totalTokens: promptTokens + completionTokens,
@@ -1319,8 +1318,7 @@ export async function executeChatTurn(turnId: string, expectedRunId?: string | n
           const promptTokens = usage.inputTokens || 0
           const completionTokens = usage.outputTokens || 0
           const cachedTokens = usage.inputTokenDetails?.cacheReadTokens || 0
-          const reasoningTokens =
-            (usage as any).outputTokenDetails.outputTokenDetails.reasoningTokens || 0
+          const reasoningTokens = usage?.outputTokenDetails?.reasoningTokens || 0
           const estimatedCost = calculateLlmCost(
             modelName,
             promptTokens,
@@ -1338,8 +1336,8 @@ export async function executeChatTurn(turnId: string, expectedRunId?: string | n
               operation: 'chat',
               entityType: 'ChatMessage',
               entityId: draft.id,
-              inputTokens,
-              outputTokens,
+              promptTokens,
+              completionTokens,
               cachedTokens,
               reasoningTokens,
               totalTokens: promptTokens + completionTokens,
