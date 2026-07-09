@@ -3,7 +3,7 @@
 **Type:** Bug  
 **Priority:** Medium  
 **Area:** `profile, planning`  
-**Status:** Open
+**Status:** Fixed
 
 ## Description
 
@@ -19,5 +19,5 @@ Edit availability; switch tab; edits lost.
 
 ## Acceptance Criteria
 
-- [ ] Issue no longer reproducible
-- [ ] Appropriate fix verified
+- [x] Issue no longer reproducible
+- [x] Appropriate fix verified

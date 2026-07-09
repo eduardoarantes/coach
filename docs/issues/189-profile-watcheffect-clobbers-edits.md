@@ -3,7 +3,7 @@
 **Type:** Bug  
 **Priority:** Medium  
 **Area:** `profile, ui/ux`  
-**Status:** Open
+**Status:** Fixed
 
 ## Description
 
@@ -19,5 +19,5 @@ Edit basic tab; save nutrition; basic edits lost.
 
 ## Acceptance Criteria
 
-- [ ] Issue no longer reproducible
-- [ ] Appropriate fix verified
+- [x] Issue no longer reproducible
+- [x] Appropriate fix verified

@@ -37,34 +37,32 @@
             @navigate="(tab) => setActiveTab(tab)"
           />
 
-          <template v-if="activeTab === 'availability'">
-            <div class="space-y-4">
-              <UCard :ui="{ body: 'p-0 sm:p-0' }">
-                <template #header>
-                  <h3 class="text-lg font-medium leading-6 text-gray-900 dark:text-white">
-                    {{ t('availability_header_title') }}
-                  </h3>
-                  <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
-                    {{ t('availability_header_desc') }}
-                  </p>
-                </template>
+          <div v-show="activeTab === 'availability'" class="space-y-4">
+            <UCard :ui="{ body: 'p-0 sm:p-0' }">
+              <template #header>
+                <h3 class="text-lg font-medium leading-6 text-gray-900 dark:text-white">
+                  {{ t('availability_header_title') }}
+                </h3>
+                <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                  {{ t('availability_header_desc') }}
+                </p>
+              </template>
 
-                <SettingsAvailabilitySettings
-                  v-if="availability"
-                  :initial-availability="availability"
-                  :loading="savingAvailability"
-                  @save="handleAvailabilitySave"
+              <SettingsAvailabilitySettings
+                v-if="availability"
+                :initial-availability="availability"
+                :loading="savingAvailability"
+                @save="handleAvailabilitySave"
+              />
+              <div v-else class="p-4 sm:p-6 space-y-4">
+                <div
+                  v-for="i in 7"
+                  :key="i"
+                  class="h-48 w-full bg-neutral-50 dark:bg-neutral-900/50 rounded-2xl border border-neutral-200 dark:border-neutral-800 animate-pulse"
                 />
-                <div v-else class="p-4 sm:p-6 space-y-4">
-                  <div
-                    v-for="i in 7"
-                    :key="i"
-                    class="h-48 w-full bg-neutral-50 dark:bg-neutral-900/50 rounded-2xl border border-neutral-200 dark:border-neutral-800 animate-pulse"
-                  />
-                </div>
-              </UCard>
-            </div>
-          </template>
+              </div>
+            </UCard>
+          </div>
 
           <template v-if="activeTab === 'sports'">
             <div class="space-y-4">
@@ -382,63 +380,81 @@
   }
 
   async function handleAutodetect(updatedProfile: any) {
-    if (updatedProfile) {
-      // 1. Update local reactive state
-      if (updatedProfile.sportSettings) {
-        sportSettings.value = updatedProfile.sportSettings
-      }
+    if (!updatedProfile) return
 
-      // 2. Prepare payload for backend update
-      const updatePayload = { ...updatedProfile }
+    const previousProfile = structuredClone(profile.value)
+    const previousSportSettings = structuredClone(sportSettings.value)
 
-      // Merge into local profile ref
-      Object.assign(profile.value, updatePayload)
+    if (updatedProfile.sportSettings) {
+      sportSettings.value = updatedProfile.sportSettings
+    }
 
-      try {
-        await $fetch('/api/profile', {
-          method: 'PATCH',
-          body: updatePayload
-        })
+    const updatePayload = { ...updatedProfile }
+    Object.assign(profile.value, updatePayload)
 
-        toast.add({
-          title: 'Profile Updated',
-          description: 'Your settings and sport-specific zones have been synced.',
-          color: 'success'
-        })
-      } catch (error: any) {
-        console.error('Autodetect sync failed:', {
-          status: error.statusCode,
-          statusText: error.statusMessage,
-          data: error.data,
-          payload: updatePayload
-        })
-        toast.add({
-          title: 'Update Failed',
-          description: 'Failed to save synced settings.',
-          color: 'error'
-        })
-      }
+    try {
+      await $fetch('/api/profile', {
+        method: 'PATCH',
+        body: updatePayload
+      })
 
-      // Refresh full profile to ensure all derived state is correct
+      toast.add({
+        title: 'Profile Updated',
+        description: 'Your settings and sport-specific zones have been synced.',
+        color: 'success'
+      })
+
       await refreshProfile()
+      applyServerProfile(profileData.value as any)
+    } catch (error: any) {
+      profile.value = previousProfile
+      sportSettings.value = previousSportSettings
+
+      console.error('Autodetect sync failed:', {
+        status: error.statusCode,
+        statusText: error.statusMessage,
+        data: error.data,
+        payload: updatePayload
+      })
+      toast.add({
+        title: 'Update Failed',
+        description: 'Failed to save synced settings.',
+        color: 'error'
+      })
     }
   }
 
-  watchEffect(() => {
-    const pData = profileData.value as any
-    if (pData?.profile) {
-      profile.value = { ...profile.value, ...pData.profile }
+  const profileHydrated = ref(false)
 
-      if (pData.profile.sportSettings) {
-        sportSettings.value = pData.profile.sportSettings as any[]
+  function applyServerProfile(pData: any) {
+    if (!pData?.profile) return
+    profile.value = { ...profile.value, ...pData.profile }
+    if (pData.profile.sportSettings) {
+      sportSettings.value = pData.profile.sportSettings as any[]
+    }
+  }
+
+  watch(
+    profileData,
+    (pData) => {
+      if (!pData) return
+      if (!profileHydrated.value) {
+        applyServerProfile(pData as any)
+        profileHydrated.value = true
       }
-    }
+    },
+    { immediate: true }
+  )
 
-    // Sync nutrition settings
-    if (nutritionData.value && (nutritionData.value as any).settings) {
-      nutritionSettings.value = (nutritionData.value as any).settings
-    }
-  })
+  watch(
+    nutritionData,
+    (nData) => {
+      if (nData && (nData as any).settings) {
+        nutritionSettings.value = (nData as any).settings
+      }
+    },
+    { immediate: true }
+  )
 
   const sportOverlapGroups = computed(() => {
     const exactTypeMatches = new Map<string, any[]>()

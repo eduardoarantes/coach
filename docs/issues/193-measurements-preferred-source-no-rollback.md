@@ -3,7 +3,7 @@
 **Type:** Bug  
 **Priority:** Medium  
 **Area:** `profile, ui/ux`  
-**Status:** Open
+**Status:** Fixed
 
 ## Description
 
@@ -20,5 +20,5 @@ Change preferred source; save fails; UI shows wrong source.
 
 ## Acceptance Criteria
 
-- [ ] Issue no longer reproducible
-- [ ] Appropriate fix verified
+- [x] Issue no longer reproducible
+- [x] Appropriate fix verified

@@ -68,16 +68,13 @@ export const useUserStore = defineStore('user', () => {
   async function updateDashboardSettings(settings: any) {
     if (!user.value) return
 
+    const previousDashboardSettings = structuredClone(user.value.dashboardSettings || {})
+
     // Optimistic update
-    // Initialize if missing
     if (!user.value.dashboardSettings) {
       user.value.dashboardSettings = {}
     }
 
-    // Deep merge or top-level merge
-    // For simplicity, we assume 'settings' is a slice we want to merge in
-    // e.g. { performanceScores: { ... } }
-    // We'll do a basic top-level merge here, or rely on the caller to pass the specific structure
     user.value.dashboardSettings = { ...user.value.dashboardSettings, ...settings }
 
     try {
@@ -86,12 +83,14 @@ export const useUserStore = defineStore('user', () => {
         body: { dashboardSettings: settings }
       })
     } catch (error) {
+      user.value.dashboardSettings = previousDashboardSettings
       console.error('Failed to update settings:', error)
       toast.add({
         title: 'Save Failed',
         description: 'Could not save dashboard preferences.',
         color: 'error'
       })
+      throw error
     }
   }
 

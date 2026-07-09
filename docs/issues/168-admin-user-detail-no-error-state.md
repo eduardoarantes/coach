@@ -3,7 +3,7 @@
 **Type:** UI  
 **Priority:** Medium  
 **Area:** `admin,ui/ux`  
-**Status:** Open
+**Status:** Fixed
 
 ## Description
 
@@ -19,4 +19,4 @@ Invalid user id shows empty page.
 
 ## Acceptance Criteria
 
-- [ ] Issue no longer reproducible
+- [x] Issue no longer reproducible

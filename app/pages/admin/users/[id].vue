@@ -11,7 +11,7 @@
   const toast = useToast()
   const { data: session } = useAuth()
 
-  const { data, pending, refresh } = await useFetch(`/api/admin/users/${userId}`)
+  const { data, pending, error, refresh } = await useFetch(`/api/admin/users/${userId}`)
 
   const impersonating = ref(false)
   const deletingUser = ref(false)
@@ -252,6 +252,38 @@
       <div class="p-6 space-y-6">
         <div v-if="pending" class="flex items-center justify-center p-12">
           <UIcon name="i-lucide-loader-2" class="animate-spin h-8 w-8 text-gray-400" />
+        </div>
+
+        <UAlert
+          v-else-if="error"
+          color="error"
+          variant="soft"
+          icon="i-heroicons-exclamation-circle"
+          title="Failed to load user"
+          :description="error.message || 'This user could not be loaded.'"
+          class="max-w-lg mx-auto"
+        >
+          <template #actions>
+            <UButton
+              color="error"
+              variant="soft"
+              size="xs"
+              icon="i-heroicons-arrow-path"
+              @click="refresh()"
+            >
+              Retry
+            </UButton>
+            <UButton color="neutral" variant="soft" size="xs" to="/admin/users">
+              Back to Users
+            </UButton>
+          </template>
+        </UAlert>
+
+        <div v-else-if="!data" class="text-center py-20 text-gray-500">
+          User not found.
+          <div class="mt-4">
+            <UButton color="primary" to="/admin/users">Back to Users</UButton>
+          </div>
         </div>
 
         <template v-else-if="data">

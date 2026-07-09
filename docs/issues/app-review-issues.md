@@ -227,28 +227,28 @@ Documents **185 app-wide issues** (039–223) from systematic codebase review. C
 
 ## Issues 151–170 (join, share, developer, triggers)
 
-| ID                                                     | Title                                 | Priority |
-| ------------------------------------------------------ | ------------------------------------- | -------- |
-| [151](./151-user-profile-stale-on-error.md)            | User profile stale on error           | Medium   |
-| ~~[152](./152-onboarding-blocks-join-callback.md)~~    | Onboarding blocks join (fixed)        | High     |
-| ~~[153](./153-join-auto-accept-branded-only.md)~~      | Join auto-accept branded only (fixed) | Medium   |
-| ~~[154](./154-join-accept-errors-return-500.md)~~      | Join accept returns 500 (fixed)       | Medium   |
-| [155](./155-workout-share-leaks-zone-profiles.md)      | Share leaks zone profiles             | High     |
-| [156](./156-nutrition-share-url-404.md)                | Nutrition share URL 404               | Medium   |
-| [157](./157-nutrition-share-unsanitized-payload.md)    | Nutrition share unsanitized           | High     |
-| [158](./158-developer-get-leaks-webhook-secret.md)     | Developer GET leaks secret            | High     |
-| [159](./159-planned-workout-share-ignores-preview.md)  | Planned share ignores preview         | Medium   |
-| [160](./160-wellness-share-og-leaks-biometrics.md)     | Wellness OG leaks biometrics          | Medium   |
-| [161](./161-connect-yazio-no-auth-middleware.md)       | Connect Yazio no auth                 | High     |
-| [162](./162-fit-ingest-no-file-ownership-check.md)     | FIT ingest no ownership check         | High     |
-| [163](./163-chat-tts-transcribe-no-quota.md)           | Chat TTS/transcribe no quota          | Medium   |
-| [164](./164-chat-turn-retry-no-quota.md)               | Chat retry no quota                   | Medium   |
-| [165](./165-chat-queued-messages-lost-on-error.md)     | Queued messages lost on error         | Medium   |
-| [166](./166-chat-message-queue-in-memory-only.md)      | Chat queue in-memory only             | Medium   |
-| [167](./167-admin-impersonate-self-allowed.md)         | Admin impersonate self                | Medium   |
-| [168](./168-admin-user-detail-no-error-state.md)       | Admin user detail no error            | Medium   |
-| [169](./169-admin-webhook-stats-wrong-progress-max.md) | Admin webhook stats wrong max         | Low      |
-| [170](./170-deduplicate-auto-analyzes-all-recent.md)   | Dedup auto-analyzes all recent        | Medium   |
+| ID                                                     | Title                                    | Priority |
+| ------------------------------------------------------ | ---------------------------------------- | -------- |
+| [151](./151-user-profile-stale-on-error.md)            | User profile stale on error              | Medium   |
+| ~~[152](./152-onboarding-blocks-join-callback.md)~~    | Onboarding blocks join (fixed)           | High     |
+| ~~[153](./153-join-auto-accept-branded-only.md)~~      | Join auto-accept branded only (fixed)    | Medium   |
+| ~~[154](./154-join-accept-errors-return-500.md)~~      | Join accept returns 500 (fixed)          | Medium   |
+| [155](./155-workout-share-leaks-zone-profiles.md)      | Share leaks zone profiles                | High     |
+| [156](./156-nutrition-share-url-404.md)                | Nutrition share URL 404                  | Medium   |
+| [157](./157-nutrition-share-unsanitized-payload.md)    | Nutrition share unsanitized              | High     |
+| [158](./158-developer-get-leaks-webhook-secret.md)     | Developer GET leaks secret               | High     |
+| [159](./159-planned-workout-share-ignores-preview.md)  | Planned share ignores preview            | Medium   |
+| [160](./160-wellness-share-og-leaks-biometrics.md)     | Wellness OG leaks biometrics             | Medium   |
+| [161](./161-connect-yazio-no-auth-middleware.md)       | Connect Yazio no auth                    | High     |
+| [162](./162-fit-ingest-no-file-ownership-check.md)     | FIT ingest no ownership check            | High     |
+| [163](./163-chat-tts-transcribe-no-quota.md)           | Chat TTS/transcribe no quota             | Medium   |
+| [164](./164-chat-turn-retry-no-quota.md)               | Chat retry no quota                      | Medium   |
+| [165](./165-chat-queued-messages-lost-on-error.md)     | Queued messages lost on error            | Medium   |
+| [166](./166-chat-message-queue-in-memory-only.md)      | Chat queue in-memory only                | Medium   |
+| [167](./167-admin-impersonate-self-allowed.md)         | Admin impersonate self                   | Medium   |
+| [168](./168-admin-user-detail-no-error-state.md)       | ~~Admin user detail no error~~ **Fixed** | Medium   |
+| [169](./169-admin-webhook-stats-wrong-progress-max.md) | Admin webhook stats wrong max            | Low      |
+| [170](./170-deduplicate-auto-analyzes-all-recent.md)   | Dedup auto-analyzes all recent           | Medium   |
 
 ## Issues 171–185 (trigger tasks deep pass)
 
@@ -272,21 +272,21 @@ Documents **185 app-wide issues** (039–223) from systematic codebase review. C
 
 ## Issues 186–198 (profile/settings + Sentry)
 
-| ID                                                        | Title                                          | Priority |
-| --------------------------------------------------------- | ---------------------------------------------- | -------- |
-| [186](./186-profile-tab-url-not-synced.md)                | ~~Profile tab URL not synced~~ **Fixed**       | Medium   |
-| [187](./187-profile-tab-unmount-popper-crash.md)          | ~~Profile tab popper crash (18A)~~ **Fixed**   | High     |
-| [188](./188-sport-settings-warning-no-revert.md)          | ~~Sport settings warning no revert~~ **Fixed** | Medium   |
-| [189](./189-profile-watcheffect-clobbers-edits.md)        | Profile watchEffect clobbers edits             | Medium   |
-| [190](./190-autodetect-drops-ftp-hr-thresholds.md)        | ~~Autodetect drops FTP/HR~~ **Fixed**          | High     |
-| [191](./191-profile-autodetect-no-rollback.md)            | Autodetect no rollback                         | Medium   |
-| [192](./192-nutrition-toggle-no-revert-on-fail.md)        | ~~Nutrition toggle no revert~~ **Fixed**       | Medium   |
-| [193](./193-measurements-preferred-source-no-rollback.md) | Measurements optimistic no rollback            | Medium   |
-| [194](./194-availability-tab-loses-unsaved-edits.md)      | Availability tab loses edits                   | Medium   |
-| [195](./195-public-presence-watcheffect-overwrites.md)    | Public presence overwrites edits               | Medium   |
-| [196](./196-sentry-no-cefsharp-scanner-filter.md)         | Sentry CefSharp filter missing                 | Low      |
-| [197](./197-connected-apps-hides-failed-status.md)        | ~~Connected apps hides FAILED~~ **Fixed**      | High     |
-| [198](./198-measurements-load-error-wrong-toast.md)       | Measurements load wrong toast                  | Low      |
+| ID                                                        | Title                                             | Priority |
+| --------------------------------------------------------- | ------------------------------------------------- | -------- |
+| [186](./186-profile-tab-url-not-synced.md)                | ~~Profile tab URL not synced~~ **Fixed**          | Medium   |
+| [187](./187-profile-tab-unmount-popper-crash.md)          | ~~Profile tab popper crash (18A)~~ **Fixed**      | High     |
+| [188](./188-sport-settings-warning-no-revert.md)          | ~~Sport settings warning no revert~~ **Fixed**    | Medium   |
+| [189](./189-profile-watcheffect-clobbers-edits.md)        | ~~Profile watchEffect clobbers edits~~ **Fixed**  | Medium   |
+| [190](./190-autodetect-drops-ftp-hr-thresholds.md)        | ~~Autodetect drops FTP/HR~~ **Fixed**             | High     |
+| [191](./191-profile-autodetect-no-rollback.md)            | ~~Autodetect no rollback~~ **Fixed**              | Medium   |
+| [192](./192-nutrition-toggle-no-revert-on-fail.md)        | ~~Nutrition toggle no revert~~ **Fixed**          | Medium   |
+| [193](./193-measurements-preferred-source-no-rollback.md) | ~~Measurements optimistic no rollback~~ **Fixed** | Medium   |
+| [194](./194-availability-tab-loses-unsaved-edits.md)      | ~~Availability tab loses edits~~ **Fixed**        | Medium   |
+| [195](./195-public-presence-watcheffect-overwrites.md)    | Public presence overwrites edits                  | Medium   |
+| [196](./196-sentry-no-cefsharp-scanner-filter.md)         | Sentry CefSharp filter missing                    | Low      |
+| [197](./197-connected-apps-hides-failed-status.md)        | ~~Connected apps hides FAILED~~ **Fixed**         | High     |
+| [198](./198-measurements-load-error-wrong-toast.md)       | Measurements load wrong toast                     | Low      |
 
 ## Issues 199–218 (i18n, a11y, misc)
 

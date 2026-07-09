@@ -3,7 +3,7 @@
 **Type:** Bug  
 **Priority:** Medium  
 **Area:** `profile, ui/ux`  
-**Status:** Open
+**Status:** Fixed
 
 ## Description
 
@@ -19,5 +19,5 @@ Autodetect PATCH fails; local profile corrupted until refresh.
 
 ## Acceptance Criteria
 
-- [ ] Issue no longer reproducible
-- [ ] Appropriate fix verified
+- [x] Issue no longer reproducible
+- [x] Appropriate fix verified
