@@ -782,6 +782,20 @@
         </div>
       </div>
 
+      <div v-else-if="fetchError" class="py-12 text-center space-y-4">
+        <UIcon name="i-heroicons-exclamation-circle" class="w-12 h-12 text-red-500 mx-auto" />
+        <p class="text-gray-700 dark:text-gray-300 font-medium font-sans">{{ fetchError }}</p>
+        <UButton
+          v-if="props.date"
+          color="primary"
+          variant="soft"
+          icon="i-heroicons-arrow-path"
+          @click="fetchWellnessData(props.date)"
+        >
+          Retry
+        </UButton>
+      </div>
+
       <div v-else class="py-12 text-center">
         <UIcon name="i-heroicons-calendar-days" class="w-12 h-12 text-gray-300 mx-auto mb-4" />
         <p class="text-gray-500 font-medium font-sans">No wellness data available for this date</p>
@@ -832,6 +846,7 @@
   })
 
   const loading = ref(false)
+  const fetchError = ref<string | null>(null)
   const wellnessData = ref<any>(null)
   const trendData = ref<any[]>([])
   const analyzingWellness = ref(false)
@@ -905,6 +920,7 @@
 
   async function fetchWellnessData(date: Date) {
     loading.value = true
+    fetchError.value = null
 
     try {
       const dateStr = formatDateUTC(date, 'yyyy-MM-dd')
@@ -942,8 +958,10 @@
       customFieldDefinitions.value = (fieldsData as any[]).filter(
         (f) => f.entityType === 'WELLNESS'
       )
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error fetching wellness data:', error)
+      fetchError.value =
+        error?.data?.message || error?.message || 'Failed to load wellness data for this date.'
       wellnessData.value = null
       trendData.value = []
     } finally {

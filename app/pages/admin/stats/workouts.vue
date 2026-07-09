@@ -9,6 +9,8 @@
   } from 'chart.js'
   import { Bar } from 'vue-chartjs'
 
+  const { tr } = useAdminStatsI18n()
+
   ChartJS.register(Tooltip, Legend, BarElement, CategoryScale, LinearScale)
 
   definePageMeta({
@@ -19,7 +21,7 @@
   const { data: stats, pending } = await useFetch('/api/admin/stats/workouts')
 
   useHead({
-    title: 'Workout Stats'
+    title: () => tr('workouts_meta_title', 'Workout Statistics')
   })
 
   // Chart Options for Stacked Bar
@@ -109,7 +111,9 @@
   <div class="flex-1 overflow-y-auto">
     <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-800 flex items-center gap-4">
       <UButton to="/admin/stats" icon="i-lucide-arrow-left" color="neutral" variant="ghost" />
-      <h1 class="text-2xl font-semibold text-gray-900 dark:text-white">Workout Stats</h1>
+      <h1 class="text-2xl font-semibold text-gray-900 dark:text-white">
+        {{ tr('workouts_page_title', 'Workout Stats') }}
+      </h1>
     </div>
 
     <div class="p-6 space-y-6">
@@ -123,7 +127,7 @@
           <UCard>
             <div class="text-center">
               <div class="text-xs font-bold text-gray-500 uppercase tracking-widest mb-1">
-                Total Workouts
+                {{ tr('workouts_kpi_total', 'Total Workouts') }}
               </div>
               <div class="text-2xl font-bold">
                 {{ stats?.global.totalWorkouts.toLocaleString() }}
@@ -133,7 +137,7 @@
           <UCard>
             <div class="text-center">
               <div class="text-xs font-bold text-gray-500 uppercase tracking-widest mb-1">
-                Total Distance
+                {{ tr('workouts_kpi_distance', 'Total Distance') }}
               </div>
               <div class="text-2xl font-bold">
                 {{ Math.round(stats?.global.totalDistanceKm || 0).toLocaleString() }}
@@ -144,7 +148,7 @@
           <UCard>
             <div class="text-center">
               <div class="text-xs font-bold text-gray-500 uppercase tracking-widest mb-1">
-                Total Duration
+                {{ tr('workouts_kpi_duration', 'Total Duration') }}
               </div>
               <div class="text-2xl font-bold">
                 {{ Math.round(stats?.global.totalDurationHours || 0).toLocaleString() }}
@@ -155,7 +159,7 @@
           <UCard>
             <div class="text-center">
               <div class="text-xs font-bold text-gray-500 uppercase tracking-widest mb-1">
-                Total TSS
+                {{ tr('workouts_kpi_tss', 'Total TSS') }}
               </div>
               <div class="text-2xl font-bold">
                 {{ Math.round(stats?.global.totalTss || 0).toLocaleString() }}
@@ -165,7 +169,7 @@
           <UCard>
             <div class="text-center">
               <div class="text-xs font-bold text-gray-500 uppercase tracking-widest mb-1">
-                Total Energy
+                {{ tr('workouts_kpi_energy', 'Total Energy') }}
               </div>
               <div class="text-2xl font-bold">
                 {{ Math.round(stats?.global.totalKj || 0).toLocaleString() }}
@@ -179,8 +183,12 @@
         <UCard>
           <template #header>
             <div class="flex justify-between items-center">
-              <h2 class="text-lg font-bold uppercase tracking-tight">Daily Ingestion Volume</h2>
-              <span class="text-xs text-gray-500">Last 30 Days</span>
+              <h2 class="text-lg font-bold uppercase tracking-tight">
+                {{ tr('workouts_chart_daily_volume', 'Daily Ingestion Volume') }}
+              </h2>
+              <span class="text-xs text-gray-500">
+                {{ tr('workouts_chart_last_30_days', 'Last 30 Days') }}
+              </span>
             </div>
           </template>
           <div class="h-64 relative">
@@ -192,7 +200,7 @@
           <!-- Type Breakdown -->
           <UCard class="md:col-span-1">
             <template #header>
-              <h3 class="font-semibold">By Type</h3>
+              <h3 class="font-semibold">{{ tr('workouts_by_type', 'By Type') }}</h3>
             </template>
             <div class="space-y-3">
               <div
@@ -209,7 +217,7 @@
           <!-- Source Breakdown -->
           <UCard class="md:col-span-1">
             <template #header>
-              <h3 class="font-semibold">By Source</h3>
+              <h3 class="font-semibold">{{ tr('workouts_by_source', 'By Source') }}</h3>
             </template>
             <div class="space-y-3">
               <div
@@ -232,15 +240,17 @@
                   {{ stats?.duplicates.duplicates }}
                 </div>
                 <div class="text-sm text-gray-500 font-medium mt-1">
-                  Duplicate Workouts Detected
+                  {{ tr('workouts_duplicates', 'Duplicate Workouts Detected') }}
                 </div>
                 <div class="text-xs text-gray-400 mt-2">
                   {{
-                    (
-                      ((stats?.duplicates.duplicates || 0) / (stats?.duplicates.total || 1)) *
-                      100
-                    ).toFixed(1)
-                  }}% of total
+                    tr('workouts_duplicates_pct', '{pct}% of total', {
+                      pct: (
+                        ((stats?.duplicates.duplicates || 0) / (stats?.duplicates.total || 1)) *
+                        100
+                      ).toFixed(1)
+                    })
+                  }}
                 </div>
               </div>
             </UCard>
@@ -251,9 +261,16 @@
                 <div class="text-3xl font-bold text-emerald-500">
                   {{ stats?.aiCoverage.percentage.toFixed(1) }}%
                 </div>
-                <div class="text-sm text-gray-500 font-medium mt-1">AI Analysis Coverage</div>
+                <div class="text-sm text-gray-500 font-medium mt-1">
+                  {{ tr('workouts_ai_coverage', 'AI Analysis Coverage') }}
+                </div>
                 <div class="text-xs text-gray-400 mt-2">
-                  {{ stats?.aiCoverage.analyzed }} / {{ stats?.aiCoverage.total }} workouts
+                  {{
+                    tr('workouts_ai_coverage_detail', '{analyzed} / {total} workouts', {
+                      analyzed: stats?.aiCoverage.analyzed ?? 0,
+                      total: stats?.aiCoverage.total ?? 0
+                    })
+                  }}
                 </div>
               </div>
             </UCard>

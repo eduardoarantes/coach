@@ -33,39 +33,69 @@
           </p>
         </div>
 
-        <RecoveryContextStrip :items="activeToday" @select="openRecoveryItem" />
+        <div v-if="pending" class="space-y-4 px-4 sm:px-0">
+          <USkeleton class="h-24 w-full rounded-lg" />
+          <USkeleton class="h-48 w-full rounded-lg" />
+          <USkeleton class="h-64 w-full rounded-lg" />
+        </div>
 
-        <UCard :ui="{ root: 'rounded-none sm:rounded-lg shadow-none sm:shadow', body: 'p-4' }">
-          <div class="grid gap-4 md:grid-cols-3">
-            <div>
-              <label
-                class="mb-1 block text-xs font-semibold uppercase tracking-widest text-gray-500"
-              >
-                Source
-              </label>
-              <USelect v-model="sourceFilter" :items="sourceOptions" />
-            </div>
-            <div>
-              <label
-                class="mb-1 block text-xs font-semibold uppercase tracking-widest text-gray-500"
-              >
-                Type
-              </label>
-              <USelect v-model="kindFilter" :items="kindOptions" />
-            </div>
-            <div class="flex items-end">
-              <UButton color="neutral" variant="ghost" size="sm" @click="resetFilters">
-                Reset filters
-              </UButton>
-            </div>
-          </div>
-        </UCard>
+        <UAlert
+          v-else-if="error"
+          color="error"
+          variant="soft"
+          icon="i-heroicons-exclamation-circle"
+          title="Failed to load recovery history"
+          :description="error.message || 'Recovery context could not be loaded.'"
+          class="mx-4 sm:mx-0"
+        >
+          <template #actions>
+            <UButton
+              color="error"
+              variant="soft"
+              size="xs"
+              icon="i-heroicons-arrow-path"
+              @click="refresh()"
+            >
+              Retry
+            </UButton>
+          </template>
+        </UAlert>
 
-        <RecoveryContextTimeline
-          :items="filteredItems"
-          :show-view-all="false"
-          @select="openRecoveryItem"
-        />
+        <template v-else>
+          <RecoveryContextStrip :items="activeToday" @select="openRecoveryItem" />
+
+          <UCard :ui="{ root: 'rounded-none sm:rounded-lg shadow-none sm:shadow', body: 'p-4' }">
+            <div class="grid gap-4 md:grid-cols-3">
+              <div>
+                <label
+                  class="mb-1 block text-xs font-semibold uppercase tracking-widest text-gray-500"
+                >
+                  Source
+                </label>
+                <USelect v-model="sourceFilter" :items="sourceOptions" />
+              </div>
+              <div>
+                <label
+                  class="mb-1 block text-xs font-semibold uppercase tracking-widest text-gray-500"
+                >
+                  Type
+                </label>
+                <USelect v-model="kindFilter" :items="kindOptions" />
+              </div>
+              <div class="flex items-end">
+                <UButton color="neutral" variant="ghost" size="sm" @click="resetFilters">
+                  Reset filters
+                </UButton>
+              </div>
+            </div>
+          </UCard>
+
+          <RecoveryContextTimeline
+            :items="filteredItems"
+            :show-view-all="false"
+            @select="openRecoveryItem"
+          />
+        </template>
       </div>
     </template>
   </UDashboardPanel>
@@ -123,7 +153,7 @@
     { label: 'Daily check-ins', value: 'daily_checkin' }
   ]
 
-  const { items, activeToday, refresh } = useRecoveryContext(selectedPeriod)
+  const { items, activeToday, refresh, pending, error } = useRecoveryContext(selectedPeriod)
 
   const filteredItems = computed(() => {
     return (items.value as RecoveryContextItem[]).filter((item: RecoveryContextItem) => {

@@ -100,8 +100,36 @@
             name="i-heroicons-exclamation-circle"
             class="w-16 h-16 text-red-500 mx-auto mb-4"
           />
-          <h3 class="text-xl font-semibold mb-2">Workout Template Not Found</h3>
-          <UButton color="primary" @click="goBack">Go Back</UButton>
+          <h3 class="text-xl font-semibold mb-2">
+            {{
+              loadError?.statusCode === 403
+                ? 'Access Denied'
+                : loadError?.statusCode === 404
+                  ? 'Workout Template Not Found'
+                  : loadError
+                    ? 'Failed to Load Template'
+                    : 'Workout Template Not Found'
+            }}
+          </h3>
+          <p class="text-muted mb-4">
+            {{
+              loadError?.statusCode === 403
+                ? "You don't have permission to view this workout template."
+                : loadError?.statusCode === 404
+                  ? "The workout template you're looking for doesn't exist."
+                  : loadError?.message || 'Something went wrong while loading this template.'
+            }}
+          </p>
+          <div class="flex items-center justify-center gap-3">
+            <UButton
+              v-if="loadError && loadError.statusCode !== 404"
+              color="primary"
+              @click="fetchTemplate"
+            >
+              Retry
+            </UButton>
+            <UButton color="neutral" variant="outline" @click="goBack">Go Back</UButton>
+          </div>
         </div>
       </div>
     </template>
@@ -204,6 +232,7 @@
   const toast = useToast()
 
   const loading = ref(true)
+  const loadError = ref<{ statusCode?: number; message?: string } | null>(null)
   const template = ref<any>(null)
   const userFtp = ref<number | undefined>(undefined)
   const userLthr = ref<number | undefined>(undefined)
@@ -241,6 +270,7 @@
 
   async function fetchTemplate() {
     loading.value = true
+    loadError.value = null
     try {
       const data: any = await $fetch(`/api/library/workouts/${route.params.id}`, {
         query: {
@@ -250,7 +280,13 @@
       template.value = data.template
       userFtp.value = data.userFtp
       userLthr.value = data.userLthr
-    } catch (error) {
+    } catch (error: any) {
+      const statusCode = error?.statusCode || error?.status
+      loadError.value = {
+        statusCode,
+        message: error?.data?.message || error?.message || 'Failed to load workout template.'
+      }
+      template.value = null
       console.error('Failed to fetch template', error)
     } finally {
       loading.value = false

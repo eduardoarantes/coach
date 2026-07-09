@@ -338,7 +338,7 @@
   }
 
   async function handleProfileUpdate(newProfile: any) {
-    // Use Object.assign to update the existing reactive object
+    const previousProfile = structuredClone(profile.value)
     Object.assign(profile.value, newProfile)
     savingProfile.value = true
 
@@ -356,6 +356,8 @@
         color: 'success'
       })
     } catch (error: any) {
+      profile.value = previousProfile
+
       console.error('Profile update failed:', {
         status: error.statusCode,
         statusText: error.statusMessage,
