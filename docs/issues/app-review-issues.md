@@ -117,78 +117,78 @@ Documents **185 app-wide issues** (039–223) from systematic codebase review. C
 | [058](./058-oauth-refresh-weak-client-binding.md)       | OAuth refresh weak binding                      | Critical | Bug         |
 | [059](./059-withings-webhook-unauthenticated.md)        | Withings webhook unauthenticated                | High     | Bug         |
 | [060](./060-integration-syncstatus-stuck.md)            | syncStatus stuck SYNCING                        | Medium   | Bug         |
-| [061](./061-i18n-gaps-secondary-pages.md)               | i18n gaps secondary pages                       | Low      | Maintenance |
+| [061](./061-i18n-gaps-secondary-pages.md)               | i18n gaps secondary pages (partial)             | Low      | Maintenance |
 
 ---
 
 ## Issues 062–090 (workouts, chat, nutrition, coaching)
 
-| ID                                                       | Title                                      | Priority |
-| -------------------------------------------------------- | ------------------------------------------ | -------- |
-| [062](./062-chat-planned-workout-pollstartedat-crash.md) | ~~Chat pollStartedAt crash~~ **Fixed**     | Critical |
-| [063](./063-admin-queue-api-unauthenticated.md)          | Admin queue API unauthenticated            | High     |
-| [064](./064-workout-detail-stale-on-nav.md)              | ~~Workout detail stale on nav~~ **Fixed**  | High     |
-| [065](./065-planned-workout-stale-on-nav.md)             | ~~Planned workout stale on nav~~ **Fixed** | High     |
-| [066](./066-public-workout-share-raw-id-fallback.md)     | Share raw workout ID fallback              | High     |
-| [067](./067-nutrition-estimate-missing-id.md)            | Nutrition estimate missing id              | High     |
-| [068](./068-coaching-overview-wrong-workout-links.md)    | Coaching feed wrong links                  | High     |
-| [069](./069-garmin-webhook-unauthenticated.md)           | Garmin webhook unauthenticated             | Critical |
-| [070](./070-yazio-password-plaintext-storage.md)         | Yazio password plaintext                   | High     |
-| [071](./071-oauth-auth-code-ignores-redirect-uri.md)     | OAuth ignores redirect_uri                 | High     |
-| [072](./072-whoop-async-webhook-auth-bypass.md)          | Whoop async webhook bypass                 | High     |
-| [073](./073-workouts-index-analyze-stuck-loading.md)     | Workouts index analyze stuck               | High     |
-| [074](./074-workout-detail-analysis-stuck-loading.md)    | Workout detail analysis stuck              | High     |
-| [075](./075-nutrition-hydration-advice-inverted.md)      | Hydration advice inverted                  | Medium   |
-| [076](./076-analytics-dashboard-autosave-silent-fail.md) | Analytics autosave silent fail             | High     |
-| [077](./077-chat-load-errors-empty-state.md)             | Chat load errors empty                     | Medium   |
-| [078](./078-library-chat-deeplink-istemplate-ignored.md) | Library chat isTemplate ignored            | Medium   |
-| [079](./079-chat-tool-approval-stuck-on-failure.md)      | Tool approval stuck                        | Medium   |
-| [080](./080-plan-dashboard-tasks-no-ontaskfailed.md)     | Plan dashboard no onTaskFailed             | Medium   |
-| [081](./081-nutrition-history-analyze-stuck-loading.md)  | Nutrition history analyze stuck            | Medium   |
-| [082](./082-meal-recommendation-modal-stuck-loading.md)  | Meal modal stuck loading                   | Medium   |
-| [083](./083-nutrition-detail-analyze-no-ui-refresh.md)   | Nutrition analyze no UI refresh            | Medium   |
-| [084](./084-nutrition-detail-back-wrong-route.md)        | ~~Nutrition back wrong route~~ **Fixed**   | Medium   |
-| [085](./085-coaching-team-delete-stub.md)                | Team delete stub                           | Medium   |
-| [086](./086-library-plan-delete-stub.md)                 | Library plan delete stub                   | Medium   |
-| [087](./087-library-workout-use-session-stub.md)         | Library use session stub                   | Medium   |
-| [088](./088-workout-matcher-silent-link-errors.md)       | ~~WorkoutMatcher silent errors~~ **Fixed** | Medium   |
-| [089](./089-planned-workout-error-as-not-found.md)       | ~~Planned error as not found~~ **Fixed**   | Medium   |
-| [090](./090-workouts-mobile-analyze-labeled-sync.md)     | Mobile analyze labeled Sync                | Medium   |
+| ID                                                       | Title                                         | Priority |
+| -------------------------------------------------------- | --------------------------------------------- | -------- |
+| [062](./062-chat-planned-workout-pollstartedat-crash.md) | ~~Chat pollStartedAt crash~~ **Fixed**        | Critical |
+| [063](./063-admin-queue-api-unauthenticated.md)          | Admin queue API unauthenticated               | High     |
+| [064](./064-workout-detail-stale-on-nav.md)              | ~~Workout detail stale on nav~~ **Fixed**     | High     |
+| [065](./065-planned-workout-stale-on-nav.md)             | ~~Planned workout stale on nav~~ **Fixed**    | High     |
+| [066](./066-public-workout-share-raw-id-fallback.md)     | Share raw workout ID fallback                 | High     |
+| [067](./067-nutrition-estimate-missing-id.md)            | Nutrition estimate missing id                 | High     |
+| [068](./068-coaching-overview-wrong-workout-links.md)    | Coaching feed wrong links                     | High     |
+| [069](./069-garmin-webhook-unauthenticated.md)           | Garmin webhook unauthenticated                | Critical |
+| [070](./070-yazio-password-plaintext-storage.md)         | Yazio password plaintext                      | High     |
+| [071](./071-oauth-auth-code-ignores-redirect-uri.md)     | OAuth ignores redirect_uri                    | High     |
+| [072](./072-whoop-async-webhook-auth-bypass.md)          | Whoop async webhook bypass                    | High     |
+| [073](./073-workouts-index-analyze-stuck-loading.md)     | Workouts index analyze stuck                  | High     |
+| [074](./074-workout-detail-analysis-stuck-loading.md)    | Workout detail analysis stuck                 | High     |
+| [075](./075-nutrition-hydration-advice-inverted.md)      | Hydration advice inverted                     | Medium   |
+| [076](./076-analytics-dashboard-autosave-silent-fail.md) | Analytics autosave silent fail                | High     |
+| [077](./077-chat-load-errors-empty-state.md)             | Chat load errors empty                        | Medium   |
+| [078](./078-library-chat-deeplink-istemplate-ignored.md) | Library chat isTemplate ignored               | Medium   |
+| [079](./079-chat-tool-approval-stuck-on-failure.md)      | Tool approval stuck                           | Medium   |
+| [080](./080-plan-dashboard-tasks-no-ontaskfailed.md)     | Plan dashboard no onTaskFailed                | Medium   |
+| [081](./081-nutrition-history-analyze-stuck-loading.md)  | Nutrition history analyze stuck               | Medium   |
+| [082](./082-meal-recommendation-modal-stuck-loading.md)  | Meal modal stuck loading                      | Medium   |
+| [083](./083-nutrition-detail-analyze-no-ui-refresh.md)   | ~~Nutrition analyze no UI refresh~~ **Fixed** | Medium   |
+| [084](./084-nutrition-detail-back-wrong-route.md)        | ~~Nutrition back wrong route~~ **Fixed**      | Medium   |
+| [085](./085-coaching-team-delete-stub.md)                | Team delete stub                              | Medium   |
+| [086](./086-library-plan-delete-stub.md)                 | Library plan delete stub                      | Medium   |
+| [087](./087-library-workout-use-session-stub.md)         | Library use session stub                      | Medium   |
+| [088](./088-workout-matcher-silent-link-errors.md)       | ~~WorkoutMatcher silent errors~~ **Fixed**    | Medium   |
+| [089](./089-planned-workout-error-as-not-found.md)       | ~~Planned error as not found~~ **Fixed**      | Medium   |
+| [090](./090-workouts-mobile-analyze-labeled-sync.md)     | Mobile analyze labeled Sync                   | Medium   |
 
 ## Issues 091–120 (workouts, oauth, webhooks, plans, library)
 
-| ID                                                        | Title                                      | Priority |
-| --------------------------------------------------------- | ------------------------------------------ | -------- |
-| [091](./091-workouts-overall-quality-wrong-metric-key.md) | Overall quality wrong metric               | Medium   |
-| [092](./092-workout-analysis-toast-no-run-correlation.md) | Analysis toast no correlation              | Medium   |
-| [093](./093-oauth-userinfo-email-ignores-scopes.md)       | userinfo email ignores scopes              | Medium   |
-| [094](./094-share-generate-workout-read-all-types.md)     | Share generate scope escalation            | Medium   |
-| [095](./095-plan-share-auto-creates-permanent-tokens.md)  | Plan share auto-creates tokens             | Medium   |
-| [096](./096-join-invite-preview-exposes-pii.md)           | Join preview exposes PII                   | Medium   |
-| ~~[097](./097-onboarding-consent-api-bypass.md)~~         | Onboarding consent bypass (fixed)          | Medium   |
-| [098](./098-polar-webhook-missing-userid.md)              | Polar webhook missing userId               | High     |
-| [099](./099-oauth-generic-webhook-ignores-secret.md)      | OAuth webhook ignores secret               | High     |
-| [100](./100-strava-webhook-post-unauthenticated.md)       | Strava POST unauthenticated                | High     |
-| [101](./101-wahoo-webhook-auth-optional.md)               | Wahoo auth optional                        | High     |
-| [102](./102-monitoring-trigger-public-without-secret.md)  | Monitoring public without secret           | High     |
-| [103](./103-health-endpoint-leaks-db-errors.md)           | Health leaks DB errors                     | Medium   |
-| [104](./104-stripe-webhook-echoes-errors.md)              | Stripe webhook echoes errors               | Medium   |
-| [105](./105-withings-webhook-no-idempotency.md)           | Withings no idempotency                    | Medium   |
-| [106](./106-sync-queue-duplicate-processing.md)           | Sync queue duplicates (fixed)              | Medium   |
-| [107](./107-webhook-poller-double-enqueue.md)             | Webhook poller double enqueue              | Medium   |
-| [108](./108-integration-sync-no-inflight-guard.md)        | Sync no in-flight guard (fixed)            | Medium   |
-| [109](./109-deactivated-users-pass-client-middleware.md)  | Deactivated users pass middleware          | Medium   |
-| [110](./110-oauth-login-open-redirect.md)                 | OAuth login open redirect                  | Medium   |
-| [111](./111-oauth-consent-csrf.md)                        | OAuth consent CSRF                         | Medium   |
-| [112](./112-map-gpx-download-silent-failure.md)           | ~~Map GPX silent failure~~ **Fixed**       | Medium   |
-| [113](./113-workout-export-apis-require-email.md)         | Export APIs require email                  | Medium   |
-| [114](./114-nutrition-history-trends-silent-fail.md)      | ~~Nutrition trends silent fail~~ **Fixed** | Medium   |
-| [115](./115-coaching-calendar-fetch-unhandled.md)         | ~~Coaching calendar unhandled~~ **Fixed**  | Medium   |
-| [116](./116-coaching-message-athlete-no-context.md)       | Message athlete no context                 | Medium   |
-| [117](./117-plan-wizard-after-failed-abandon.md)          | Plan wizard after failed abandon           | Medium   |
-| [118](./118-plan-creation-polling-no-failure-feedback.md) | Plan polling no failure feedback           | Medium   |
-| [119](./119-library-workout-structure-no-ontaskfailed.md) | Library structure no onTaskFailed          | Medium   |
-| [120](./120-library-workout-fetch-error-as-not-found.md)  | ~~Library fetch as not found~~ **Fixed**   | Medium   |
+| ID                                                        | Title                                          | Priority |
+| --------------------------------------------------------- | ---------------------------------------------- | -------- |
+| [091](./091-workouts-overall-quality-wrong-metric-key.md) | Overall quality wrong metric                   | Medium   |
+| [092](./092-workout-analysis-toast-no-run-correlation.md) | Analysis toast no correlation                  | Medium   |
+| [093](./093-oauth-userinfo-email-ignores-scopes.md)       | userinfo email ignores scopes                  | Medium   |
+| [094](./094-share-generate-workout-read-all-types.md)     | Share generate scope escalation                | Medium   |
+| [095](./095-plan-share-auto-creates-permanent-tokens.md)  | Plan share auto-creates tokens                 | Medium   |
+| [096](./096-join-invite-preview-exposes-pii.md)           | Join preview exposes PII                       | Medium   |
+| ~~[097](./097-onboarding-consent-api-bypass.md)~~         | Onboarding consent bypass (fixed)              | Medium   |
+| [098](./098-polar-webhook-missing-userid.md)              | Polar webhook missing userId                   | High     |
+| [099](./099-oauth-generic-webhook-ignores-secret.md)      | OAuth webhook ignores secret                   | High     |
+| [100](./100-strava-webhook-post-unauthenticated.md)       | Strava POST unauthenticated                    | High     |
+| [101](./101-wahoo-webhook-auth-optional.md)               | Wahoo auth optional                            | High     |
+| [102](./102-monitoring-trigger-public-without-secret.md)  | Monitoring public without secret               | High     |
+| [103](./103-health-endpoint-leaks-db-errors.md)           | Health leaks DB errors                         | Medium   |
+| [104](./104-stripe-webhook-echoes-errors.md)              | Stripe webhook echoes errors                   | Medium   |
+| [105](./105-withings-webhook-no-idempotency.md)           | Withings no idempotency                        | Medium   |
+| [106](./106-sync-queue-duplicate-processing.md)           | Sync queue duplicates (fixed)                  | Medium   |
+| [107](./107-webhook-poller-double-enqueue.md)             | Webhook poller double enqueue                  | Medium   |
+| [108](./108-integration-sync-no-inflight-guard.md)        | Sync no in-flight guard (fixed)                | Medium   |
+| [109](./109-deactivated-users-pass-client-middleware.md)  | Deactivated users pass middleware              | Medium   |
+| [110](./110-oauth-login-open-redirect.md)                 | OAuth login open redirect                      | Medium   |
+| [111](./111-oauth-consent-csrf.md)                        | OAuth consent CSRF                             | Medium   |
+| [112](./112-map-gpx-download-silent-failure.md)           | ~~Map GPX silent failure~~ **Fixed**           | Medium   |
+| [113](./113-workout-export-apis-require-email.md)         | Export APIs require email                      | Medium   |
+| [114](./114-nutrition-history-trends-silent-fail.md)      | ~~Nutrition trends silent fail~~ **Fixed**     | Medium   |
+| [115](./115-coaching-calendar-fetch-unhandled.md)         | ~~Coaching calendar unhandled~~ **Fixed**      | Medium   |
+| [116](./116-coaching-message-athlete-no-context.md)       | Message athlete no context                     | Medium   |
+| [117](./117-plan-wizard-after-failed-abandon.md)          | Plan wizard after failed abandon               | Medium   |
+| [118](./118-plan-creation-polling-no-failure-feedback.md) | ~~Plan polling no failure feedback~~ **Fixed** | Medium   |
+| [119](./119-library-workout-structure-no-ontaskfailed.md) | Library structure no onTaskFailed              | Medium   |
+| [120](./120-library-workout-fetch-error-as-not-found.md)  | ~~Library fetch as not found~~ **Fixed**       | Medium   |
 
 ## Issues 121–150 (library, feed, fitness, stores)
 

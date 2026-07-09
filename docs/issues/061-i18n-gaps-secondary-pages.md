@@ -11,13 +11,13 @@ Many user-facing pages use hardcoded English strings while adjacent areas (dashb
 
 ## Examples
 
-| Page / Component | Hardcoded strings |
-| ---------------- | ----------------- |
-| `app/pages/notifications.vue` | “Mark all as read”, “No notifications yet” |
-| `app/pages/recovery/index.vue` | “Recovery History”, “Log event” |
-| `app/pages/events/index.vue` | Event action labels |
-| `app/pages/reports.vue` | Report UI copy |
-| `app/pages/workouts/upload.vue` | Upload flow messages |
+| Page / Component                | Hardcoded strings                          |
+| ------------------------------- | ------------------------------------------ |
+| `app/pages/notifications.vue`   | “Mark all as read”, “No notifications yet” |
+| `app/pages/recovery/index.vue`  | “Recovery History”, “Log event”            |
+| `app/pages/events/index.vue`    | Event action labels                        |
+| `app/pages/reports.vue`         | Report UI copy                             |
+| `app/pages/workouts/upload.vue` | Upload flow messages                       |
 
 ## Steps to Reproduce
 
@@ -47,7 +47,9 @@ Many user-facing pages use hardcoded English strings while adjacent areas (dashb
 
 Incremental Tolgee extraction per page; add keys to translation files.
 
+**Progress (2026-07-09):** Notifications page, NotificationDropdown, Recovery History, and Events index now use Tolgee. `reports.vue` and `workouts/upload.vue` remain English-only.
+
 ## Acceptance Criteria
 
-- [ ] Listed pages use `useTranslate` for user-visible strings
-- [ ] No English-only regressions in non-English locales for those flows
+- [x] Notifications, recovery, events pages use `useTranslate` for user-visible strings
+- [ ] `reports.vue` and `workouts/upload.vue` still need extraction
