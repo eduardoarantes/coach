@@ -12,7 +12,9 @@ vi.mock('../../../../server/utils/db', () => ({
       findFirst: vi.fn()
     },
     plannedWorkout: {
-      update: vi.fn()
+      findUnique: vi.fn(),
+      update: vi.fn(),
+      updateMany: vi.fn()
     },
     syncQueue: {
       create: vi.fn(),
@@ -124,5 +126,39 @@ describe('intervals-sync helpers', () => {
         })
       })
     )
+  })
+
+  it('supersedes stale sync queue items when structure revision advanced', async () => {
+    const { processSyncQueueItem } = await import('../../../../server/utils/intervals-sync')
+
+    vi.mocked(prisma.plannedWorkout.findUnique).mockResolvedValue({
+      structureRevision: 4
+    } as any)
+
+    const result = await processSyncQueueItem({
+      id: 'queue-stale',
+      userId: 'user-1',
+      entityType: 'planned_workout',
+      entityId: 'planned-1',
+      operation: 'UPDATE',
+      structureRevision: 3,
+      payload: {
+        id: 'planned-1',
+        externalId: '12345',
+        date: '2026-03-12T00:00:00.000Z',
+        title: 'Tempo Ride',
+        type: 'Ride',
+        workout_doc: '- 10m 70%'
+      },
+      attempts: 0
+    })
+
+    expect(result).toBe(true)
+    expect(updateIntervalsPlannedWorkout).not.toHaveBeenCalled()
+    expect(prisma.syncQueue.update).toHaveBeenCalledWith({
+      where: { id: 'queue-stale' },
+      data: expect.objectContaining({ status: 'SUPERSEDED' })
+    })
+    expect(prisma.plannedWorkout.updateMany).not.toHaveBeenCalled()
   })
 })

@@ -911,6 +911,8 @@ model PlannedWorkout {
   pendingRemoteStructuredWorkout Json?
   syncError         String?
   syncStatus        String?                  @default("SYNCED")
+  structureRevision Int                     @default(0)
+  generationRevision Int                    @default(0)
   shareToken        String?                  @unique
   completionStatus  String                   @default("PENDING")
   structuredWorkout Json?
@@ -1723,6 +1725,7 @@ model SyncQueue {
   entityType  String
   entityId    String
   operation   String
+  structureRevision Int?
   payload     Json
   status      String    @default("PENDING")
   attempts    Int       @default(0)
@@ -1735,6 +1738,7 @@ model SyncQueue {
 
   @@index([userId, status])
   @@index([status, createdAt])
+  @@index([entityType, entityId, structureRevision])
 }
 
 model LlmUsage {

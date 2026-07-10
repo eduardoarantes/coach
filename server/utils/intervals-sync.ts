@@ -309,6 +309,7 @@ export async function queueSyncOperation(data: {
   entityId: string
   operation: string
   payload: any
+  structureRevision?: number | null
   error?: string
 }): Promise<void> {
   try {
@@ -318,6 +319,7 @@ export async function queueSyncOperation(data: {
         entityType: data.entityType,
         entityId: data.entityId,
         operation: data.operation,
+        structureRevision: data.structureRevision ?? data.payload?.structureRevision ?? null,
         payload: data.payload,
         status: 'PENDING',
         error: data.error,
@@ -335,6 +337,22 @@ export async function queueSyncOperation(data: {
  */
 export async function processSyncQueueItem(queueItem: any): Promise<boolean> {
   try {
+    const queuedStructureRevision =
+      typeof queueItem.structureRevision === 'number' ? queueItem.structureRevision : null
+    // Never replay an old structured-workout payload after a newer local edit.
+    if (queueItem.entityType === 'planned_workout' && queuedStructureRevision !== null) {
+      const current = await prisma.plannedWorkout.findUnique({
+        where: { id: queueItem.entityId },
+        select: { structureRevision: true }
+      })
+      if (!current || current.structureRevision !== queuedStructureRevision) {
+        await prisma.syncQueue.update({
+          where: { id: queueItem.id },
+          data: { status: 'SUPERSEDED', completedAt: new Date(), error: null }
+        })
+        return true
+      }
+    }
     // Get integration
     const integration = await prisma.integration.findFirst({
       where: {
@@ -425,8 +443,11 @@ export async function processSyncQueueItem(queueItem: any): Promise<boolean> {
 
     // Update entity sync status
     if (queueItem.entityType === 'planned_workout') {
-      await prisma.plannedWorkout.update({
-        where: { id: queueItem.entityId },
+      await prisma.plannedWorkout.updateMany({
+        where:
+          queuedStructureRevision === null
+            ? { id: queueItem.entityId }
+            : { id: queueItem.entityId, structureRevision: queuedStructureRevision },
         data: {
           syncStatus: 'SYNCED',
           lastSyncedAt: new Date(),

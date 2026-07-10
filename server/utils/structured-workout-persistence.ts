@@ -83,6 +83,13 @@ function normalizePrimaryTarget(step: any, fallbackOrder: StepMetric[]) {
 
 function getTargetMidpoint(target: any): number | null {
   if (!target || typeof target !== 'object') return null
+  if (
+    target.rangeMps &&
+    typeof target.rangeMps.min === 'number' &&
+    typeof target.rangeMps.max === 'number'
+  ) {
+    return (target.rangeMps.min + target.rangeMps.max) / 2
+  }
   if (typeof target.value === 'number') return target.value
   if (
     target.range &&
@@ -185,9 +192,15 @@ function inferStepSpeedMps(
   for (const metric of orderedMetrics) {
     if (metric !== 'pace') continue
     const target = step?.pace
+    if (target?.unresolved || target?.kind === 'freeform') continue
+    if (target?.rangeMps) {
+      const min = Number(target.rangeMps.min)
+      const max = Number(target.rangeMps.max)
+      if (Number.isFinite(min) && Number.isFinite(max)) return (min + max) / 2
+    }
     const value = getTargetMidpoint(target)
     if (value === null || !Number.isFinite(value)) continue
-    const units = String(target?.units || '')
+    const units = String(target?.units || target?.sourceUnit || '')
       .trim()
       .toLowerCase()
     if (units === 'm/s') return value
@@ -195,14 +208,13 @@ function inferStepSpeedMps(
       const secondsPerKm = value * 60
       if (secondsPerKm > 0) return 1000 / secondsPerKm
     }
-    if (value > 1.5 && value < 8) return value
-    if (refs.thresholdPace > 0) {
-      if (value > 3) return value / refs.thresholdPace
+    if ((units === 'pace' || units === 'relative') && refs.thresholdPace > 0)
       return value * refs.thresholdPace
-    }
+    if ((units === '%pace' || units === 'percentpace') && refs.thresholdPace > 0)
+      return (value / 100) * refs.thresholdPace
   }
 
-  return defaultRunSpeedFromIntent(step?.intent, refs.thresholdPace)
+  return null
 }
 
 function parseSwimTargetSplitMps(targetSplit: unknown): number | null {
