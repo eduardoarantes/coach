@@ -100,11 +100,25 @@
   }>()
 
   const emit = defineEmits(['update:open', 'submit'])
-  const { trackAdhocWorkoutCreate } = useAnalytics()
+  const { trackAdhocWorkoutCreate, trackModalOpen, trackModalComplete, trackModalDismiss } =
+    useAnalytics()
+  const completed = ref(false)
 
   const isOpen = computed({
     get: () => props.open,
     set: (value) => emit('update:open', value)
+  })
+
+  watch(isOpen, (open, wasOpen) => {
+    if (open) {
+      completed.value = false
+      trackModalOpen('adhoc_workout_create')
+      return
+    }
+
+    if (wasOpen && !completed.value) {
+      trackModalDismiss('adhoc_workout_create')
+    }
   })
 
   const form = reactive({
@@ -124,7 +138,9 @@
   const intensityOptions = ['Recovery', 'Endurance', 'Tempo', 'Threshold', 'VO2Max', 'Anaerobic']
 
   function submit() {
+    completed.value = true
     trackAdhocWorkoutCreate(form.type)
+    trackModalComplete('adhoc_workout_create', form.type)
     emit('submit', { ...form })
   }
 </script>

@@ -48,6 +48,30 @@
       userStore.user?.nutritionTrackingEnabled !== false
   )
 
+  const { trackNavClick } = useAnalytics()
+
+  function wrapNavItems(items: NavigationMenuItem[]): NavigationMenuItem[] {
+    return items.map((item) => {
+      const path =
+        typeof item.to === 'string'
+          ? item.to
+          : item.to && typeof item.to === 'object' && 'path' in item.to
+            ? String(item.to.path)
+            : '/'
+      const label = String(item.label || path)
+      const originalOnSelect = item.onSelect
+
+      return {
+        ...item,
+        onSelect: () => {
+          trackNavClick(path, label)
+          originalOnSelect?.()
+        },
+        children: item.children ? wrapNavItems(item.children) : undefined
+      }
+    })
+  }
+
   // Ensure user data (including subscription) is loaded
   await callOnce(async () => {
     if (data.value?.user) {
@@ -398,7 +422,7 @@
       ]
     })
 
-    return [primaryLinks]
+    return [wrapNavItems(primaryLinks)]
   })
 
   // Command Palette Groups

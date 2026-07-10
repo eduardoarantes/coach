@@ -995,6 +995,7 @@
 
   const selectedBlockId = ref<string | null>(null)
   const selectedWeekId = ref<string | null>(null)
+  const { trackPlanBlockSelect, trackPlanWeekSelect } = useAnalytics()
   const showAdaptModal = ref(false)
   const showSaveTemplateModal = ref(false)
   const showTimelineEditor = ref(false)
@@ -1976,8 +1977,15 @@
     { immediate: true }
   )
 
+  watch(selectedWeekId, (weekId) => {
+    if (weekId) {
+      trackPlanWeekSelect(weekId)
+    }
+  })
+
   watch(selectedBlockId, (newId) => {
     if (newId) {
+      trackPlanBlockSelect(newId)
       console.log('[Dashboard] block manually changed', { newId })
       const block = props.plan.blocks.find((b: any) => b.id === newId)
       if (block && block.weeks.length > 0) {

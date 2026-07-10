@@ -116,6 +116,7 @@
 
   const { data: session, refresh } = useAuth()
   const toast = useToast()
+  const { trackOnboardingView, trackOnboardingComplete } = useAnalytics()
   const acceptedTerms = ref(false)
   const acceptedHealth = ref(false)
   const loading = ref(false)
@@ -125,6 +126,10 @@
   // Constants for policy versions
   const TOS_VERSION = '1.0' // TODO: Move to a shared config if needed
   const PRIVACY_VERSION = '1.0'
+
+  onMounted(() => {
+    trackOnboardingView()
+  })
 
   async function submitConsent() {
     if (!isValid.value) return
@@ -150,6 +155,7 @@
       // Since our middleware checks the session, we might need to reload the page or trigger a session refetch.
       await refresh()
 
+      trackOnboardingComplete()
       navigateTo('/dashboard')
     } catch (error: any) {
       console.error('Failed to save consent:', error)

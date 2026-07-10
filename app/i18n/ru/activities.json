@@ -40,6 +40,7 @@
   "errors_load_failed": "Не удалось загрузить активности. Пожалуйста, попробуйте еще раз.",
   "header_chat": "Чат",
   "header_menu_deduplicate": "Удалить дубликаты",
+  "header_menu_link_workouts": "Связать тренировки",
   "header_menu_manage": "Управлять",
   "header_new_chat": "Новый чат",
   "header_refresh": "Обновить",

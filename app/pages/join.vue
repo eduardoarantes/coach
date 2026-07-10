@@ -530,6 +530,7 @@
   }
 
   async function handleGoogleLogin() {
+    trackSignUp('google')
     isInitializing.value = true
     try {
       // Simulate technical delay for the animation
@@ -542,6 +543,7 @@
   }
 
   async function handleStravaLogin() {
+    trackSignUp('strava')
     isInitializing.value = true
     loadingStrava.value = true
     try {
@@ -556,6 +558,7 @@
   }
 
   async function handleIntervalsLogin() {
+    trackSignUp('intervals')
     isInitializing.value = true
     loadingIntervals.value = true
     try {

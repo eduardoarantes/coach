@@ -12,10 +12,10 @@
           />
           <div>
             <h2 class="text-xl font-bold uppercase tracking-tight text-gray-900 dark:text-white">
-              Release Notes
+              {{ t('release_notes_header') }}
             </h2>
             <p class="text-sm text-gray-500 dark:text-gray-400">
-              Explore the latest features and improvements in Coach Watts.
+              {{ t('release_notes_description') }}
             </p>
           </div>
         </div>
@@ -40,9 +40,9 @@
 
     <div v-else-if="error" class="py-12 text-center">
       <UIcon name="i-heroicons-exclamation-circle" class="w-12 h-12 text-red-500 mx-auto mb-4" />
-      <p class="text-gray-900 dark:text-white font-bold">Failed to load release notes</p>
+      <p class="text-gray-900 dark:text-white font-bold">{{ t('release_notes_load_failed') }}</p>
       <UButton
-        label="Try Again"
+        :label="t('release_notes_try_again')"
         color="neutral"
         variant="outline"
         class="mt-4"
@@ -55,7 +55,7 @@
         name="i-heroicons-sparkles"
         class="w-12 h-12 text-gray-300 dark:text-gray-700 mx-auto mb-4"
       />
-      <p class="text-gray-500 dark:text-gray-400">No release notes found.</p>
+      <p class="text-gray-500 dark:text-gray-400">{{ t('release_notes_empty') }}</p>
     </div>
 
     <div v-else class="space-y-6">
@@ -84,6 +84,9 @@
 
 <script setup lang="ts">
   import { h } from 'vue'
+  import { useTranslate } from '@tolgee/vue'
+
+  const { t } = useTranslate('settings')
 
   const { data, pending, error, refresh } = useAsyncData<any[]>('releases', () =>
     ($fetch as any)('/api/releases')

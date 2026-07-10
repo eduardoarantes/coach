@@ -40,6 +40,7 @@
   "errors_load_failed": "Failed to load activities. Please try again.",
   "header_chat": "Chat",
   "header_menu_deduplicate": "Deduplicate",
+  "header_menu_link_workouts": "Link Workouts",
   "header_menu_manage": "Manage",
   "header_new_chat": "New Chat",
   "header_refresh": "Refresh",

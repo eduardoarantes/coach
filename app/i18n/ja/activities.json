@@ -40,6 +40,7 @@
   "errors_load_failed": "アクティビティの読み込みに失敗しました。もう一度お試しください。",
   "header_chat": "チャット",
   "header_menu_deduplicate": "重複排除",
+  "header_menu_link_workouts": "ワークアウトをリンク",
   "header_menu_manage": "管理",
   "header_new_chat": "新しいチャット",
   "header_refresh": "リフレッシュ",

@@ -129,8 +129,13 @@
     trackShareLinkCopy,
     trackShareNetworkClick,
     trackShareRewardClaim,
-    trackShareRewardClaimRejected
+    trackShareRewardClaimRejected,
+    trackModalOpen,
+    trackModalComplete,
+    trackModalDismiss
   } = useAnalytics()
+
+  const shareCompleted = ref(false)
 
   const shareLink = computed(() => {
     const baseUrl = runtimeConfig.public.siteUrl || 'https://coachwatts.com'
@@ -210,6 +215,7 @@
     try {
       await navigator.clipboard.writeText(shareLink.value)
       hasShareIntent.value = true
+      shareCompleted.value = true
       trackShareLinkCopy()
       toast.add({
         title: t.value('share_modal_copied_title'),
@@ -228,6 +234,7 @@
 
   function handleNetworkClick(network: string) {
     hasShareIntent.value = true
+    shareCompleted.value = true
     trackShareNetworkClick(network)
   }
 
@@ -246,6 +253,7 @@
       }
 
       trackShareRewardClaim(response.daysGranted)
+      trackModalComplete('share_coach_watts', 'reward_claim')
       await userStore.fetchUser(true)
       toast.add({
         title: t.value('share_modal_reward_claimed_title'),
@@ -279,11 +287,16 @@
     async (isOpen) => {
       if (isOpen) {
         hasShareIntent.value = false
+        shareCompleted.value = false
         if (!qrCodeDataUrl.value) {
           await generateQrCode()
         }
         trackShareModalOpen()
+        trackModalOpen('share_coach_watts')
       } else {
+        if (!shareCompleted.value) {
+          trackModalDismiss('share_coach_watts')
+        }
         hasShareIntent.value = false
       }
     }

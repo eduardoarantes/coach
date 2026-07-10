@@ -13,17 +13,19 @@ interface UpgradeModalOptions {
 export function useUpgradeModal() {
   const isOpen = useState<boolean>('upgradeModalOpen', () => false)
   const options = useState<UpgradeModalOptions>('upgradeModalOptions', () => ({}))
-  const { trackUpgradeView } = useAnalytics()
+  const { trackUpgradeView, trackModalOpen, trackModalDismiss } = useAnalytics()
 
   function show(opts: UpgradeModalOptions = {}) {
     options.value = opts
     isOpen.value = true
 
-    // Track promotion view
-    trackUpgradeView(opts.featureTitle || opts.title || 'Upgrade Plan', opts.reason || 'upsell')
+    const featureName = opts.featureTitle || opts.title || 'Upgrade Plan'
+    trackUpgradeView(featureName, opts.reason || 'upsell')
+    trackModalOpen('upgrade_modal', featureName)
   }
 
   function close() {
+    trackModalDismiss('upgrade_modal')
     isOpen.value = false
   }
 

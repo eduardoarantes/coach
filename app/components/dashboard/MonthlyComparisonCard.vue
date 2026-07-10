@@ -166,6 +166,7 @@
   const selectedMetric = ref('tss')
   const selectedSport = ref('all')
   const viewMode = ref('cumulative')
+  const { trackTabFilterChange } = useAnalytics()
 
   // Sync refs with store data when it loads or changes
   watch(
@@ -207,6 +208,9 @@
 
   // Watch for changes and save
   watch([selectedMetric, selectedSport, viewMode], () => {
+    trackTabFilterChange('dashboard', 'monthly_metric', selectedMetric.value)
+    trackTabFilterChange('dashboard', 'monthly_sport', selectedSport.value)
+    trackTabFilterChange('dashboard', 'monthly_view_mode', viewMode.value)
     savePreferences()
   })
 

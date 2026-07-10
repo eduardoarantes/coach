@@ -154,7 +154,8 @@
   const { currency, setCurrency } = useCurrency()
   const { createCheckoutSession, openCustomerPortal } = useStripe()
   const config = useRuntimeConfig()
-  const { trackCheckoutStart, trackBillingPortalView } = useAnalytics()
+  const { trackCheckoutStart, trackBillingPortalView, trackModalComplete, trackModalDismiss } =
+    useAnalytics()
   const subscriptionsEnabled = computed(() => config.public.subscriptionsEnabled)
 
   const billingInterval = ref<BillingInterval>('monthly')
@@ -181,6 +182,7 @@
     // Track begin checkout
     const priceValue = billingInterval.value === 'monthly' ? plan.monthlyPrice : plan.annualPrice
     trackCheckoutStart(priceId, plan.name, billingInterval.value, priceValue || 0, currency.value)
+    trackModalComplete('upgrade_modal', 'checkout')
 
     await createCheckoutSession(priceId, {
       successUrl: `${window.location.origin}/settings/billing?success=true`,
@@ -189,6 +191,7 @@
   }
 
   function close() {
+    trackModalDismiss('upgrade_modal')
     isOpen.value = false
   }
 </script>

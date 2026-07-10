@@ -3474,7 +3474,7 @@
   const { t: tt } = useTranslate('workout-tooltips')
 
   const { formatDate: baseFormatDate, formatDateTime, formatDateUTC, formatTime } = useFormat()
-  const { trackWorkoutViewDetail } = useAnalytics()
+  const { trackWorkoutViewDetail, trackWorkoutSectionView } = useAnalytics()
   const isPageActive = ref(true)
 
   type WorkoutSectionKey =
@@ -5666,6 +5666,7 @@
 
   // Scroll to section
   function scrollToSection(sectionId: string) {
+    trackWorkoutSectionView(sectionId)
     if (!deferredSectionsReady.value) {
       deferredSectionsReady.value = true
     }

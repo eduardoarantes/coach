@@ -9,7 +9,7 @@
             variant="ghost"
             to="/nutrition/history"
           >
-            Back
+            {{ t('detail_back') }}
           </UButton>
         </template>
         <template #right>
@@ -24,7 +24,7 @@
               :loading="generatingPlan"
               @click="handleGeneratePlan"
             >
-              Regenerate Plan
+              {{ t('detail_regenerate_plan') }}
             </UButton>
             <UButton
               v-if="nutrition"
@@ -35,8 +35,8 @@
               class="font-bold"
               @click="chatAboutNutrition"
             >
-              <span class="hidden sm:inline">Chat about this</span>
-              <span class="sm:hidden">Chat</span>
+              <span class="hidden sm:inline">{{ t('detail_chat_about') }}</span>
+              <span class="sm:hidden">{{ t('detail_chat_short') }}</span>
             </UButton>
             <ClientOnly>
               <DashboardTriggerMonitorButton />
@@ -57,12 +57,20 @@
             icon="i-heroicons-exclamation-triangle"
             color="error"
             variant="soft"
-            title="Data Error"
+            :title="t('detail_data_error')"
             :description="error"
           />
         </div>
 
         <div v-else-if="nutrition" class="space-y-4 sm:space-y-8">
+          <UAlert
+            v-if="partialLoadWarning"
+            color="warning"
+            variant="soft"
+            icon="i-heroicons-exclamation-triangle"
+            :description="t('detail_partial_warning')"
+          />
+
           <!-- 0. THE DATE HEADER -->
           <UCard
             :ui="{
@@ -104,12 +112,12 @@
                   <h1
                     class="text-xl sm:text-2xl font-black tracking-tight text-gray-900 dark:text-white uppercase truncate"
                   >
-                    Fueling Strategy
+                    {{ t('detail_fueling_strategy') }}
                   </h1>
                   <p
                     class="text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-[0.2em] mt-1 italic"
                   >
-                    Metabolic status & timing
+                    {{ t('detail_metabolic_status') }}
                   </p>
                 </div>
 
@@ -131,12 +139,12 @@
                       >
                         {{ stateLabel }}
                       </h2>
-                      <UTooltip v-if="nutrition.isManualLock" text="Manual Lock Enabled">
+                      <UTooltip v-if="nutrition.isManualLock" :text="t('detail_manual_lock')">
                         <UIcon name="i-heroicons-lock-closed" class="w-4 h-4 text-gray-400" />
                       </UTooltip>
                     </div>
                     <p class="text-[10px] text-gray-500 font-bold uppercase tracking-widest italic">
-                      Fuel State {{ fuelState }}
+                      {{ t('detail_fuel_state', { state: fuelState }) }}
                     </p>
                   </div>
 
@@ -282,11 +290,11 @@
                 color="warning"
                 variant="soft"
                 icon="i-heroicons-exclamation-triangle"
-                title="Planned activity missing start time"
+                :title="t('detail_missing_start_title')"
               >
                 <template #description>
                   <span v-if="missingPlannedStartActivities.length === 1">
-                    The following planned activity is missing a start time:
+                    {{ t('detail_missing_start_single') }}
                     <NuxtLink
                       :to="`/workouts/planned/${missingPlannedStartActivities[0].id}`"
                       class="font-bold underline hover:text-warning-600 transition-colors"
@@ -295,8 +303,11 @@
                     </NuxtLink>
                   </span>
                   <span v-else>
-                    The following {{ missingPlannedStartActivities.length }} planned activities are
-                    missing a start time:
+                    {{
+                      t('detail_missing_start_multiple', {
+                        count: missingPlannedStartActivities.length
+                      })
+                    }}
                     <template
                       v-for="(activity, index) in missingPlannedStartActivities"
                       :key="activity.id"
@@ -310,7 +321,7 @@
                       <span v-if="index < missingPlannedStartActivities.length - 1">, </span>
                     </template>
                   </span>
-                  . They can appear at 00:00 and skew this metabolic horizon.
+                  {{ t('detail_missing_start_footer') }}
                 </template>
               </UAlert>
             </div>
@@ -382,7 +393,12 @@
               color="warning"
               variant="soft"
               icon="i-heroicons-information-circle"
-              :description="`Daily carb target reached (${Math.round(nutrition.carbs || 0)}/${Math.round(nutrition.carbsGoal || 0)}g). Remaining window carbs are timing-focused and optional.`"
+              :description="
+                t('detail_carb_target_reached', {
+                  actual: Math.round(nutrition.carbs || 0),
+                  target: Math.round(nutrition.carbsGoal || 0)
+                })
+              "
             />
           </div>
           <div class="sm:px-0">
@@ -410,7 +426,7 @@
                 <div class="flex items-center justify-between">
                   <h2 class="text-lg font-black uppercase tracking-tighter flex items-center gap-2">
                     <UIcon name="i-heroicons-sparkles" class="w-5 h-5 text-primary-500" />
-                    Coach Analysis
+                    {{ t('detail_coach_analysis') }}
                   </h2>
                   <UButton
                     variant="ghost"
@@ -419,7 +435,7 @@
                     size="xs"
                     :loading="analyzingNutrition"
                     @click="analyzeNutrition"
-                    >Refresh</UButton
+                    >{{ t('detail_analyze_refresh') }}</UButton
                   >
                 </div>
               </template>
@@ -455,6 +471,37 @@
                     </ul>
                   </div>
                 </div>
+              </div>
+            </UCard>
+
+            <UCard
+              v-else
+              :ui="{
+                root: 'rounded-none sm:rounded-xl shadow-none sm:shadow border-x-0 sm:border-x',
+                body: 'p-4 sm:p-6'
+              }"
+              class="mt-4 sm:mt-8 overflow-hidden"
+            >
+              <template #header>
+                <div class="flex items-center justify-between">
+                  <h2 class="text-lg font-black uppercase tracking-tighter flex items-center gap-2">
+                    <UIcon name="i-heroicons-sparkles" class="w-5 h-5 text-primary-500" />
+                    {{ t('detail_coach_analysis') }}
+                  </h2>
+                </div>
+              </template>
+              <div class="flex flex-col items-center justify-center py-8 text-center space-y-4">
+                <p class="text-sm text-gray-500 dark:text-gray-400 max-w-md">
+                  {{ t('detail_analyze_empty_desc') }}
+                </p>
+                <UButton
+                  color="primary"
+                  icon="i-heroicons-sparkles"
+                  :loading="analyzingNutrition"
+                  @click="analyzeNutrition"
+                >
+                  {{ t('detail_analyze_cta') }}
+                </UButton>
               </div>
             </UCard>
           </div>
@@ -494,6 +541,7 @@
 </template>
 
 <script setup lang="ts">
+  import { useTranslate } from '@tolgee/vue'
   import { getCalendarActivities } from '~/utils/calendar'
   import {
     mapNutritionToTimeline,
@@ -512,6 +560,9 @@
   const toast = useToast()
   const userStore = useUserStore()
   const { formatDateUTC } = useFormat()
+  const { t } = useTranslate('nutrition')
+  const { trackNutritionView, trackNutritionAnalyze, trackTabFilterChange } = useAnalytics()
+  const energyViewIdx = ref('0')
 
   // State
   const nutrition = ref<any>(null)
@@ -520,10 +571,9 @@
   const nutritionSettings = ref<any>(null)
   const loading = ref(true)
   const error = ref<string | null>(null)
+  const partialLoadWarning = ref(false)
   const generatingPlan = ref(false)
   const analyzingNutrition = ref(false)
-  const quickLogInput = ref('')
-  const isLogging = ref(false)
 
   const showItemModal = ref(false)
   const showAiModal = ref(false)
@@ -724,61 +774,55 @@
     }
   })
 
-  const missingStartTimeWarning = computed(() => {
-    const activities = missingPlannedStartActivities.value
-    if (!activities.length) return ''
-
-    const count = activities.length
-    if (count === 1) {
-      return `The following planned activity is missing a start time: ${activities[0].title}. They can appear at 00:00 and skew this metabolic horizon.`
-    }
-
-    const titles = activities.map((a) => a.title).join(', ')
-    return `The following ${count} planned activities are missing a start time: ${titles}. They can appear at 00:00 and skew this metabolic horizon.`
-  })
-
   // Data Fetching
 
   async function fetchData() {
     loading.value = true
-
     error.value = null
+    partialLoadWarning.value = false
 
     const id = route.params.id as string
 
     try {
-      // 1. Fetch Nutrition record
       const nData = (await ($fetch as any)(`/api/nutrition/${id}`, {
         query: { currentTime: new Date().toISOString() }
       })) as any
 
       nutrition.value = nData
       journeyEvents.value = nData.journeyEvents || []
+    } catch (fetchError: any) {
+      console.error('Fetch Error:', fetchError)
+      error.value = t.value('detail_load_error')
+      loading.value = false
+      return
+    }
 
-      const dateStr = nData.date
+    const dateStr = nutrition.value.date
 
-      // 2. Fetch all training activities for this date
+    try {
       const calendarData = await ($fetch as any)('/api/calendar', {
         query: { startDate: dateStr, endDate: dateStr }
       })
 
-      // Filter out non-training items like wellness/nutrition placeholders and notes from the workouts array
       workouts.value = getCalendarActivities(calendarData).filter(
         (a) =>
           (a.source === 'completed' || a.source === 'planned') &&
           a.type !== 'Rest' &&
           a.type !== 'Note'
       )
+    } catch (calendarError) {
+      console.error('Failed to load calendar activities:', calendarError)
+      workouts.value = []
+      partialLoadWarning.value = true
+    }
 
-      // 3. Fetch Nutrition Settings
-
+    try {
       const sData = (await ($fetch as any)('/api/profile/nutrition')) as any
-
       nutritionSettings.value = sData.settings
-    } catch (error: any) {
-      console.error('Fetch Error:', error)
-
-      error.value = 'Could not load nutrition dashboard. Please try again.'
+    } catch (settingsError) {
+      console.error('Failed to load nutrition settings:', settingsError)
+      nutritionSettings.value = null
+      partialLoadWarning.value = true
     } finally {
       loading.value = false
     }
@@ -794,15 +838,15 @@
         body: { date: nutrition.value.date }
       })
       toast.add({
-        title: 'Plan Updated',
-        description: response?.message || 'Fueling strategy regenerated in real time.',
+        title: t.value('detail_plan_updated_title'),
+        description: response?.message || t.value('detail_plan_updated_desc'),
         color: 'primary'
       })
       await fetchData()
     } catch (error: any) {
       toast.add({
-        title: 'Error',
-        description: error?.data?.message || 'Failed to regenerate fueling strategy.',
+        title: t.value('detail_analyze_error_title'),
+        description: error?.data?.message || t.value('detail_plan_error_desc'),
         color: 'error'
       })
     } finally {
@@ -813,18 +857,23 @@
   async function analyzeNutrition() {
     if (!nutrition.value) return
     analyzingNutrition.value = true
+    trackNutritionAnalyze('single')
     try {
       await $fetch(`/api/nutrition/${nutritionApiId.value}/analyze`, {
         method: 'POST'
       })
       toast.add({
-        title: 'Analysis Started',
-        description: 'AI coach is analyzing your day...',
+        title: t.value('detail_analyze_started_title'),
+        description: t.value('detail_analyze_started_desc'),
         color: 'primary'
       })
     } catch (error) {
       analyzingNutrition.value = false
-      toast.add({ title: 'Error', description: 'Failed to trigger analysis.', color: 'error' })
+      toast.add({
+        title: t.value('detail_analyze_error_title'),
+        description: t.value('detail_analyze_error_desc'),
+        color: 'error'
+      })
     }
   }
 
@@ -833,27 +882,9 @@
     navigateTo({
       path: '/chat',
       query: {
-        initialMessage: `Please analyze my nutrition and fueling strategy for ${nutrition.value.date} (nutrition ID: ${nutrition.value.id}).`
+        initialMessage: `Please analyze my nutrition and fueling strategy for ${nutrition.value.date} (nutrition ID: ${nutritionApiId.value}).`
       }
     })
-  }
-
-  async function handleQuickLog() {
-    if (!quickLogInput.value || isLogging.value) return
-    isLogging.value = true
-
-    try {
-      // Logic for AI logging would go here
-      // For now we simulate
-      await new Promise((r) => setTimeout(r, 1000))
-      toast.add({ title: 'Logged', description: 'Item added to your journal.', color: 'success' })
-      quickLogInput.value = ''
-      await fetchData()
-    } catch (error) {
-      toast.add({ title: 'Error', description: 'Could not log item.', color: 'error' })
-    } finally {
-      isLogging.value = false
-    }
   }
 
   function handleAddItem(event: { type: string; meals?: string[] }) {
@@ -959,8 +990,8 @@
     await fetchData()
     analyzingNutrition.value = false
     toast.add({
-      title: 'Analysis Complete',
-      description: 'Nutrition coach analysis has been updated.',
+      title: t.value('detail_analyze_complete_title'),
+      description: t.value('detail_analyze_complete_desc'),
       color: 'success',
       icon: 'i-heroicons-check-circle'
     })
@@ -969,12 +1000,20 @@
   onTaskFailed('analyze-nutrition', (run) => {
     analyzingNutrition.value = false
     toast.add({
-      title: 'Analysis Failed',
-      description: run.error?.message || 'Nutrition analysis failed.',
+      title: t.value('detail_analyze_failed_title'),
+      description: run.error?.message || t.value('detail_analyze_error_desc'),
       color: 'error',
       icon: 'i-heroicons-exclamation-circle'
     })
   })
 
-  onMounted(fetchData)
+  onMounted(async () => {
+    trackNutritionView('detail')
+    await fetchData()
+  })
+
+  watch(energyViewIdx, (tab) => {
+    const view = tab === '0' ? 'percent' : tab === '1' ? 'kcal' : 'carbs'
+    trackTabFilterChange('nutrition_detail', 'energy_view', view)
+  })
 </script>

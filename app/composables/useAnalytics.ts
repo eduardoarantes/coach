@@ -1,10 +1,37 @@
-export function useAnalytics() {
-  const { gtag } = useGtag()
+type AnalyticsParams = Record<string, string | number | boolean | undefined | null | object>
 
+type TrackOptions = {
+  beacon?: boolean
+}
+
+function isAnalyticsEnabled() {
+  if (import.meta.server) return false
+
+  const config = useRuntimeConfig()
+  return Boolean(config.public.gtag?.enabled || config.public.gtag?.id)
+}
+
+function trackEvent(eventName: string, params: AnalyticsParams = {}, options: TrackOptions = {}) {
+  if (!isAnalyticsEnabled()) return
+
+  const { gtag } = useGtag()
+  const payload = Object.fromEntries(
+    Object.entries(params).filter(([, value]) => value !== undefined && value !== null)
+  )
+
+  gtag('event', eventName, {
+    ...payload,
+    ...(options.beacon ? { transport_type: 'beacon' } : {})
+  })
+}
+
+export function useAnalytics() {
   return {
+    trackEvent,
+
     // 1. Monetization & Quota
     trackUpgradeView: (featureName: string, reason: string = 'upsell') => {
-      gtag('event', 'view_promotion', {
+      trackEvent('view_promotion', {
         promotion_id: 'upgrade_modal',
         promotion_name: featureName,
         creative_slot: reason
@@ -18,7 +45,7 @@ export function useAnalytics() {
       value: number,
       currency: string
     ) => {
-      gtag('event', 'begin_checkout', {
+      trackEvent('begin_checkout', {
         currency: currency.toUpperCase(),
         value,
         items: [
@@ -33,148 +60,273 @@ export function useAnalytics() {
       })
     },
 
-    trackPurchase: (transactionId: string, value: number, currency: string) => {
-      gtag('event', 'purchase', {
+    trackPurchase: (transactionId: string, value: number, currency: string, tier?: string) => {
+      trackEvent('purchase', {
         transaction_id: transactionId,
         value,
-        currency: currency.toUpperCase()
+        currency: currency.toUpperCase(),
+        item_category: tier
       })
     },
 
     trackBillingPortalView: () => {
-      gtag('event', 'view_billing_portal')
+      trackEvent('view_billing_portal')
+    },
+
+    trackPricingView: (entryPoint: string = 'direct') => {
+      trackEvent('pricing_view', {
+        entry_point: entryPoint
+      })
     },
 
     // 2. AI Coaching & Recommendations
     trackRecommendationRequest: (isRefinement: boolean, hasFeedback: boolean) => {
-      gtag('event', 'recommendation_request', {
+      trackEvent('recommendation_request', {
         is_refinement: isRefinement,
         has_feedback: hasFeedback
       })
     },
 
     trackRecommendationAccept: (recommendationId: string, type: string) => {
-      gtag('event', 'recommendation_accept', {
+      trackEvent('recommendation_accept', {
         recommendation_id: recommendationId,
         type
       })
     },
 
     trackAiFeedback: (sentiment: 'positive' | 'negative', feature: string) => {
-      gtag('event', 'ai_feedback_submit', {
+      trackEvent('ai_feedback_submit', {
         sentiment,
         feature
       })
     },
 
     trackAiLogView: () => {
-      gtag('event', 'ai_log_view')
+      trackEvent('ai_log_view')
     },
 
     trackAthleteProfileGenerate: () => {
-      gtag('event', 'athlete_profile_generate')
+      trackEvent('athlete_profile_generate')
     },
 
     // 3. AI Chat & Tools
     trackChatSessionStart: (roomId: string) => {
-      gtag('event', 'chat_session_start', {
+      trackEvent('chat_session_start', {
         room_id: roomId
       })
     },
 
     trackChatToolExpand: (toolName: string) => {
-      gtag('event', 'chat_tool_expanded', {
+      trackEvent('chat_tool_expanded', {
         tool_name: toolName
       })
     },
 
     trackChatError: (errorType: string) => {
-      gtag('event', 'chat_error', {
+      trackEvent('chat_error', {
         error_type: errorType
       })
     },
 
     // 4. Integrations & Sync
     trackIntegrationConnectStart: (provider: string) => {
-      gtag('event', 'integration_connect_start', {
+      trackEvent('integration_connect_start', {
         provider
       })
     },
 
     trackIntegrationConnectSuccess: (provider: string) => {
-      gtag('event', 'integration_connect_success', {
+      trackEvent('integration_connect_success', {
         provider
       })
     },
 
     trackManualSyncAll: () => {
-      gtag('event', 'sync_all_manual')
+      trackEvent('sync_all_manual')
     },
 
     // 5. Engagement & Training
     trackDailyCheckinStart: () => {
-      gtag('event', 'daily_checkin_start')
+      trackEvent('daily_checkin_start')
     },
 
     trackDailyCheckinComplete: () => {
-      gtag('event', 'daily_checkin_complete')
+      trackEvent('daily_checkin_complete')
     },
 
     trackAdhocWorkoutCreate: (sportType: string) => {
-      gtag('event', 'adhoc_workout_create', {
+      trackEvent('adhoc_workout_create', {
         sport_type: sportType
       })
     },
 
     trackWorkoutViewDetail: (workoutType: 'planned' | 'completed') => {
-      gtag('event', 'workout_view_detail', {
+      trackEvent('workout_view_detail', {
         workout_type: workoutType
       })
     },
 
     // 6. Acquisition & Activation
     trackSignUp: (method: string) => {
-      gtag('event', 'sign_up', {
-        method
-      })
+      trackEvent(
+        'sign_up',
+        {
+          method
+        },
+        { beacon: true }
+      )
     },
 
     trackLogin: (method: string) => {
-      gtag('event', 'login', {
-        method
+      trackEvent(
+        'login',
+        {
+          method
+        },
+        { beacon: true }
+      )
+    },
+
+    trackOnboardingView: () => {
+      trackEvent('onboarding_view')
+    },
+
+    trackOnboardingComplete: () => {
+      trackEvent('onboarding_complete')
+    },
+
+    // 7. Navigation & UI
+    trackNavigation: (destinationPath: string, sourcePath: string, section?: string) => {
+      trackEvent('app_navigation', {
+        destination_path: destinationPath,
+        source_path: sourcePath,
+        section: section || inferAppSection(destinationPath)
       })
     },
 
+    trackNavClick: (destinationPath: string, label: string) => {
+      trackEvent('nav_click', {
+        destination_path: destinationPath,
+        nav_label: label
+      })
+    },
+
+    trackWidgetClick: (widgetName: string, action: string = 'click') => {
+      trackEvent('widget_click', {
+        widget_name: widgetName,
+        action
+      })
+    },
+
+    trackModalOpen: (modalName: string, context?: string) => {
+      trackEvent('modal_open', {
+        modal_name: modalName,
+        context
+      })
+    },
+
+    trackModalComplete: (modalName: string, action: string = 'submit') => {
+      trackEvent('modal_complete', {
+        modal_name: modalName,
+        action
+      })
+    },
+
+    trackModalDismiss: (modalName: string, reason: string = 'close') => {
+      trackEvent('modal_dismiss', {
+        modal_name: modalName,
+        reason
+      })
+    },
+
+    trackTabFilterChange: (page: string, filterType: string, value: string | number) => {
+      trackEvent('tab_filter_change', {
+        page,
+        filter_type: filterType,
+        value: String(value)
+      })
+    },
+
+    trackWorkoutSectionView: (sectionKey: string) => {
+      trackEvent('workout_section_view', {
+        section: sectionKey
+      })
+    },
+
+    trackPlanBlockSelect: (blockId: string) => {
+      trackEvent('plan_block_select', {
+        block_id: blockId
+      })
+    },
+
+    trackPlanWeekSelect: (weekId: string) => {
+      trackEvent('plan_week_select', {
+        week_id: weekId
+      })
+    },
+
+    // 8. Nutrition
+    trackNutritionView: (view: 'index' | 'detail' | 'history') => {
+      trackEvent('nutrition_view', {
+        view
+      })
+    },
+
+    trackNutritionAnalyze: (scope: 'single' | 'bulk') => {
+      trackEvent('nutrition_analyze', {
+        scope
+      })
+    },
+
+    // 9. Sharing
     trackSharePromptView: (messageType: string) => {
-      gtag('event', 'share_prompt_view', {
+      trackEvent('share_prompt_view', {
         message_type: messageType
       })
     },
 
     trackShareModalOpen: () => {
-      gtag('event', 'share_modal_open')
+      trackEvent('share_modal_open')
     },
 
     trackShareLinkCopy: () => {
-      gtag('event', 'share_link_copy')
+      trackEvent('share_link_copy')
     },
 
     trackShareNetworkClick: (network: string) => {
-      gtag('event', 'share_network_click', {
+      trackEvent('share_network_click', {
         network
       })
     },
 
     trackShareRewardClaim: (daysGranted: number) => {
-      gtag('event', 'share_reward_claim', {
+      trackEvent('share_reward_claim', {
         days_granted: daysGranted
       })
     },
 
     trackShareRewardClaimRejected: (reason: string) => {
-      gtag('event', 'share_reward_claim_rejected', {
+      trackEvent('share_reward_claim_rejected', {
         reason
       })
     }
   }
+}
+
+function inferAppSection(path: string): string {
+  if (path.startsWith('/dashboard')) return 'dashboard'
+  if (path.startsWith('/activities')) return 'activities'
+  if (path.startsWith('/chat')) return 'chat'
+  if (path.startsWith('/plan')) return 'plan'
+  if (path.startsWith('/nutrition')) return 'nutrition'
+  if (path.startsWith('/performance')) return 'performance'
+  if (path.startsWith('/recommendations')) return 'recommendations'
+  if (path.startsWith('/workouts')) return 'workouts'
+  if (path.startsWith('/settings')) return 'settings'
+  if (path.startsWith('/onboarding')) return 'onboarding'
+  if (path.startsWith('/analytics')) return 'analytics'
+  if (path.startsWith('/coaching')) return 'coaching'
+  if (path.startsWith('/profile')) return 'profile'
+  if (path === '/') return 'home'
+  return 'other'
 }

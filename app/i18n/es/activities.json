@@ -40,6 +40,7 @@
   "errors_load_failed": "No se pudieron cargar las actividades. Inténtalo de nuevo.",
   "header_chat": "Charlar",
   "header_menu_deduplicate": "Desduplicar",
+  "header_menu_link_workouts": "Vincular entrenamientos",
   "header_menu_manage": "Administrar",
   "header_new_chat": "Nuevo chat",
   "header_refresh": "Refrescar",

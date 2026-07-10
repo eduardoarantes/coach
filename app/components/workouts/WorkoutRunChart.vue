@@ -495,11 +495,17 @@
           ? [step.pace, step.heartRate, step.power]
           : [step.power, step.heartRate, step.pace]
 
-    return (
+    const target =
       orderedTargets.find(
         (target) => target && (typeof target.value === 'number' || target.range)
       ) || null
-    )
+
+    // Pace-zone targets are indexes (Z1..Z7), while chart geometry requires
+    // threshold-relative intensity. Keep the raw target for labels, but use
+    // the normalized target for all chart math.
+    return chartPreference.value === 'pace'
+      ? normalizeMetricTarget(target, 'pace') || target
+      : target
   }
 
   function getHandleBottom(step: any) {
@@ -1054,7 +1060,7 @@
   ): { value?: number; range?: { start: number; end: number } } | undefined {
     const normalized = normalizePaceTarget(target)
     if (!normalized) return undefined
-    const thresholdPace = Number(props.sportSettings?.thresholdPace || 0)
+    const thresholdPace = Number(effectiveSportSettings.value?.thresholdPace || 0)
     const convert = (value: number) => {
       const speedMps = paceValueToMps(value, normalized.units)
       if (speedMps !== null && thresholdPace > 0) return speedMps / thresholdPace

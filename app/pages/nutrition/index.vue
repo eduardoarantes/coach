@@ -64,8 +64,34 @@
           </p>
         </div>
 
-        <UTabs :items="tabs" class="w-full">
+        <UTabs v-model="activeNutritionTab" :items="tabs" class="w-full">
           <template #strategy>
+            <UAlert
+              v-if="loadErrors.length > 0"
+              class="mt-4"
+              color="warning"
+              variant="soft"
+              icon="i-heroicons-exclamation-triangle"
+              :title="t('load_partial_title')"
+            >
+              <template #description>
+                <ul class="list-disc list-inside space-y-1">
+                  <li v-for="(message, index) in loadErrors" :key="index">{{ message }}</li>
+                </ul>
+              </template>
+              <template #actions>
+                <UButton
+                  color="warning"
+                  variant="soft"
+                  size="xs"
+                  icon="i-heroicons-arrow-path"
+                  @click="refreshData"
+                >
+                  {{ t('nav_refresh') }}
+                </UButton>
+              </template>
+            </UAlert>
+
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-6 pt-4">
               <!-- Main Chart Section -->
               <div id="top-section" class="lg:col-span-2 space-y-4 sm:space-y-6">
@@ -158,7 +184,7 @@
                     color="warning"
                     variant="soft"
                     icon="i-heroicons-exclamation-triangle"
-                    :title="t('horizon_alert_missing_start_single')"
+                    :title="t('horizon_alert_missing_start_title')"
                   >
                     <template #description>
                       <span v-if="missingPlannedStartActivities.length === 1">
@@ -538,6 +564,8 @@
 
   const { t } = useTranslate('nutrition')
   const toast = useToast()
+  const { trackNutritionView, trackTabFilterChange } = useAnalytics()
+  const activeNutritionTab = ref('0')
 
   definePageMeta({
     middleware: ['auth', 'nutrition-enabled'],
@@ -570,6 +598,7 @@
   const loadingWave = ref(true)
   const loadingStrategy = ref(true)
   const loadingActiveFeed = ref(true)
+  const loadErrors = ref<string[]>([])
   const userStore = useUserStore()
   const generatingPlan = ref(false)
   const planDashboard = ref<any>(null)
@@ -738,6 +767,7 @@
     loadingWave.value = true
     loadingStrategy.value = true
     loadingActiveFeed.value = true
+    loadErrors.value = []
 
     try {
       const [waveRes, strategyRes, feedRes, upcomingRes] = await Promise.allSettled([
@@ -758,6 +788,7 @@
         journeyEvents.value = []
         waveWorkouts.value = []
         missingPlannedStartActivities.value = []
+        loadErrors.value.push(t.value('load_error_wave'))
       }
 
       if (strategyRes.status === 'fulfilled') {
@@ -765,6 +796,7 @@
       } else {
         console.error('Failed to load strategy:', strategyRes.reason)
         strategy.value = null
+        loadErrors.value.push(t.value('load_error_strategy'))
       }
 
       if (feedRes.status === 'fulfilled') {
@@ -772,6 +804,7 @@
       } else {
         console.error('Failed to load active feed:', feedRes.reason)
         activeFeed.value = null
+        loadErrors.value.push(t.value('load_error_feed'))
       }
 
       if (upcomingRes.status === 'fulfilled') {
@@ -779,6 +812,7 @@
       } else {
         console.error('Failed to load upcoming plan:', upcomingRes.reason)
         upcomingPlan.value = null
+        loadErrors.value.push(t.value('load_error_upcoming'))
       }
     } catch (e) {
       console.error('Failed to load nutrition strategy:', e)
@@ -800,15 +834,31 @@
       if (planDashboard.value) {
         planDashboard.value.refresh()
       }
-    } catch (e) {
+
+      toast.add({
+        title: t.value('plan_generate_success_title'),
+        description: t.value('plan_generate_success_description'),
+        color: 'success'
+      })
+    } catch (e: any) {
       console.error('Failed to generate plan:', e)
+      toast.add({
+        title: t.value('plan_generate_failed_title'),
+        description: e?.data?.message || t.value('plan_generate_failed_description'),
+        color: 'error'
+      })
     } finally {
       generatingPlan.value = false
     }
   }
 
   onMounted(() => {
+    trackNutritionView('index')
     refreshData()
+  })
+
+  watch(activeNutritionTab, (tab) => {
+    trackTabFilterChange('nutrition', 'tab', tab === '0' ? 'strategy' : 'plan')
   })
 
   function openAiHelper(context: any) {
@@ -862,18 +912,11 @@
       dayPlannedCarbs: window.dayPlannedCarbs || 0,
       currentAssignedCarbs: window.currentAssignedCarbs || 0
     }
-    console.log('[nutrition/index] openAiHelperForWindow', {
-      startTime: window.startTime,
-      dateKey: window.dateKey,
-      resolvedDate: dateFromWindow,
-      windowType: window.type,
-      slotName: window.slotName || window.label || ''
-    })
     showRecommendations.value = true
   }
 
   const hydrationAdvice = computed(() => {
-    if (!strategy.value) return t.value('nav_refresh') + '...'
+    if (!strategy.value) return t.value('hydration_advice_unavailable')
     const debt = strategy.value.hydrationDebt
     if (debt > 2000) return t.value('hydration_advice_severe')
     if (debt > 1500) return t.value('hydration_advice_high')

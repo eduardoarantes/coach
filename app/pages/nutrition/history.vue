@@ -1,7 +1,7 @@
 <template>
   <UDashboardPanel id="nutrition">
     <template #header>
-      <UDashboardNavbar title="Nutrition">
+      <UDashboardNavbar :title="t('history_page_title')">
         <template #leading>
           <UDashboardSidebarCollapse />
         </template>
@@ -11,6 +11,16 @@
               <DashboardTriggerMonitorButton />
             </ClientOnly>
             <UButton
+              to="/nutrition"
+              icon="i-lucide-activity"
+              color="neutral"
+              variant="outline"
+              size="sm"
+              class="font-bold"
+            >
+              <span class="hidden sm:inline">{{ t('history_nav_strategy') }}</span>
+            </UButton>
+            <UButton
               :loading="generatingExplanations"
               color="primary"
               variant="solid"
@@ -19,8 +29,8 @@
               class="font-bold"
               @click="generateExplanations"
             >
-              <span class="hidden sm:inline">Insights</span>
-              <span class="sm:hidden">AI</span>
+              <span class="hidden sm:inline">{{ t('history_nav_insights') }}</span>
+              <span class="sm:hidden">{{ t('history_nav_insights_short') }}</span>
             </UButton>
             <UButton
               :loading="analyzingNutrition"
@@ -31,8 +41,8 @@
               class="font-bold"
               @click="analyzeAllNutrition"
             >
-              <span class="hidden sm:inline">Analyze</span>
-              <span class="sm:hidden">Sync</span>
+              <span class="hidden sm:inline">{{ t('history_nav_analyze') }}</span>
+              <span class="sm:hidden">{{ t('history_nav_analyze_short') }}</span>
             </UButton>
           </div>
         </template>
@@ -43,9 +53,11 @@
       <div class="p-3 sm:p-6 space-y-4 sm:space-y-6">
         <!-- Page Header -->
         <div>
-          <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Nutrition</h1>
+          <h1 class="text-2xl font-bold text-gray-900 dark:text-white">
+            {{ t('history_page_title') }}
+          </h1>
           <p class="text-sm text-muted mt-1">
-            Monitor your daily nutrition intake and quality scores
+            {{ t('history_subtitle') }}
           </p>
         </div>
 
@@ -58,7 +70,7 @@
               <span
                 class="text-[10px] font-black uppercase tracking-widest text-blue-600 dark:text-blue-400"
               >
-                Total Days
+                {{ t('history_stat_total_days') }}
               </span>
               <UIcon name="i-heroicons-calendar" class="size-3.5 text-blue-500" />
             </div>
@@ -75,7 +87,7 @@
               <span
                 class="text-[10px] font-black uppercase tracking-widest text-emerald-600 dark:text-emerald-400"
               >
-                Analyzed
+                {{ t('history_stat_analyzed') }}
               </span>
               <UIcon name="i-heroicons-sparkles" class="size-3.5 text-emerald-500" />
             </div>
@@ -92,7 +104,7 @@
               <span
                 class="text-[10px] font-black uppercase tracking-widest text-amber-600 dark:text-amber-400"
               >
-                Avg Score
+                {{ t('history_stat_avg_score') }}
               </span>
               <UIcon name="i-heroicons-star" class="size-3.5 text-amber-500" />
             </div>
@@ -109,7 +121,7 @@
               <span
                 class="text-[10px] font-black uppercase tracking-widest text-purple-600 dark:text-purple-400"
               >
-                Avg Calories
+                {{ t('history_stat_avg_calories') }}
               </span>
               <UIcon name="i-heroicons-fire" class="size-3.5 text-purple-500" />
             </div>
@@ -124,7 +136,7 @@
         <div class="space-y-6">
           <div class="flex items-center justify-between px-1">
             <h2 class="text-xl font-bold text-gray-900 dark:text-white uppercase tracking-tight">
-              Nutrition Quality
+              {{ t('history_quality_header') }}
             </h2>
             <USelect
               v-model="selectedPeriod"
@@ -160,8 +172,8 @@
             color="error"
             variant="soft"
             icon="i-heroicons-exclamation-circle"
-            title="Failed to load nutrition trends"
-            description="Nutrition quality scores could not be loaded. Please try again."
+            :title="t('history_trends_error_title')"
+            :description="t('history_trends_error_desc')"
           >
             <template #actions>
               <UButton
@@ -171,7 +183,7 @@
                 icon="i-heroicons-arrow-path"
                 @click="refreshNutritionTrends()"
               >
-                Retry
+                {{ t('history_retry') }}
               </UButton>
             </template>
           </UAlert>
@@ -443,12 +455,12 @@
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div class="flex items-center gap-3">
               <span class="text-[10px] font-black uppercase tracking-widest text-gray-400 shrink-0">
-                Analysis
+                {{ t('history_filter_analysis') }}
               </span>
               <USelect
                 v-model="filterAnalysis"
                 :items="analysisStatusOptions"
-                placeholder="All Status"
+                :placeholder="t('history_filter_all_status')"
                 size="sm"
                 color="neutral"
                 variant="outline"
@@ -458,12 +470,12 @@
 
             <div class="flex items-center gap-3">
               <span class="text-[10px] font-black uppercase tracking-widest text-gray-400 shrink-0">
-                Calories
+                {{ t('history_filter_calories') }}
               </span>
               <USelect
                 v-model="filterCalories"
                 :items="calorieStatusOptions"
-                placeholder="All"
+                :placeholder="t('history_filter_all')"
                 size="sm"
                 color="neutral"
                 variant="outline"
@@ -484,42 +496,42 @@
                   <th
                     class="px-6 py-3 text-left text-[10px] font-black text-gray-400 uppercase tracking-widest"
                   >
-                    Date
+                    {{ t('history_table_date') }}
                   </th>
                   <th
                     class="px-6 py-3 text-left text-[10px] font-black text-gray-400 uppercase tracking-widest"
                   >
-                    Calories
+                    {{ t('history_table_calories') }}
                   </th>
                   <th
                     class="px-6 py-3 text-left text-[10px] font-black text-gray-400 uppercase tracking-widest"
                   >
-                    Protein
+                    {{ t('history_table_protein') }}
                   </th>
                   <th
                     class="px-6 py-3 text-left text-[10px] font-black text-gray-400 uppercase tracking-widest"
                   >
-                    Carbs
+                    {{ t('history_table_carbs') }}
                   </th>
                   <th
                     class="px-6 py-3 text-left text-[10px] font-black text-gray-400 uppercase tracking-widest"
                   >
-                    Fat
+                    {{ t('history_table_fat') }}
                   </th>
                   <th
                     class="px-6 py-3 text-left text-[10px] font-black text-gray-400 uppercase tracking-widest"
                   >
-                    Water
+                    {{ t('history_table_water') }}
                   </th>
                   <th
                     class="px-6 py-3 text-left text-[10px] font-black text-gray-400 uppercase tracking-widest"
                   >
-                    Score
+                    {{ t('history_table_score') }}
                   </th>
                   <th
                     class="px-6 py-3 text-left text-[10px] font-black text-gray-400 uppercase tracking-widest"
                   >
-                    AI Analysis
+                    {{ t('history_table_analysis') }}
                   </th>
                 </tr>
               </thead>
@@ -536,7 +548,7 @@
               <tbody v-else-if="filteredNutrition.length === 0" class="bg-white dark:bg-gray-800">
                 <tr>
                   <td colspan="8" class="p-8 text-center text-gray-600 dark:text-gray-400">
-                    No nutrition data found. Connect Yazio and sync data to get started.
+                    {{ t('history_empty') }}
                   </td>
                 </tr>
               </tbody>
@@ -702,6 +714,7 @@
 </template>
 
 <script setup lang="ts">
+  import { useTranslate } from '@tolgee/vue'
   import {
     Chart as ChartJS,
     CategoryScale,
@@ -735,13 +748,15 @@
     layout: 'default'
   })
 
+  const { t } = useTranslate('nutrition')
+  const { trackNutritionView, trackNutritionAnalyze, trackTabFilterChange } = useAnalytics()
+
   useHead({
-    title: 'Nutrition',
+    title: computed(() => t.value('history_page_title')),
     meta: [
       {
         name: 'description',
-        content:
-          'Monitor your nutrition intake, calorie goals, and macro distribution with Yazio integration.'
+        content: t.value('history_meta_description')
       }
     ]
   })
@@ -761,22 +776,22 @@
 
   // Period selection for nutrition scores
   const selectedPeriod = ref<number | string>(30)
-  const periodOptions = [
-    { label: '7 Days', value: 7 },
-    { label: '14 Days', value: 14 },
-    { label: '30 Days', value: 30 },
-    { label: '90 Days', value: 90 },
-    { label: 'Year to Date', value: 'YTD' },
-    { label: 'All Time', value: 3650 }
-  ]
+  const periodOptions = computed(() => [
+    { label: t.value('history_period_7d'), value: 7 },
+    { label: t.value('history_period_14d'), value: 14 },
+    { label: t.value('history_period_30d'), value: 30 },
+    { label: t.value('history_period_90d'), value: 90 },
+    { label: t.value('history_period_ytd'), value: 'YTD' },
+    { label: t.value('history_period_all'), value: 3650 }
+  ])
 
   // Listeners
   onTaskCompleted('analyze-nutrition', async () => {
     await fetchNutrition()
     analyzingNutrition.value = false
     toast.add({
-      title: 'Analysis Complete',
-      description: 'Nutrition data has been analyzed.',
+      title: t.value('history_analysis_complete_title'),
+      description: t.value('history_analysis_complete_desc'),
       color: 'success',
       icon: 'i-heroicons-check-circle'
     })
@@ -788,8 +803,8 @@
     generatingExplanations.value = false
     nutritionExplanations.value = {}
     toast.add({
-      title: 'Insights Ready',
-      description: 'Nutrition insights have been generated.',
+      title: t.value('history_insights_ready_title'),
+      description: t.value('history_insights_ready_desc'),
       color: 'success',
       icon: 'i-heroicons-sparkles'
     })
@@ -798,8 +813,8 @@
   onTaskFailed('analyze-nutrition', async (run) => {
     analyzingNutrition.value = false
     toast.add({
-      title: 'Analysis Failed',
-      description: run.error?.message || 'Nutrition analysis failed',
+      title: t.value('history_analysis_failed_title'),
+      description: run.error?.message || t.value('detail_analyze_error_desc'),
       color: 'error',
       icon: 'i-heroicons-exclamation-circle'
     })
@@ -808,8 +823,8 @@
   onTaskFailed('generate-score-explanations', async (run) => {
     generatingExplanations.value = false
     toast.add({
-      title: 'Insights Failed',
-      description: run.error?.message || 'Failed to generate nutrition insights',
+      title: t.value('history_insights_failed_title'),
+      description: run.error?.message || t.value('detail_analyze_error_desc'),
       color: 'error',
       icon: 'i-heroicons-exclamation-circle'
     })
@@ -850,20 +865,20 @@
   const filterCalories = ref<string | undefined>(undefined)
 
   // Filter options
-  const analysisStatusOptions = [
-    { label: 'All Status', value: undefined },
-    { label: 'Completed', value: 'COMPLETED' },
-    { label: 'Pending', value: 'PENDING' },
-    { label: 'Processing', value: 'PROCESSING' },
-    { label: 'Not Started', value: 'NOT_STARTED' }
-  ]
+  const analysisStatusOptions = computed(() => [
+    { label: t.value('history_filter_all_status'), value: undefined },
+    { label: t.value('history_filter_completed'), value: 'COMPLETED' },
+    { label: t.value('history_filter_pending'), value: 'PENDING' },
+    { label: t.value('history_filter_processing'), value: 'PROCESSING' },
+    { label: t.value('history_filter_not_started'), value: 'NOT_STARTED' }
+  ])
 
-  const calorieStatusOptions = [
-    { label: 'All Calories', value: undefined },
-    { label: 'Over Goal', value: 'over' },
-    { label: 'Under Goal', value: 'under' },
-    { label: 'Met Goal (±50 cal)', value: 'met' }
-  ]
+  const calorieStatusOptions = computed(() => [
+    { label: t.value('history_filter_all_calories'), value: undefined },
+    { label: t.value('history_filter_over_goal'), value: 'over' },
+    { label: t.value('history_filter_under_goal'), value: 'under' },
+    { label: t.value('history_filter_met_goal'), value: 'met' }
+  ])
 
   // Fetch all nutrition data
   async function fetchNutrition() {
@@ -883,8 +898,8 @@
     } catch (error) {
       console.error('Error fetching nutrition:', error)
       toast.add({
-        title: 'Error',
-        description: 'Failed to load nutrition data',
+        title: t.value('history_fetch_error_title'),
+        description: t.value('history_fetch_error_desc'),
         color: 'error'
       })
     } finally {
@@ -898,7 +913,10 @@
 
     if (filterAnalysis.value) {
       if (filterAnalysis.value === 'NOT_STARTED') {
-        nutrition = nutrition.filter((n) => !(n as any).aiAnalysisStatus)
+        nutrition = nutrition.filter((n) => {
+          const status = (n as any).aiAnalysisStatus
+          return !status || status === 'NOT_STARTED'
+        })
       } else {
         nutrition = nutrition.filter((n) => (n as any).aiAnalysisStatus === filterAnalysis.value)
       }
@@ -1016,8 +1034,8 @@
       refreshRuns()
 
       toast.add({
-        title: 'Insights Generation Started',
-        description: 'AI is generating insights for all metrics. This may take a few minutes.',
+        title: t.value('history_insights_ready_title'),
+        description: t.value('history_insights_generating_desc'),
         color: 'success',
         icon: 'i-heroicons-sparkles'
       })
@@ -1027,8 +1045,8 @@
     } catch (error: any) {
       generatingExplanations.value = false
       toast.add({
-        title: 'Generation Failed',
-        description: error.data?.message || error.message || 'Failed to start generation',
+        title: t.value('history_generation_failed_title'),
+        description: error.data?.message || error.message || t.value('detail_analyze_error_desc'),
         color: 'error',
         icon: 'i-heroicons-exclamation-circle'
       })
@@ -1037,6 +1055,7 @@
 
   async function analyzeAllNutrition() {
     analyzingNutrition.value = true
+    trackNutritionAnalyze('bulk')
     try {
       const response: any = await $fetch('/api/nutrition/analyze-all', {
         method: 'POST'
@@ -1044,7 +1063,7 @@
       refreshRuns()
 
       toast.add({
-        title: 'Analysis Started',
+        title: t.value('history_analysis_started_title'),
         description: response.message,
         color: 'success',
         icon: 'i-heroicons-check-circle'
@@ -1052,8 +1071,8 @@
     } catch (error: any) {
       analyzingNutrition.value = false
       toast.add({
-        title: 'Analysis Failed',
-        description: error.data?.message || error.message || 'Failed to start analysis',
+        title: t.value('history_analysis_failed_title'),
+        description: error.data?.message || error.message || t.value('detail_analyze_error_desc'),
         color: 'error',
         icon: 'i-heroicons-exclamation-circle'
       })
@@ -1431,12 +1450,14 @@
 
   // Watch for period changes and refetch nutrition trends
   watch(selectedPeriod, async () => {
+    trackTabFilterChange('nutrition_history', 'period_days', selectedPeriod.value)
     await refreshNuxtData('nutrition-trends')
     await fetchAllRecommendations()
   })
 
   // Load data on mount
   onMounted(async () => {
+    trackNutritionView('history')
     await fetchNutrition()
     await fetchAllRecommendations()
   })

@@ -81,6 +81,7 @@
   const integrationStore = useIntegrationStore()
   const userStore = useUserStore()
   const { formatDate, formatDateUTC, getUserLocalDate } = useFormat()
+  const { trackWidgetClick } = useAnalytics()
 
   const isOnboarded = computed(() => {
     // 1. Check if Intervals is connected (current behavior)
@@ -101,6 +102,7 @@
   })
 
   function navigateActivity(item: any) {
+    trackWidgetClick('recent_activity', item.type || 'activity')
     if (item.link) {
       navigateTo(item.link)
     }

@@ -429,7 +429,7 @@
                           : ''
                       "
                     >
-                      >Week {{ week[0] ? getWeekNumber(week[0].date) : '' }}</span
+                      Week {{ week[0] ? getWeekNumber(week[0].date) : '' }}</span
                     >
                     <div class="flex items-center gap-3 text-[10px]">
                       <span>{{
@@ -1226,6 +1226,14 @@
     })
 
     items.push({
+      label: isTReady ? t.value('header_menu_link_workouts') : 'Link Workouts',
+      icon: 'i-heroicons-link',
+      onSelect: () => {
+        showMatcherModal.value = true
+      }
+    })
+
+    items.push({
       label: isTReady ? t.value('header_menu_manage') : 'Manage',
       icon: 'i-heroicons-trash',
       onSelect: () => {
@@ -1365,7 +1373,10 @@
         .filter((a) => a.source === 'completed' && a.hasStreams)
         .map((a) => a.id)
 
-      if (ids.length === 0) return
+      if (ids.length === 0) {
+        streamsMap.value = {}
+        return
+      }
 
       streamsLoading.value = true
       try {
@@ -2168,9 +2179,13 @@
   }
 
   async function onQuickScheduleTemplate({ template, date }: { template: any; date: string }) {
+    const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(date)
+    if (!match) return
+
+    const [, year, month, day] = match
     await onScheduleTemplate({
       template,
-      date: new Date(`${date}T00:00:00`)
+      date: new Date(Date.UTC(Number(year), Number(month) - 1, Number(day)))
     })
   }
 

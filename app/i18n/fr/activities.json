@@ -40,6 +40,7 @@
   "errors_load_failed": "Échec du chargement des activités. Veuillez réessayer.",
   "header_chat": "Discussion",
   "header_menu_deduplicate": "Dédupliquer",
+  "header_menu_link_workouts": "Lier les séances",
   "header_menu_manage": "Gérer",
   "header_new_chat": "Nouvelle discussion",
   "header_refresh": "Actualiser",

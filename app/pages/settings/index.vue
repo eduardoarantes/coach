@@ -1,4 +1,6 @@
 <script setup lang="ts">
+  const route = useRoute()
+
   definePageMeta({
     middleware: 'auth'
   })
@@ -14,7 +16,9 @@
   })
 
   // Redirect to /settings/apps by default
-  navigateTo('/settings/apps', { replace: true })
+  // Keep OAuth and billing callback query parameters when normalizing the
+  // legacy /settings entry point to the Connected Apps page.
+  navigateTo({ path: '/settings/apps', query: route.query }, { replace: true })
 </script>
 
 <template>

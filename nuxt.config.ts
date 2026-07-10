@@ -175,6 +175,11 @@ export default defineNuxtConfig({
     '@vue-email/nuxt'
   ],
 
+  gtag: {
+    enabled: !!process.env.NUXT_PUBLIC_GTAG_ID,
+    id: process.env.NUXT_PUBLIC_GTAG_ID
+  },
+
   vueEmail: {
     baseUrl: process.env.NUXT_PUBLIC_SITE_URL || 'https://app.coachwatts.com',
     emailsDir: 'app/emails'

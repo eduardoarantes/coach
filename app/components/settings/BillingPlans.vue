@@ -404,7 +404,7 @@
     selectedPlan.value = plan.key
     await createCheckoutSession(priceId, {
       successUrl: `${window.location.origin}/settings/billing?success=true`,
-      cancelUrl: `${window.location.origin}/pricing?canceled=true`
+      cancelUrl: `${window.location.origin}/settings/billing?canceled=true`
     })
     loading.value = false
   }

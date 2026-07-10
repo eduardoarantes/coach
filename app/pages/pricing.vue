@@ -10,6 +10,19 @@
     auth: false
   })
 
+  const route = useRoute()
+  const { trackPricingView } = useAnalytics()
+
+  onMounted(() => {
+    const entryPoint =
+      typeof route.query.from === 'string'
+        ? route.query.from
+        : document.referrer
+          ? 'referral'
+          : 'direct'
+    trackPricingView(entryPoint)
+  })
+
   useHead({
     title: 'Pricing',
     meta: [

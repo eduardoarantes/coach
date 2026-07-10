@@ -15,7 +15,7 @@
             icon="i-heroicons-adjustments-horizontal"
             @click="openIngestionSettingsModal"
           >
-            Ingestion Settings
+            {{ t('apps_ingestion_settings') }}
           </UButton>
         </div>
       </template>
@@ -76,9 +76,9 @@
 
     <div>
       <div>
-        <h2 class="text-2xl font-bold">Applications that can connect to Coach Watts</h2>
+        <h2 class="text-2xl font-bold">{{ t('apps_available_header') }}</h2>
         <p class="text-neutral-500">
-          Discover Third-party applications that can access your Coach Watts account.
+          {{ t('apps_available_description') }}
         </p>
       </div>
 
@@ -95,7 +95,7 @@
           class="w-12 h-12 text-gray-300 dark:text-gray-700 mx-auto mb-3"
         />
         <p class="text-sm text-gray-500 dark:text-gray-400 font-medium">
-          No applications are available yet.
+          {{ t('apps_empty') }}
         </p>
       </div>
 
@@ -117,13 +117,13 @@
                 {{ app.name }}
               </h3>
               <p class="text-sm text-muted mt-1 break-words whitespace-normal leading-relaxed">
-                {{ app.description || 'No description provided.' }}
+                {{ app.description || t('apps_no_description') }}
               </p>
               <p
                 v-if="app.isConnected && app.consent"
                 class="text-xs text-gray-500 dark:text-gray-400 mt-1 font-medium"
               >
-                Authorized on {{ formatDate(app.consent.createdAt) }}
+                {{ t('apps_authorized_on', { date: formatDate(app.consent.createdAt) }) }}
               </p>
             </div>
           </div>
@@ -132,7 +132,7 @@
             <p
               class="text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-widest mb-2"
             >
-              Permissions:
+              {{ t('apps_permissions') }}
             </p>
             <div class="flex flex-wrap gap-1.5">
               <UBadge
@@ -154,7 +154,7 @@
             <template v-if="app.isConnected && app.consent">
               <UButton
                 v-if="app.homepageUrl"
-                label="Website"
+                :label="t('apps_website')"
                 color="success"
                 variant="solid"
                 size="sm"
@@ -164,7 +164,7 @@
                 target="_blank"
               />
               <UButton
-                label="Disconnect"
+                :label="t('apps_disconnect')"
                 color="error"
                 variant="outline"
                 icon="i-heroicons-trash"
@@ -175,7 +175,7 @@
             </template>
             <UButton
               v-else-if="app.homepageUrl"
-              label="Visit Website"
+              :label="t('apps_visit_website')"
               color="neutral"
               variant="outline"
               icon="i-heroicons-arrow-top-right-on-square"
@@ -190,19 +190,18 @@
     <!-- Revoke Confirmation Modal -->
     <UModal
       v-model:open="isRevokeModalOpen"
-      title="Revoke Access"
-      description="Revoke the authorization for this application to access your Coach Watts data."
+      :title="t('apps_revoke_title')"
+      :description="t('apps_revoke_description')"
     >
       <template #body>
         <p class="text-sm text-gray-600 dark:text-gray-400 font-medium">
-          Are you sure you want to revoke access for <strong>{{ selectedConsent?.app.name }}</strong
-          >? The application will no longer be able to access your data.
+          {{ t('apps_revoke_confirmation', { name: selectedConsent?.app.name }) }}
         </p>
       </template>
       <template #footer>
         <div class="flex justify-end gap-3">
           <UButton
-            label="Cancel"
+            :label="t('banner_exit')"
             color="neutral"
             variant="ghost"
             @click="isRevokeModalOpen = false"
@@ -214,8 +213,8 @@
 
     <UModal
       v-model:open="isIngestionSettingsModalOpen"
-      title="Ingestion Settings"
-      description="Control what happens automatically after future activity imports."
+      :title="t('apps_ingestion_settings')"
+      :description="t('apps_ingestion_description')"
     >
       <template #body>
         <div class="space-y-4 sm:min-w-[440px]">
@@ -243,14 +242,14 @@
             :disabled="savingIngestionSettings"
             @click="isIngestionSettingsModalOpen = false"
           >
-            Cancel
+            {{ t('banner_exit') }}
           </UButton>
           <UButton
             color="primary"
             :loading="savingIngestionSettings"
             @click="saveIngestionSettings"
           >
-            Save
+            {{ t('settings_save_changes') }}
           </UButton>
         </div>
       </template>
@@ -261,7 +260,9 @@
 <script setup lang="ts">
   import { isAutoDeduplicateWorkoutsEnabled } from '~/utils/ingestion-settings'
   import { isIntegrationConnected } from '~/utils/integrations'
+  import { useTranslate } from '@tolgee/vue'
 
+  const { t } = useTranslate('settings')
   const toast = useToast()
   const router = useRouter()
   const route = useRoute()

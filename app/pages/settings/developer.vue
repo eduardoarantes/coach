@@ -242,7 +242,7 @@
               <th
                 class="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider"
               >
-                Actions
+                {{ t('usage_col_actions') }}
               </th>
             </tr>
           </thead>
@@ -338,7 +338,7 @@
               size="sm"
               @click="copyKey"
             >
-              {{ t('quick_capture_preview_header').includes('előnézet') ? 'Másolás' : 'Copy' }}
+              {{ t('dev_copy') }}
             </UButton>
           </div>
         </div>
@@ -371,7 +371,7 @@
     >
       <template #footer>
         <UButton
-          label="Cancel"
+          :label="t('banner_exit')"
           color="neutral"
           variant="ghost"
           @click="isDeleteModalOpen = false"

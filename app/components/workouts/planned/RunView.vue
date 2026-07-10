@@ -273,6 +273,10 @@
 
     if (normalizedUnits === 'm/s') return value
 
+    // `pace_zone` values are zone indexes, not speeds. They must be resolved
+    // before reaching this function; never let a zone number become m/s.
+    if (normalizedUnits === 'pace_zone' || normalizedUnits === 'zone') return null
+
     if (value > 1.5 && value < 8) return value
 
     if (thresholdPace > 0) {
@@ -301,6 +305,17 @@
         const factor = paceMid > 3 ? paceMid / thresholdPace : paceMid
         return clamp(factor, 0.5, 1.5) * thresholdPace
       }
+    }
+
+    // If the profile has no zone bounds, retain a safe threshold-relative
+    // estimate instead of interpreting a zone index (e.g. 4) as 4 m/s.
+    const rawPaceUnits = String(step?.pace?.units || '')
+      .trim()
+      .toLowerCase()
+    if ((rawPaceUnits === 'pace_zone' || rawPaceUnits === 'zone') && thresholdPace > 0) {
+      const zoneIndex = Math.max(1, Math.round(Number(step.pace.value) || 1))
+      const zoneFactors = [0.7, 0.82, 0.92, 1, 1.08, 1.15]
+      return thresholdPace * (zoneFactors[zoneIndex - 1] || zoneFactors[zoneFactors.length - 1])
     }
 
     const hrMid = getTargetMidpoint(step.heartRate)

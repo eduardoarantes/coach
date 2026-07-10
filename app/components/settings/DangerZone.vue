@@ -5,16 +5,15 @@
       <template #header>
         <div class="flex items-center gap-2">
           <UIcon name="i-heroicons-calendar" class="w-5 h-5 text-warning" />
-          <h2 class="text-xl font-semibold">Training Schedule</h2>
+          <h2 class="text-xl font-semibold">{{ t('danger_schedule_header') }}</h2>
         </div>
       </template>
 
       <div class="space-y-4">
         <div>
-          <h3 class="font-medium mb-1">Clear Schedule</h3>
+          <h3 class="font-medium mb-1">{{ t('danger_schedule_clear_title') }}</h3>
           <p class="text-sm text-muted mb-3">
-            Remove planned workouts from your schedule. This is useful if you want to regenerate
-            your plan or clean up old entries.
+            {{ t('danger_schedule_clear_desc') }}
           </p>
           <div class="flex flex-wrap gap-2">
             <UButton
@@ -23,7 +22,7 @@
               :loading="clearingSchedule"
               @click="isClearScheduleModalOpen = true"
             >
-              Clear Future Workouts
+              {{ t('danger_button_clear_future') }}
             </UButton>
             <UButton
               color="warning"
@@ -31,7 +30,7 @@
               :loading="clearingPastSchedule"
               @click="isClearPastScheduleModalOpen = true"
             >
-              Clear Past Planned (Non-Completed) Workouts
+              {{ t('danger_button_clear_past') }}
             </UButton>
             <UButton
               color="warning"
@@ -39,7 +38,7 @@
               :loading="clearingOrphanedSchedule"
               @click="isClearOrphanedScheduleModalOpen = true"
             >
-              Clear Orphaned Planned Workouts
+              {{ t('danger_button_clear_orphaned') }}
             </UButton>
           </div>
         </div>
@@ -51,16 +50,15 @@
       <template #header>
         <div class="flex items-center gap-2">
           <UIcon name="i-heroicons-user-circle" class="w-5 h-5 text-warning" />
-          <h2 class="text-xl font-semibold">Athlete Profile</h2>
+          <h2 class="text-xl font-semibold">{{ t('danger_athlete_header') }}</h2>
         </div>
       </template>
 
       <div class="space-y-4">
         <div>
-          <h3 class="font-medium mb-1">Wipe Athlete Profiles</h3>
+          <h3 class="font-medium mb-1">{{ t('danger_athlete_wipe_title') }}</h3>
           <p class="text-sm text-muted mb-3">
-            Remove all AI-generated athlete profiles and clear cached performance scores. This is
-            useful if your scores were calculated using duplicate workout data.
+            {{ t('danger_athlete_wipe_desc') }}
           </p>
           <UButton
             color="warning"
@@ -68,7 +66,7 @@
             :loading="wipingProfiles"
             @click="isWipeProfilesModalOpen = true"
           >
-            Wipe Profiles & Scores
+            {{ t('danger_button_wipe_profiles') }}
           </UButton>
         </div>
       </div>
@@ -79,16 +77,15 @@
       <template #header>
         <div class="flex items-center gap-2">
           <UIcon name="i-heroicons-sparkles" class="w-5 h-5 text-warning" />
-          <h2 class="text-xl font-semibold">AI Analysis Data</h2>
+          <h2 class="text-xl font-semibold">{{ t('danger_ai_header') }}</h2>
         </div>
       </template>
 
       <div class="space-y-4">
         <div>
-          <h3 class="font-medium mb-1">Wipe AI Recommendations & Analysis</h3>
+          <h3 class="font-medium mb-1">{{ t('danger_ai_wipe_title') }}</h3>
           <p class="text-sm text-muted mb-3">
-            Remove all AI-generated workout analysis, recommendations, and reports. This will not
-            delete your actual workout data, only the AI insights.
+            {{ t('danger_ai_wipe_desc') }}
           </p>
           <UButton
             color="warning"
@@ -96,7 +93,7 @@
             :loading="wipingAnalysis"
             @click="isWipeAnalysisModalOpen = true"
           >
-            Wipe AI Data
+            {{ t('danger_button_wipe_ai') }}
           </UButton>
         </div>
       </div>
@@ -107,7 +104,7 @@
       <template #header>
         <div class="flex items-center gap-2">
           <UIcon name="i-heroicons-circle-stack" class="w-5 h-5 text-warning" />
-          <h2 class="text-xl font-semibold">Imported Data Management</h2>
+          <h2 class="text-xl font-semibold">{{ t('danger_imported_header') }}</h2>
         </div>
       </template>
 
@@ -239,9 +236,9 @@
 
       <template #footer>
         <div class="flex gap-2 justify-end w-full">
-          <UButton color="neutral" variant="ghost" @click="isClearScheduleModalOpen = false"
-            >Cancel</UButton
-          >
+          <UButton color="neutral" variant="ghost" @click="isClearScheduleModalOpen = false">{{
+            t('banner_exit')
+          }}</UButton>
           <UButton color="warning" :loading="clearingSchedule" @click="executeClearSchedule"
             >Clear Future Workouts</UButton
           >
@@ -264,9 +261,9 @@
 
       <template #footer>
         <div class="flex gap-2 justify-end w-full">
-          <UButton color="neutral" variant="ghost" @click="isClearPastScheduleModalOpen = false"
-            >Cancel</UButton
-          >
+          <UButton color="neutral" variant="ghost" @click="isClearPastScheduleModalOpen = false">{{
+            t('banner_exit')
+          }}</UButton>
           <UButton color="warning" :loading="clearingPastSchedule" @click="executeClearPastSchedule"
             >Clear Past Workouts</UButton
           >
@@ -290,8 +287,11 @@
 
       <template #footer>
         <div class="flex gap-2 justify-end w-full">
-          <UButton color="neutral" variant="ghost" @click="isClearOrphanedScheduleModalOpen = false"
-            >Cancel</UButton
+          <UButton
+            color="neutral"
+            variant="ghost"
+            @click="isClearOrphanedScheduleModalOpen = false"
+            >{{ t('banner_exit') }}</UButton
           >
           <UButton
             color="warning"
@@ -318,9 +318,9 @@
       </template>
       <template #footer>
         <div class="flex gap-2 justify-end w-full">
-          <UButton color="neutral" variant="ghost" @click="isWipeProfilesModalOpen = false"
-            >Cancel</UButton
-          >
+          <UButton color="neutral" variant="ghost" @click="isWipeProfilesModalOpen = false">{{
+            t('banner_exit')
+          }}</UButton>
           <UButton color="warning" :loading="wipingProfiles" @click="executeWipeProfiles"
             >Wipe Profiles & Scores</UButton
           >
@@ -342,9 +342,9 @@
       </template>
       <template #footer>
         <div class="flex gap-2 justify-end w-full">
-          <UButton color="neutral" variant="ghost" @click="isWipeAnalysisModalOpen = false"
-            >Cancel</UButton
-          >
+          <UButton color="neutral" variant="ghost" @click="isWipeAnalysisModalOpen = false">{{
+            t('banner_exit')
+          }}</UButton>
           <UButton color="warning" :loading="wipingAnalysis" @click="executeWipeAnalysis"
             >Wipe AI Data</UButton
           >
@@ -369,8 +369,11 @@
       </template>
       <template #footer>
         <div class="flex gap-2 justify-end w-full">
-          <UButton color="neutral" variant="ghost" @click="isWipeSyncedActivitiesModalOpen = false"
-            >Cancel</UButton
+          <UButton
+            color="neutral"
+            variant="ghost"
+            @click="isWipeSyncedActivitiesModalOpen = false"
+            >{{ t('banner_exit') }}</UButton
           >
           <UButton
             color="warning"
@@ -399,9 +402,9 @@
       </template>
       <template #footer>
         <div class="flex gap-2 justify-end w-full">
-          <UButton color="neutral" variant="ghost" @click="isWipeWellnessModalOpen = false"
-            >Cancel</UButton
-          >
+          <UButton color="neutral" variant="ghost" @click="isWipeWellnessModalOpen = false">{{
+            t('banner_exit')
+          }}</UButton>
           <UButton color="warning" :loading="wipingWellness" @click="executeWipeWellness"
             >Wipe Wellness Data</UButton
           >
@@ -426,9 +429,9 @@
       </template>
       <template #footer>
         <div class="flex gap-2 justify-end w-full">
-          <UButton color="neutral" variant="ghost" @click="isWipeNutritionModalOpen = false"
-            >Cancel</UButton
-          >
+          <UButton color="neutral" variant="ghost" @click="isWipeNutritionModalOpen = false">{{
+            t('banner_exit')
+          }}</UButton>
           <UButton color="warning" :loading="wipingNutrition" @click="executeWipeNutrition"
             >Wipe Nutrition Logs</UButton
           >
@@ -453,9 +456,9 @@
       </template>
       <template #footer>
         <div class="flex gap-2 justify-end w-full">
-          <UButton color="neutral" variant="ghost" @click="isDeleteAccountModalOpen = false"
-            >Cancel</UButton
-          >
+          <UButton color="neutral" variant="ghost" @click="isDeleteAccountModalOpen = false">{{
+            t('banner_exit')
+          }}</UButton>
           <UButton
             color="error"
             :loading="deletingAccount"
@@ -471,8 +474,10 @@
 </template>
 
 <script setup lang="ts">
+  import { useTranslate } from '@tolgee/vue'
   import { useAppLogout } from '#imports'
 
+  const { t } = useTranslate('settings')
   const toast = useToast()
   const { logout } = useAppLogout()
   const coachingStore = useCoachingStore()

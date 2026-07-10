@@ -200,7 +200,10 @@
                 :settings="nutritionSettings"
                 :weight="userStore.currentWeightKg || 75"
                 :loading="loadingNutrition"
-                @refresh="fetchTodayNutrition"
+                @refresh="
+                  trackWidgetClick('nutrition_fueling', 'refresh')
+                  fetchTodayNutrition()
+                "
               />
             </div>
 
@@ -264,7 +267,10 @@
                         v-for="workout in upcomingWorkouts"
                         :key="workout.id"
                         class="py-3 flex items-center gap-3 hover:bg-gray-50 dark:hover:bg-gray-800/50 cursor-pointer -mx-4 px-4 rounded-lg transition-colors group relative"
-                        @click="navigateTo(`/workouts/planned/${workout.id}`)"
+                        @click="
+                          trackWidgetClick('upcoming_workouts', 'open_workout')
+                          navigateTo(`/workouts/planned/${workout.id}`)
+                        "
                       >
                         <!-- Date Box (Standardized) -->
                         <div
@@ -405,6 +411,7 @@
   import { showDashboardProgressToast } from '~/utils/dashboard-progress-toast'
 
   const { t } = useTranslate('dashboard')
+  const { trackWidgetClick } = useAnalytics()
 
   const { formatDate, formatDateUTC, getUserLocalDate } = useFormat()
 
@@ -651,11 +658,13 @@
   })
 
   function openRecommendationModal() {
+    trackWidgetClick('training_recommendation', 'open_details')
     showRecommendationModal.value = true
   }
 
   // Wellness modal handlers
   function openWellnessModal() {
+    trackWidgetClick('athlete_profile', 'open_wellness')
     // Use today's date or the latest wellness date
     const latestDate = userStore.profile?.latestWellnessDate
       ? new Date(userStore.profile.latestWellnessDate)
@@ -668,6 +677,7 @@
 
   // Function to open score detail modal
   function openScoreModal(data: any) {
+    trackWidgetClick('performance_scores', data.title || 'open_score')
     scoreModalData.value = data
     showScoreModal.value = true
   }
@@ -676,12 +686,14 @@
   const showTrainingLoadModal = ref(false)
 
   function openTrainingLoadModal() {
+    trackWidgetClick('performance_scores', 'open_training_load')
     showTrainingLoadModal.value = true
   }
 
   // Daily Check-in Modal
   const showCheckinModal = ref(false)
   function openCheckinModal() {
+    trackWidgetClick('training_recommendation', 'open_checkin')
     showCheckinModal.value = true
   }
 

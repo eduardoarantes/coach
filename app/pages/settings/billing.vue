@@ -24,6 +24,8 @@
   const route = useRoute()
   const userStore = useUserStore()
   const { openCustomerPortal } = useStripe()
+  const { trackPurchase } = useAnalytics()
+  const purchaseTracked = ref(false)
 
   const loadingPortal = ref(false)
   const syncing = ref(false)
@@ -33,6 +35,21 @@
   const showPlansModal = ref(false)
   const celebrationPlayed = ref(false)
   const prefersReducedMotion = ref(false)
+
+  function maybeTrackPurchase() {
+    if (purchaseTracked.value) return
+    if (!showSuccessMessage.value) return
+    if (userStore.user?.subscriptionStatus !== 'ACTIVE') return
+    if (userStore.user?.subscriptionTier === 'FREE') return
+
+    purchaseTracked.value = true
+    trackPurchase(
+      userStore.user?.stripeSubscriptionId || `tier_${userStore.user?.subscriptionTier}`,
+      0,
+      'USD',
+      userStore.user?.subscriptionTier
+    )
+  }
   const confettiPieces = ref<
     Array<{
       id: number
@@ -70,6 +87,7 @@
       if (userStore.user?.subscriptionStatus === 'ACTIVE') {
         triggerCelebration()
         showSuccessMessage.value = true
+        maybeTrackPurchase()
       }
     } else {
       try {
@@ -164,6 +182,7 @@
             await new Promise((resolve) => setTimeout(resolve, minPollingMs - elapsed))
           }
           polling.value = false
+          maybeTrackPurchase()
           return
         }
       } catch (e) {

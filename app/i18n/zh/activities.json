@@ -40,6 +40,7 @@
   "errors_load_failed": "活动加载失败，请重试。",
   "header_chat": "聊天",
   "header_menu_deduplicate": "去重",
+  "header_menu_link_workouts": "关联训练",
   "header_menu_manage": "管理",
   "header_new_chat": "新聊天",
   "header_refresh": "刷新",

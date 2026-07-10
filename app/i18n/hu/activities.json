@@ -40,6 +40,7 @@
   "errors_load_failed": "Nem sikerült betölteni a tevékenységeket. Kérjük, próbálja újra.",
   "header_chat": "Csevegés",
   "header_menu_deduplicate": "Duplikátumok eltávolítása",
+  "header_menu_link_workouts": "Edzések összekapcsolása",
   "header_menu_manage": "Kezelés",
   "header_new_chat": "Új csevegés",
   "header_refresh": "Frissítés",

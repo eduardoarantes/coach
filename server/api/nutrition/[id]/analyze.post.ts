@@ -72,6 +72,24 @@ export default defineEventHandler(async (event) => {
     nutrition = await nutritionRepository.getById(id, userId)
   }
 
+  if (!nutrition && /^\d{4}-\d{2}-\d{2}$/.test(id)) {
+    const dateObj = new Date(`${id}T00:00:00Z`)
+    if (!isNaN(dateObj.getTime())) {
+      nutrition = await nutritionRepository.create({
+        userId,
+        date: dateObj,
+        calories: 0,
+        protein: 0,
+        carbs: 0,
+        fat: 0,
+        breakfast: [],
+        lunch: [],
+        dinner: [],
+        snacks: []
+      })
+    }
+  }
+
   if (!nutrition) {
     throw createError({
       statusCode: 404,
