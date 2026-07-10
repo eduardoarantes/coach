@@ -369,7 +369,7 @@ CRITICAL INSTRUCTIONS:
                 name: fullUser.name || 'Athlete',
                 date: formatUserDate(todayDateOnly, timezone, 'EEEE, MMM d'),
                 recommendation: suggestion.action.toUpperCase().replace('_', ' '),
-                reasoningText: suggestion.reason,
+                reasoning: suggestion.reason,
                 unsubscribeUrl: `${process.env.NUXT_PUBLIC_SITE_URL || 'https://coachwatts.com'}/profile/settings?tab=communication`
               }
             })

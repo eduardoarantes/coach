@@ -8,7 +8,7 @@ function formatActivityRecommendation(rec: {
   id: string
   recommendation: string
   confidence: number
-  reasoningText: string
+  reasoning: string
   analysisJson?: unknown
   plannedWorkout?: {
     id: string
@@ -34,7 +34,7 @@ function formatActivityRecommendation(rec: {
       description: planned.description || rec.recommendation,
       decision: rec.recommendation,
       confidence: rec.confidence,
-      reasoningText: rec.reasoningText,
+      reasoning: rec.reasoning,
       planned_workout_id: planned.id
     }
   }
@@ -53,7 +53,7 @@ function formatActivityRecommendation(rec: {
       description: modifications.description || rec.recommendation,
       decision: rec.recommendation,
       confidence: rec.confidence,
-      reasoningText: rec.reasoningText
+      reasoning: rec.reasoning
     }
   }
 
@@ -61,10 +61,10 @@ function formatActivityRecommendation(rec: {
     source: 'activity_recommendation' as const,
     recommendation_id: rec.id,
     title: rec.recommendation,
-    description: rec.reasoningText,
+    description: rec.reasoning,
     decision: rec.recommendation,
     confidence: rec.confidence,
-    reasoningText: rec.reasoningText
+    reasoning: rec.reasoning
   }
 }
 

@@ -649,7 +649,7 @@ emailCommand
         name: user.name || 'Athlete',
         date: 'Saturday, Feb 21',
         recommendation: 'PROCEED',
-        reasoningText:
+        reasoning:
           'Your TSB is in the building zone (-15) and your recovery score is excellent (88%). It is a great day for your planned interval session.',
         unsubscribeUrl: 'https://coachwatts.com/profile/settings?tab=communication'
       }

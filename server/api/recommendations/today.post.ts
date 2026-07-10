@@ -71,7 +71,7 @@ export default defineEventHandler(async (event) => {
       date: today,
       recommendation: 'proceed', // Placeholder
       confidence: 0,
-      reasoningText: 'Analysis in progress...',
+      reasoning: 'Analysis in progress...',
       status: 'PROCESSING'
       // We could store the feedback in a new field if we want to persist it,
       // but passing it to the job is sufficient for now.

@@ -55,7 +55,7 @@ describe('recommendationTools', () => {
       id: 'act-rec-1',
       recommendation: 'proceed',
       confidence: 0.9,
-      reasoningText: 'Readiness is good.',
+      reasoning: 'Readiness is good.',
       status: 'COMPLETED',
       analysisJson: null,
       plannedWorkout: {

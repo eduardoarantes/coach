@@ -167,7 +167,7 @@ describe('recommendTodayActivityTask', () => {
 
     expect(activityRecommendationUpdate).toHaveBeenCalledWith('rec-1', 'user-1', {
       status: 'FAILED',
-      reasoningText: 'Gemini unavailable'
+      reasoning: 'Gemini unavailable'
     })
   })
 })

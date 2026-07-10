@@ -58,7 +58,7 @@ import {
 interface RecommendationAnalysis {
   recommendation: 'proceed' | 'modify' | 'reduce_intensity' | 'rest'
   confidence: number
-  reasoningText: string
+  reasoning: string
   planned_workout?: {
     original_title: string
     original_tss: number
@@ -83,7 +83,7 @@ interface RecommendationAnalysis {
     carbs: number
     absorptionType: 'RAPID' | 'FAST' | 'BALANCED' | 'DENSE' | 'HYPER_LOAD'
     timing: string
-    reasoningText: string
+    reasoning: string
   }
   key_factors?: string[]
 }
@@ -96,7 +96,7 @@ const recommendationSchema = {
       enum: ['proceed', 'modify', 'reduce_intensity', 'rest']
     },
     confidence: { type: 'number' },
-    reasoningText: { type: 'string' },
+    reasoning: { type: 'string' },
     planned_workout: {
       type: 'object',
       properties: {
@@ -136,7 +136,7 @@ const recommendationSchema = {
           enum: ['RAPID', 'FAST', 'BALANCED', 'DENSE', 'HYPER_LOAD']
         },
         timing: { type: 'string' },
-        reasoningText: { type: 'string' }
+        reasoning: { type: 'string' }
       }
     },
     key_factors: {
@@ -174,7 +174,7 @@ export const recommendTodayActivityTask = task({
           if (recommendationId) {
             await activityRecommendationRepository.update(recommendationId, userId, {
               status: 'FAILED',
-              reasoningText: 'Quota exceeded. Upgrade your plan for higher limits.'
+              reasoning: 'Quota exceeded. Upgrade your plan for higher limits.'
             })
           }
           return { success: false, reason: 'QUOTA_EXCEEDED' }
@@ -1051,7 +1051,7 @@ Maintain your **${aiSettings.aiPersona}** persona throughout.`
         recommendation = await activityRecommendationRepository.update(recommendationId, userId, {
           recommendation: analysis.recommendation,
           confidence: analysis.confidence,
-          reasoningText: analysis.reasoningText,
+          reasoning: analysis.reasoning,
           analysisJson: attachRecommendationGuardrails(
             analysis as any,
             primaryPlannedWorkout,
@@ -1070,7 +1070,7 @@ Maintain your **${aiSettings.aiPersona}** persona throughout.`
           date: today,
           recommendation: analysis.recommendation,
           confidence: analysis.confidence,
-          reasoningText: analysis.reasoningText,
+          reasoning: analysis.reasoning,
           analysisJson: attachRecommendationGuardrails(
             analysis as any,
             primaryPlannedWorkout,
@@ -1123,7 +1123,7 @@ Maintain your **${aiSettings.aiPersona}** persona throughout.`
                   name: fullUser.name || 'Athlete',
                   date: formatUserDate(today, userTimezone, 'EEEE, MMM d'),
                   recommendation: analysis.recommendation.toUpperCase().replace('_', ' '),
-                  reasoningText: analysis.reasoningText,
+                  reasoning: analysis.reasoning,
                   unsubscribeUrl: `${process.env.NUXT_PUBLIC_SITE_URL || 'https://coachwatts.com'}/profile/settings?tab=communication`
                 }
               })
@@ -1166,7 +1166,7 @@ Maintain your **${aiSettings.aiPersona}** persona throughout.`
         try {
           await activityRecommendationRepository.update(recommendationId, userId, {
             status: 'FAILED',
-            reasoningText: failureMessage
+            reasoning: failureMessage
           })
         } catch (updateError) {
           logger.error('Failed to mark recommendation as FAILED', {

@@ -21,7 +21,7 @@ defineRouteMeta({
                 date: { type: 'string', format: 'date-time' },
                 recommendation: { type: 'string' },
                 confidence: { type: 'number' },
-                reasoningText: { type: 'string' },
+                reasoning: { type: 'string' },
                 status: { type: 'string' },
                 userAccepted: { type: 'boolean' },
                 analysisJson: { type: 'object' },
