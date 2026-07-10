@@ -17,6 +17,7 @@ import { prisma } from '../server/utils/db'
 import { shouldIngestActivities, shouldIngestWellness } from '../server/utils/integration-settings'
 import { wellnessRepository } from '../server/utils/repositories/wellnessRepository'
 import { workoutRepository } from '../server/utils/repositories/workoutRepository'
+import { workoutStreamRepository } from '../server/utils/repositories/workoutStreamRepository'
 import { getUserTimezone, getStartOfDayUTC } from '../server/utils/date'
 import { normalizeTSS } from '../server/utils/normalize-tss'
 import { calculateWorkoutStress } from '../server/utils/calculate-workout-stress'
@@ -396,6 +397,14 @@ export const ingestWithingsTask = task({
               normalizedWorkout as any
             )
             workoutUpsertCount++
+
+            const withingsStreams = (normalizedWorkout as any).streams
+            if (withingsStreams?.heartrate?.length && withingsStreams?.time?.length) {
+              await workoutStreamRepository.upsert(upsertedWorkout.record.id, {
+                time: withingsStreams.time,
+                heartrate: withingsStreams.heartrate
+              })
+            }
 
             // Normalize TSS (if HR data available, we might estimate)
             try {

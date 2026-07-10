@@ -1,4 +1,5 @@
 import { PrismaClient } from '@prisma/client'
+import { attachStreamsToWorkouts } from '../repositories/workoutStreamRepository'
 
 /**
  * UserUniverseCollector:
@@ -87,10 +88,11 @@ export class UserUniverseCollector {
             sets: true
           }
         },
-        streams: true,
         planAdherence: true
       }
     })
+
+    const workoutsWithStreams = await attachStreamsToWorkouts(workouts)
 
     const fitFiles = await this.prisma.fitFile.findMany({
       where: { userId: this.userId }
@@ -112,7 +114,7 @@ export class UserUniverseCollector {
     })
 
     return {
-      workouts,
+      workouts: workoutsWithStreams,
       fitFiles,
       plannedWorkouts,
       metricHistory,

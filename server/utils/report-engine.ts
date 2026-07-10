@@ -1,5 +1,6 @@
 import { prisma } from './db'
 import { workoutRepository } from './repositories/workoutRepository'
+import { attachStreamsToWorkouts } from './repositories/workoutStreamRepository'
 import { wellnessRepository } from './repositories/wellnessRepository'
 import { nutritionRepository } from './repositories/nutritionRepository'
 import { sportSettingsRepository } from './repositories/sportSettingsRepository'
@@ -74,9 +75,9 @@ export async function fetchReportContext(userId: string, inputConfig: any) {
             endDate,
             limit: source.limit,
             orderBy: source.orderBy || { date: 'desc' },
-            includeDuplicates: false,
-            include: { streams: true }
+            includeDuplicates: false
           })
+          data = await attachStreamsToWorkouts(data)
 
           // Apply additional filters (e.g., by sport type)
           if (source.filter?.type) {

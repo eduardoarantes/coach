@@ -1,5 +1,6 @@
 import { prisma } from './db'
 import { userRepository } from './repositories/userRepository'
+import { attachStreamToWorkout } from './repositories/workoutStreamRepository'
 
 export const altitudeService = {
   /**
@@ -11,12 +12,13 @@ export const altitudeService = {
    * 4. Update user profile if significantly different from current setting.
    */
   async checkAndUpdateHomeAltitude(workoutId: string, userId: string) {
-    const workout = await prisma.workout.findUnique({
-      where: { id: workoutId },
-      include: { streams: true }
+    const workoutRecord = await prisma.workout.findUnique({
+      where: { id: workoutId }
     })
+    if (!workoutRecord) return
 
-    if (!workout || !workout.streams?.altitude) return
+    const workout = await attachStreamToWorkout(workoutRecord)
+    if (!workout.streams?.altitude) return
 
     // Filter for outdoor activities
     if (workout.type === 'VirtualRide' || workout.trainer) return

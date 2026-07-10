@@ -241,6 +241,7 @@ export const ingestStravaTask = task({
           userId,
           source: 'strava',
           streams: null,
+          streamsV2: null,
           id: { notIn: Array.from(queuedRepairWorkoutIds) }
         },
         orderBy: {

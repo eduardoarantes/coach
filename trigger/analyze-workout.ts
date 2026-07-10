@@ -2,6 +2,7 @@ import './init'
 import { logger, task } from '@trigger.dev/sdk/v3'
 import { generateCoachAnalysis, generateStructuredAnalysis } from '../server/utils/gemini'
 import { prisma } from '../server/utils/db'
+import { attachStreamToWorkout } from '../server/utils/repositories/workoutStreamRepository'
 import { workoutRepository } from '../server/utils/repositories/workoutRepository'
 import { sportSettingsRepository } from '../server/utils/repositories/sportSettingsRepository'
 import { userAnalysisQueue } from './queues'
@@ -271,10 +272,9 @@ export const analyzeWorkoutTask = task({
     logger.log('Starting workout analysis', { workoutId, source })
 
     try {
-      const workout = await prisma.workout.findUnique({
+      const workoutRecord = await prisma.workout.findUnique({
         where: { id: workoutId },
         include: {
-          streams: true,
           exercises: {
             include: {
               exercise: true,
@@ -292,9 +292,11 @@ export const analyzeWorkoutTask = task({
         }
       })
 
-      if (!workout) {
+      if (!workoutRecord) {
         throw new Error('Workout not found')
       }
+
+      const workout = await attachStreamToWorkout(workoutRecord)
 
       const timezone = await getUserTimezone(workout.userId)
       const today = getUserLocalDate(timezone)

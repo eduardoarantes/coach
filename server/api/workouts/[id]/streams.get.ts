@@ -222,11 +222,8 @@ export default defineEventHandler(async (event) => {
       // Persist calculated zones if needed
       if (zonesUpdated) {
         // Run update in background to not block response
-        prisma.workoutStream
-          .update({
-            where: { workoutId: workout.id },
-            data: updates
-          })
+        workoutStreamRepository
+          .updateMetadata(workout.id, updates)
           .catch((e) => console.error('Failed to backfill zones:', e))
       }
 

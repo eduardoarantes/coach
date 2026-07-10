@@ -15,6 +15,10 @@ import {
   computeElevationGainFromAltitudeStream
 } from '../intervals'
 import { workoutRepository } from '../repositories/workoutRepository'
+import {
+  attachStreamsToWorkouts,
+  workoutStreamRepository
+} from '../repositories/workoutStreamRepository'
 import { wellnessRepository } from '../repositories/wellnessRepository'
 import { eventRepository } from '../repositories/eventRepository'
 import { calendarNoteRepository } from '../repositories/calendarNoteRepository'
@@ -796,59 +800,34 @@ export const IntervalsService = {
     await heartbeats.yield()
 
     // Store in database
-    const workoutStream = await prisma.workoutStream.upsert({
-      where: { workoutId: workoutId },
-      create: {
-        workoutId: workoutId,
-        time: timeData,
-        distance: distanceData,
-        velocity: velocityData,
-        heartrate: heartrateData,
-        cadence: cadenceData,
-        watts: wattsData,
-        altitude: altitudeData,
-        latlng: latlngData as any,
-        grade: gradeData,
-        moving: movingData,
-        torque: torqueData as any,
-        temp: tempData as any,
-        respiration: respirationData as any,
-        hrv: hrvData as any,
-        leftRightBalance: leftRightBalanceData as any,
-        hrZoneTimes: hrZoneTimes as any,
-        powerZoneTimes: powerZoneTimes as any,
-        lapSplits: lapSplits as any,
-        paceVariability,
-        avgPacePerKm,
-        pacingStrategy: pacingStrategy as any,
-        surges: surges as any
-      },
-      update: {
-        time: timeData,
-        distance: distanceData,
-        velocity: velocityData,
-        heartrate: heartrateData,
-        cadence: cadenceData,
-        watts: wattsData,
-        altitude: altitudeData,
-        latlng: latlngData as any,
-        grade: gradeData,
-        moving: movingData,
-        torque: torqueData as any,
-        temp: tempData as any,
-        respiration: respirationData as any,
-        hrv: hrvData as any,
-        leftRightBalance: leftRightBalanceData as any,
-        hrZoneTimes: hrZoneTimes as any,
-        powerZoneTimes: powerZoneTimes as any,
-        lapSplits: lapSplits as any,
-        paceVariability,
-        avgPacePerKm,
-        pacingStrategy: pacingStrategy as any,
-        surges: surges as any,
-        updatedAt: new Date()
-      }
+    await workoutStreamRepository.upsert(workoutId, {
+      time: timeData,
+      distance: distanceData,
+      velocity: velocityData,
+      heartrate: heartrateData,
+      cadence: cadenceData,
+      watts: wattsData,
+      altitude: altitudeData,
+      latlng: latlngData as [number, number][] | null,
+      grade: gradeData,
+      moving: movingData,
+      torque: torqueData as number[] | null,
+      temp: tempData as number[] | null,
+      respiration: respirationData as number[] | null,
+      hrv: hrvData as number[] | null,
+      leftRightBalance: leftRightBalanceData as number[] | null,
+      hrZoneTimes: hrZoneTimes as any,
+      powerZoneTimes: powerZoneTimes as any,
+      lapSplits: lapSplits as any,
+      paceVariability,
+      avgPacePerKm,
+      pacingStrategy: pacingStrategy as any,
+      surges: surges as any
     })
+    const workoutStream = await workoutStreamRepository.findByWorkoutId(workoutId)
+    if (!workoutStream) {
+      throw new Error(`Failed to persist streams for workout ${workoutId}`)
+    }
     await heartbeats.yield()
 
     // If Intervals summary omitted power metrics (common on some running activities),
@@ -1418,8 +1397,7 @@ export const IntervalsService = {
       include: {
         duplicates: {
           include: {
-            exercises: true,
-            streams: true
+            exercises: true
           }
         }
       }
@@ -1427,11 +1405,15 @@ export const IntervalsService = {
 
     if (!workoutToDelete) return
 
+    const duplicatesWithStreams = workoutToDelete.duplicates.length
+      ? await attachStreamsToWorkouts(workoutToDelete.duplicates)
+      : []
+
     await prisma.$transaction(async (tx) => {
       // If the workout has duplicates, we need to promote one of them
-      if (workoutToDelete.duplicates.length > 0) {
+      if (duplicatesWithStreams.length > 0) {
         // Calculate scores for all duplicates to find the best one to promote
-        const scoredDuplicates = workoutToDelete.duplicates.map((d) => ({
+        const scoredDuplicates = duplicatesWithStreams.map((d) => ({
           ...d,
           score: deduplicationService.calculateCompletenessScore(d)
         }))

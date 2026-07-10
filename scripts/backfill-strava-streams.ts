@@ -16,7 +16,8 @@ async function backfillStreams() {
   const workouts = await prisma.workout.findMany({
     where: {
       source: 'strava',
-      streams: null
+      streams: null,
+      streamsV2: null
     },
     orderBy: {
       date: 'desc'

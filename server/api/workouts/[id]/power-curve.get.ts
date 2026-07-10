@@ -1,6 +1,7 @@
 import { defineEventHandler, createError, getRouterParam } from 'h3'
 import { requireAuth } from '../../../utils/auth-guard'
 import { prisma } from '../../../utils/db'
+import { attachStreamToWorkout } from '../../../utils/repositories/workoutStreamRepository'
 import { computePowerCurveWindows } from '../../../utils/power-curve'
 
 defineRouteMeta({
@@ -67,23 +68,21 @@ export default defineEventHandler(async (event) => {
     })
   }
 
-  // Get workout with streams
-  const workout = await prisma.workout.findFirst({
+  const workoutRecord = await prisma.workout.findFirst({
     where: {
       id: workoutId,
       userId: user.id
-    },
-    include: {
-      streams: true
     }
   })
 
-  if (!workout) {
+  if (!workoutRecord) {
     throw createError({
       statusCode: 404,
       message: 'Workout not found'
     })
   }
+
+  const workout = await attachStreamToWorkout(workoutRecord)
 
   // Check if workout has power data
   if (!workout.streams?.watts) {

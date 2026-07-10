@@ -2,6 +2,7 @@ import { tasks } from '@trigger.dev/sdk/v3'
 import { prisma } from '../db'
 import { wellnessRepository } from '../repositories/wellnessRepository'
 import { workoutRepository } from '../repositories/workoutRepository'
+import { workoutStreamRepository } from '../repositories/workoutStreamRepository'
 import {
   fetchGarminActivityFile,
   fetchGarminActivityFileByCallbackUrl,
@@ -584,10 +585,7 @@ export const GarminService = {
 
       // Try to fetch streams (FIT file) if not already present
       if (upserted.record) {
-        const existingStream = await prisma.workoutStream.findUnique({
-          where: { workoutId: upserted.record.id },
-          select: { id: true }
-        })
+        const existingStream = await workoutStreamRepository.existsByWorkoutId(upserted.record.id)
         const existingFitFile = await prisma.fitFile.findUnique({
           where: { workoutId: upserted.record.id },
           select: { id: true }
@@ -651,10 +649,7 @@ export const GarminService = {
         where: { workoutId: workout.id },
         select: { id: true }
       })
-      const existingStream = await prisma.workoutStream.findUnique({
-        where: { workoutId: workout.id },
-        select: { id: true }
-      })
+      const existingStream = await workoutStreamRepository.existsByWorkoutId(workout.id)
 
       if (existingFitFile && existingStream) continue
 
@@ -752,14 +747,9 @@ export const GarminService = {
       })
     }
 
-    await prisma.workoutStream.upsert({
-      where: { workoutId },
-      create: {
-        workoutId,
-        ...streams,
-        extrasMeta
-      },
-      update: { ...streams, extrasMeta }
+    await workoutStreamRepository.upsert(workoutId, {
+      ...streams,
+      extrasMeta
     })
   },
 

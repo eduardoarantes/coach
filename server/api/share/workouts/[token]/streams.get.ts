@@ -71,9 +71,6 @@ export default defineEventHandler(async (event) => {
   const workout = await (prisma as any).workout.findUnique({
     where: {
       id: shareToken.resourceId
-    },
-    include: {
-      streams: true
     }
   })
 

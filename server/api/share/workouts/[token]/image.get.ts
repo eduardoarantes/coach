@@ -10,6 +10,7 @@ import {
   setCachedWorkoutImage
 } from '../../../../utils/sharing/image-cache'
 import { workoutRepository } from '../../../../utils/repositories/workoutRepository'
+import { attachStreamToWorkout } from '../../../../utils/repositories/workoutStreamRepository'
 
 defineRouteMeta({
   openAPI: {
@@ -65,15 +66,13 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 410, message: 'Share link has expired' })
   }
 
-  const workout = await workoutRepository.getById(shareToken.resourceId, shareToken.userId, {
-    include: {
-      streams: true
-    }
-  })
+  const workoutRecord = await workoutRepository.getById(shareToken.resourceId, shareToken.userId)
 
-  if (!workout) {
+  if (!workoutRecord) {
     throw createError({ statusCode: 404, message: 'Workout not found' })
   }
+
+  const workout = await attachStreamToWorkout(workoutRecord)
 
   try {
     const cacheKey = buildWorkoutImageCacheKey({

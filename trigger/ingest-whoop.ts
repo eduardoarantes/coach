@@ -12,6 +12,7 @@ import {
 import { prisma } from '../server/utils/db'
 import { shouldIngestActivities, shouldIngestWellness } from '../server/utils/integration-settings'
 import { workoutRepository } from '../server/utils/repositories/workoutRepository'
+import { workoutStreamRepository } from '../server/utils/repositories/workoutStreamRepository'
 import { wellnessRepository } from '../server/utils/repositories/wellnessRepository'
 import { normalizeTSS } from '../server/utils/normalize-tss'
 import { calculateWorkoutStress } from '../server/utils/calculate-workout-stress'
@@ -164,15 +165,8 @@ export const ingestWhoopTask = task({
           // Capture HR Zones if available
           const hrZoneTimes = extractWhoopHrZones(whoopWorkout)
           if (hrZoneTimes) {
-            await prisma.workoutStream.upsert({
-              where: { workoutId: upsertedWorkout.record.id },
-              create: {
-                workoutId: upsertedWorkout.record.id,
-                hrZoneTimes
-              },
-              update: {
-                hrZoneTimes
-              }
+            await workoutStreamRepository.upsert(upsertedWorkout.record.id, {
+              hrZoneTimes
             })
             logger.log('[Whoop Ingest] Captured HR zones', {
               workoutId: upsertedWorkout.record.id,

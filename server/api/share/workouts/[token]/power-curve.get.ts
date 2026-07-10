@@ -1,5 +1,6 @@
 import { defineEventHandler, createError, getRouterParam } from 'h3'
 import { prisma } from '../../../../utils/db'
+import { attachStreamToWorkout } from '../../../../utils/repositories/workoutStreamRepository'
 import { computePowerCurveWindows } from '../../../../utils/power-curve'
 
 defineRouteMeta({
@@ -82,12 +83,11 @@ export default defineEventHandler(async (event) => {
   }
 
   // Get workout with streams by ID
-  const workout = await (prisma as any).workout.findUnique({
+  const workoutRecord = await (prisma as any).workout.findUnique({
     where: {
       id: shareToken.resourceId
     },
     include: {
-      streams: true,
       user: {
         select: {
           ftp: true
@@ -96,16 +96,16 @@ export default defineEventHandler(async (event) => {
     }
   })
 
-  if (!workout) {
+  if (!workoutRecord) {
     throw createError({
       statusCode: 404,
       message: 'Workout not found'
     })
   }
 
-  // Check if workout has power data
-  // Note: workout.streams is available due to include: { streams: true }
-  const streams = (workout as any).streams
+  const workout = await attachStreamToWorkout(workoutRecord)
+
+  const streams = workout.streams
   if (!streams?.watts) {
     return {
       hasPowerData: false,

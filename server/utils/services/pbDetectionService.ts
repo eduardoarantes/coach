@@ -1,6 +1,7 @@
 import { prisma as globalPrisma } from '../db'
 import { findPeakEfforts } from '../interval-detection'
 import { logger } from '@trigger.dev/sdk/v3'
+import { workoutStreamRepository } from '../repositories/workoutStreamRepository'
 
 export interface PersonalBestCandidate {
   type: string
@@ -23,17 +24,17 @@ export const pbDetectionService = {
       workout = await prisma.workout.findUnique({
         where: { id: workoutOrId },
         include: {
-          streams: true,
           user: true
         }
       })
+      if (workout) {
+        workout.streams = await workoutStreamRepository.findByWorkoutId(workoutOrId)
+      }
     } else {
       workout = workoutOrId
       // Ensure streams are loaded if passed as object
       if (!workout.streams && workout.id) {
-        workout.streams = await prisma.workoutStream.findUnique({
-          where: { workoutId: workout.id }
-        })
+        workout.streams = await workoutStreamRepository.findByWorkoutId(workout.id)
       }
     }
 

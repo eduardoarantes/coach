@@ -2,6 +2,7 @@ import { tool } from 'ai'
 import { z } from 'zod/v3'
 import { prisma } from '../db'
 import { workoutRepository } from '../repositories/workoutRepository'
+import { attachStreamToWorkout } from '../repositories/workoutStreamRepository'
 import { plannedWorkoutRepository } from '../repositories/plannedWorkoutRepository'
 import {
   getStartOfDaysAgoUTC,
@@ -118,14 +119,13 @@ export const workoutTools = (userId: string, timezone: string, aiSettings: AiSet
     }),
     execute: async ({ workout_id }) => {
       try {
-        const workout = (await workoutRepository.getById(workout_id, userId, {
+        const workoutRecord = (await workoutRepository.getById(workout_id, userId, {
           include: {
-            plannedWorkout: true,
-            streams: true
+            plannedWorkout: true
           }
         })) as any
 
-        if (!workout) {
+        if (!workoutRecord) {
           const planned = await prisma.plannedWorkout.findFirst({
             where: { id: workout_id, userId },
             include: {
@@ -141,6 +141,8 @@ export const workoutTools = (userId: string, timezone: string, aiSettings: AiSet
             date: formatDateUTC(planned.date)
           }
         }
+
+        const workout = await attachStreamToWorkout(workoutRecord)
 
         return {
           ...workout,

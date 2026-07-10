@@ -7,6 +7,7 @@ import { prisma } from './db'
 import { calculateCTL, calculateATL, getStressScore } from './training-stress'
 import { userRepository } from './repositories/userRepository'
 import { normalizeTSS } from './normalize-tss'
+import { workoutStreamRepository } from './repositories/workoutStreamRepository'
 
 const verboseWorkoutStressLogs = process.env.CW_VERBOSE_WORKOUT_STRESS_LOGS === '1'
 
@@ -120,20 +121,13 @@ export async function calculateWorkoutStress(
     }
 
     if (ftp > 0) {
-      const workoutWithStreams = await prisma.workout.findUnique({
-        where: { id: workoutId },
-        include: { streams: true }
-      })
+      const streams = await workoutStreamRepository.findByWorkoutId(workoutId)
 
-      if (
-        workoutWithStreams?.streams?.watts &&
-        Array.isArray(workoutWithStreams.streams.watts) &&
-        workoutWithStreams.streams.watts.length > 0
-      ) {
+      if (streams?.watts && Array.isArray(streams.watts) && streams.watts.length > 0) {
         // Simple TSS calculation: (sec * NP * IF) / (FTP * 3600) * 100
         // Need NP first. For now, let's use Average Power as a rough proxy if NP is missing
         // or re-implement simple NP calculation here
-        const watts = workoutWithStreams.streams.watts as number[]
+        const watts = streams.watts as number[]
         const avgPower = watts.reduce((a, b) => a + b, 0) / watts.length
 
         // Simple normalized power approximation (often ~5-10% higher than avg for variable rides)

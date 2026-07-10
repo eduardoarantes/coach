@@ -4,6 +4,7 @@ import { findPeakEfforts } from '../interval-detection'
 import { createUserNotification } from '../notifications'
 import { queueThresholdUpdateEmail } from '../workout-insight-email'
 import { logger } from '@trigger.dev/sdk/v3'
+import { workoutStreamRepository } from '../repositories/workoutStreamRepository'
 
 export const thresholdDetectionService = {
   /**
@@ -23,7 +24,6 @@ export const thresholdDetectionService = {
       workout = await prisma.workout.findUnique({
         where: { id: workoutOrId },
         include: {
-          streams: true,
           user: {
             select: {
               id: true,
@@ -35,13 +35,14 @@ export const thresholdDetectionService = {
           }
         }
       })
+      if (workout) {
+        workout.streams = await workoutStreamRepository.findByWorkoutId(workoutOrId)
+      }
     } else {
       workout = workoutOrId
       // Ensure streams are loaded if passed as object
       if (!workout.streams && workout.id) {
-        workout.streams = await prisma.workoutStream.findUnique({
-          where: { workoutId: workout.id }
-        })
+        workout.streams = await workoutStreamRepository.findByWorkoutId(workout.id)
       }
     }
 

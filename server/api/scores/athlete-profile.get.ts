@@ -1,6 +1,7 @@
 import { requireAuth } from '../../utils/auth-guard'
 import { prisma } from '../../utils/db'
 import { pbDetectionService } from '../../utils/services/pbDetectionService'
+import { attachStreamsToWorkouts } from '../../utils/repositories/workoutStreamRepository'
 
 const personalBestSelect = {
   id: true,
@@ -24,7 +25,7 @@ async function ensurePersonalBestsBackfilled(userId: string) {
     where: {
       userId,
       isDuplicate: false,
-      streams: { isNot: null }
+      OR: [{ streams: { isNot: null } }, { streamsV2: { isNot: null } }]
     },
     orderBy: { date: 'asc' },
     select: {
@@ -36,12 +37,14 @@ async function ensurePersonalBestsBackfilled(userId: string) {
       averageHr: true,
       averageCadence: true,
       maxHr: true,
-      maxCadence: true,
-      streams: true
+      maxCadence: true
     }
   })
 
-  for (const workout of workouts) {
+  const workoutsWithStreams = await attachStreamsToWorkouts(workouts)
+
+  for (const workout of workoutsWithStreams) {
+    if (!workout.streams) continue
     await pbDetectionService.detectPBs(workout, prisma)
   }
 

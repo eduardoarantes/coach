@@ -1,6 +1,7 @@
 import { z } from 'zod/v3'
 import { getServerSession } from '../../../utils/session'
 import { prisma } from '../../../utils/db'
+import { attachStreamToWorkout } from '../../../utils/repositories/workoutStreamRepository'
 import { calculateSegmentMetricsFromStreams } from '../../../utils/analytics/segment-summary'
 
 const segmentSummarySchema = z
@@ -51,20 +52,21 @@ export default defineEventHandler(async (event) => {
 
   const body = await readValidatedBody(event, segmentSummarySchema.parse)
 
-  const workout = await prisma.workout.findFirst({
+  const workoutRecord = await prisma.workout.findFirst({
     where: {
       id: workoutId,
       userId: (session.user as any).id
-    },
-    include: { streams: true }
+    }
   })
 
-  if (!workout) {
+  if (!workoutRecord) {
     throw createError({
       statusCode: 404,
       message: 'Workout not found'
     })
   }
+
+  const workout = await attachStreamToWorkout(workoutRecord)
 
   const streams = workout.streams as any
   const time = Array.isArray(streams?.time) ? (streams.time as number[]) : []

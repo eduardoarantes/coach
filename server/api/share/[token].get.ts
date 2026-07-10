@@ -1,5 +1,6 @@
 import { workoutRepository } from '../../utils/repositories/workoutRepository'
 import { nutritionRepository } from '../../utils/repositories/nutritionRepository'
+import { attachStreamToWorkout } from '../../utils/repositories/workoutStreamRepository'
 import { sanitizeSharedNutrition, sanitizeSharedPlannedWorkout } from '../../utils/share-response'
 
 defineRouteMeta({
@@ -87,11 +88,8 @@ export default defineEventHandler(async (event) => {
       where: { id: shareToken.resourceId }
     })
   } else if (shareToken.resourceType === 'WORKOUT') {
-    data = await workoutRepository.getById(shareToken.resourceId, shareToken.userId, {
-      include: {
-        streams: true
-      }
-    })
+    const workoutRecord = await workoutRepository.getById(shareToken.resourceId, shareToken.userId)
+    data = workoutRecord ? await attachStreamToWorkout(workoutRecord) : null
   } else if (shareToken.resourceType === 'NUTRITION') {
     const nutrition = await nutritionRepository.getByIdInternal(shareToken.resourceId)
     data = nutrition ? sanitizeSharedNutrition(nutrition) : null

@@ -2,6 +2,7 @@ import './init'
 import { logger, task } from '@trigger.dev/sdk/v3'
 import { generateStructuredAnalysis } from '../server/utils/gemini'
 import { prisma } from '../server/utils/db'
+import { attachStreamToWorkout } from '../server/utils/repositories/workoutStreamRepository'
 import { userReportsQueue } from './queues'
 import { queueWorkoutInsightEmail } from '../server/utils/workout-insight-email'
 import { formatStructuredPlanForPrompt } from './utils/planned-workout-targets'
@@ -166,11 +167,10 @@ export const analyzePlanAdherenceTask = task({
     const { workoutId, plannedWorkoutId } = payload
 
     // Fetch data
-    const [workout, plan] = await Promise.all([
+    const [workoutRecord, plan] = await Promise.all([
       prisma.workout.findUnique({
         where: { id: workoutId },
         include: {
-          streams: true,
           user: { select: { ftp: true, aiPersona: true, language: true } }
         }
       }),
@@ -179,7 +179,9 @@ export const analyzePlanAdherenceTask = task({
       })
     ])
 
-    if (!workout || !plan) throw new Error('Workout or Plan not found')
+    if (!workoutRecord || !plan) throw new Error('Workout or Plan not found')
+
+    const workout = await attachStreamToWorkout(workoutRecord)
 
     // Fetch Sport Specific Settings
     const sportSettings = await sportSettingsRepository.getForActivityType(

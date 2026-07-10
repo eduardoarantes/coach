@@ -1,3 +1,5 @@
+import { attachStreamToWorkout } from '../../../utils/repositories/workoutStreamRepository'
+
 defineRouteMeta({
   openAPI: {
     tags: ['Public'],
@@ -67,12 +69,11 @@ export default defineEventHandler(async (event) => {
     })
   }
 
-  const workout = await prisma.workout.findUnique({
+  const workoutRecord = await prisma.workout.findUnique({
     where: {
       id: shareToken.resourceId
     },
     include: {
-      streams: true,
       oauthApp: {
         select: {
           name: true,
@@ -90,12 +91,14 @@ export default defineEventHandler(async (event) => {
     }
   })
 
-  if (!workout) {
+  if (!workoutRecord) {
     throw createError({
       statusCode: 404,
       message: 'Workout not found or link is invalid'
     })
   }
+
+  const workout = await attachStreamToWorkout(workoutRecord)
 
   const { userId, externalId, ...safeWorkout } = workout
   return safeWorkout

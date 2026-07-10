@@ -1,4 +1,5 @@
 import { prisma } from '../db'
+import { workoutStreamRepository } from '../repositories/workoutStreamRepository'
 import { getZoneIndex } from '../training-metrics'
 import { sportSettingsRepository } from '../repositories/sportSettingsRepository'
 import { calculateNormalizedPower } from '../power-metrics'
@@ -140,14 +141,19 @@ export async function calculateSegmentSummary(
 ): Promise<SegmentSummaryResult> {
   const workout = await prisma.workout.findUnique({
     where: { id: workoutId },
-    select: { type: true, streams: true }
+    select: { type: true }
   })
 
-  if (!workout || !workout.streams) {
+  if (!workout) {
+    throw new Error('Workout not found')
+  }
+
+  const streams = await workoutStreamRepository.findByWorkoutId(workoutId)
+  if (!streams) {
     throw new Error('Workout or streams not found')
   }
 
-  const s = workout.streams as any
+  const s = streams as any
   const time = s.time as number[]
   const distance = s.distance as number[]
   const watts = s.watts as number[]

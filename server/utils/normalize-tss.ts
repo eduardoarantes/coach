@@ -13,6 +13,7 @@
 
 import type { Prisma } from '@prisma/client'
 import { prisma } from './db'
+import { attachStreamToWorkout } from './repositories/workoutStreamRepository'
 import { userRepository } from './repositories/userRepository'
 
 export interface TSSNormalizationResult {
@@ -146,15 +147,15 @@ export async function normalizeTSS(
   userId: string,
   force: boolean = false
 ): Promise<TSSNormalizationResult> {
-  // Get workout with streams
-  const workout = await prisma.workout.findUnique({
-    where: { id: workoutId },
-    include: { streams: true }
+  const workoutRecord = await prisma.workout.findUnique({
+    where: { id: workoutId }
   })
 
-  if (!workout) {
+  if (!workoutRecord) {
     throw new Error(`Workout ${workoutId} not found`)
   }
+
+  const workout = await attachStreamToWorkout(workoutRecord)
 
   // 1. Check if TSS is already set from source
   // If force is true, we ignore existing TSS UNLESS it's from intervals (source of truth)

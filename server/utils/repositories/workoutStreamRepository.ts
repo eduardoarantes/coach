@@ -41,16 +41,58 @@ function normalizeV2(stream: any): NormalizedStream {
   return { ...rest, latlng }
 }
 
+function hasUsableStreamData(stream: NormalizedStream | null): stream is NormalizedStream {
+  if (!stream) return false
+  if (Array.isArray(stream.time) && stream.time.length > 0) return true
+  if (Array.isArray(stream.heartrate) && stream.heartrate.length > 0) return true
+  if (Array.isArray(stream.watts) && stream.watts.length > 0) return true
+  if (Array.isArray(stream.velocity) && stream.velocity.length > 0) return true
+  if (Array.isArray(stream.latlng) && stream.latlng.length > 0) return true
+  if (stream.hrZoneTimes != null) return true
+  if (stream.powerZoneTimes != null) return true
+  return false
+}
+
+function toNormalizedFromV1(stream: any): NormalizedStream {
+  return stream as NormalizedStream
+}
+
+export async function attachStreamToWorkout<T extends { id: string }>(
+  workout: T
+): Promise<T & { streams: NormalizedStream | null }> {
+  const streams = await workoutStreamRepository.findByWorkoutId(workout.id)
+  return { ...workout, streams }
+}
+
+export async function attachStreamsToWorkouts<T extends { id: string }>(
+  workouts: T[]
+): Promise<Array<T & { streams: NormalizedStream | null }>> {
+  const streamMap = await workoutStreamRepository.findManyByWorkoutIds(workouts.map((w) => w.id))
+  return workouts.map((workout) => ({
+    ...workout,
+    streams: streamMap.get(workout.id) ?? null
+  }))
+}
+
 export const workoutStreamRepository = {
   async findByWorkoutId(workoutId: string): Promise<NormalizedStream | null> {
     const v2 = await (prisma as any).workoutStreamV2
       .findUnique({ where: { workoutId } })
       .catch(() => null)
-    if (v2 && Array.isArray(v2.time) && v2.time.length > 0) {
-      return normalizeV2(v2)
+    if (v2) {
+      const normalized = normalizeV2(v2)
+      if (hasUsableStreamData(normalized)) return normalized
     }
+
     const v1 = await prisma.workoutStream.findUnique({ where: { workoutId } }).catch(() => null)
-    return v1 as NormalizedStream | null
+    if (!v1) return null
+    const normalized = toNormalizedFromV1(v1)
+    return hasUsableStreamData(normalized) ? normalized : null
+  },
+
+  async existsByWorkoutId(workoutId: string): Promise<boolean> {
+    const stream = await this.findByWorkoutId(workoutId)
+    return stream !== null
   },
 
   async findManyByWorkoutIds(workoutIds: string[]): Promise<Map<string, NormalizedStream>> {
@@ -63,8 +105,9 @@ export const workoutStreamRepository = {
 
     const missingIds: string[] = []
     for (const r of v2Records) {
-      if (Array.isArray(r.time) && r.time.length > 0) {
-        result.set(r.workoutId, normalizeV2(r))
+      const normalized = normalizeV2(r)
+      if (hasUsableStreamData(normalized)) {
+        result.set(r.workoutId, normalized)
       } else {
         missingIds.push(r.workoutId)
       }
@@ -80,11 +123,42 @@ export const workoutStreamRepository = {
         .findMany({ where: { workoutId: { in: missingIds } } })
         .catch(() => [])
       for (const r of v1Records) {
-        result.set(r.workoutId, r as unknown as NormalizedStream)
+        const normalized = toNormalizedFromV1(r)
+        if (hasUsableStreamData(normalized)) {
+          result.set(r.workoutId, normalized)
+        }
       }
     }
 
     return result
+  },
+
+  async updateMetadata(
+    workoutId: string,
+    data: { hrZoneTimes?: unknown; powerZoneTimes?: unknown }
+  ): Promise<void> {
+    const v2 = await (prisma as any).workoutStreamV2
+      .findUnique({ where: { workoutId }, select: { id: true } })
+      .catch(() => null)
+
+    if (v2) {
+      await (prisma as any).workoutStreamV2.update({
+        where: { workoutId },
+        data: { ...data, updatedAt: new Date() }
+      })
+      return
+    }
+
+    const v1 = await prisma.workoutStream.findUnique({
+      where: { workoutId },
+      select: { id: true }
+    })
+    if (v1) {
+      await prisma.workoutStream.update({
+        where: { workoutId },
+        data: { ...data, updatedAt: new Date() }
+      })
+    }
   },
 
   async upsert(

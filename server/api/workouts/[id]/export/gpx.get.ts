@@ -1,6 +1,7 @@
 import { defineEventHandler, createError, getRouterParam, setResponseHeader } from 'h3'
 import { getServerSession } from '../../../../utils/session'
 import { prisma } from '../../../../utils/db'
+import { attachStreamToWorkout } from '../../../../utils/repositories/workoutStreamRepository'
 import { generateGPX } from '../../../../utils/gpx-export'
 
 export default defineEventHandler(async (event) => {
@@ -20,23 +21,21 @@ export default defineEventHandler(async (event) => {
     })
   }
 
-  // Get workout with streams
-  const workout = await prisma.workout.findFirst({
+  const workoutRecord = await prisma.workout.findFirst({
     where: {
       id: workoutId,
       user: { email: session.user.email }
-    },
-    include: {
-      streams: true
     }
   })
 
-  if (!workout) {
+  if (!workoutRecord) {
     throw createError({
       statusCode: 404,
       message: 'Workout not found'
     })
   }
+
+  const workout = await attachStreamToWorkout(workoutRecord)
 
   if (!workout.streams) {
     throw createError({

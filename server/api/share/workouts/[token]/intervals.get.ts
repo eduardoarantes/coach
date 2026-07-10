@@ -1,5 +1,6 @@
 import { defineEventHandler, createError, getRouterParam } from 'h3'
 import { prisma } from '../../../../utils/db'
+import { attachStreamToWorkout } from '../../../../utils/repositories/workoutStreamRepository'
 import {
   detectIntervals,
   findPeakEfforts,
@@ -83,12 +84,11 @@ export default defineEventHandler(async (event) => {
   }
 
   // Get workout with streams by ID
-  const workout = await (prisma as any).workout.findUnique({
+  const workoutRecord = await (prisma as any).workout.findUnique({
     where: {
       id: shareToken.resourceId
     },
     include: {
-      streams: true,
       user: {
         select: {
           id: true,
@@ -99,12 +99,14 @@ export default defineEventHandler(async (event) => {
     }
   })
 
-  if (!workout) {
+  if (!workoutRecord) {
     throw createError({
       statusCode: 404,
       message: 'Workout not found'
     })
   }
+
+  const workout = await attachStreamToWorkout(workoutRecord)
 
   // Check if workout has stream data
   const streams = (workout as any).streams

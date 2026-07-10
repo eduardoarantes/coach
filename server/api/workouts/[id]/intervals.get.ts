@@ -1,6 +1,7 @@
 import { defineEventHandler, createError, getRouterParam, getQuery } from 'h3'
 import { getServerSession } from '../../../utils/session'
 import { prisma } from '../../../utils/db'
+import { attachStreamToWorkout } from '../../../utils/repositories/workoutStreamRepository'
 import { calculateRollingNormalizedPower } from '../../../utils/power-metrics'
 import {
   detectIntervals,
@@ -105,24 +106,24 @@ export default defineEventHandler(async (event) => {
     })
   }
 
-  // Get workout with streams and planned workout
-  const workout = await prisma.workout.findFirst({
+  const workoutRecord = await prisma.workout.findFirst({
     where: {
       id: workoutId,
       userId: user.id
     },
     include: {
-      streams: true,
       plannedWorkout: true
     }
   })
 
-  if (!workout) {
+  if (!workoutRecord) {
     throw createError({
       statusCode: 404,
       message: 'Workout not found'
     })
   }
+
+  const workout = await attachStreamToWorkout(workoutRecord)
 
   // Check if workout has stream data
   if (!workout.streams) {

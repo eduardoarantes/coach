@@ -2,6 +2,7 @@ import './init'
 import { logger, task } from '@trigger.dev/sdk/v3'
 import { prisma } from '../server/utils/db'
 import { workoutRepository } from '../server/utils/repositories/workoutRepository'
+import { attachStreamsToWorkouts } from '../server/utils/repositories/workoutStreamRepository'
 import { recalculateStressAfterDate } from '../server/utils/calculate-workout-stress'
 import { userBackgroundQueue } from './queues'
 import { deduplicationService } from '../server/utils/services/deduplicationService'
@@ -54,13 +55,10 @@ export const deduplicateWorkoutsTask = task({
       // Here we explicitly want ALL workouts, including potential duplicates, to analyze them.
       // So we use includeDuplicates: true
       // Include stream ID to check for existence
-      const workouts = await workoutRepository.getForUser(actualUserId, {
+      const workoutRecords = await workoutRepository.getForUser(actualUserId, {
         includeDuplicates: true,
         orderBy: { date: 'desc' },
         include: {
-          streams: {
-            select: { id: true }
-          },
           exercises: {
             select: { id: true }
           },
@@ -72,6 +70,8 @@ export const deduplicateWorkoutsTask = task({
           }
         }
       })
+
+      const workouts = await attachStreamsToWorkouts(workoutRecords)
 
       logger.log(`Found ${workouts.length} workouts to analyze`, {
         userId: actualUserId,

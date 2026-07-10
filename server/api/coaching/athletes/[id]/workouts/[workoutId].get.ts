@@ -1,6 +1,7 @@
 import { z } from 'zod/v3'
 import { requireCoachAccessToAthlete } from '../../../../../utils/coaching-auth'
 import { workoutRepository } from '../../../../../utils/repositories/workoutRepository'
+import { attachStreamToWorkout } from '../../../../../utils/repositories/workoutStreamRepository'
 
 const paramsSchema = z.object({
   id: z.string(),
@@ -11,18 +12,19 @@ export default defineEventHandler(async (event) => {
   const { id: athleteId, workoutId } = await getValidatedRouterParams(event, paramsSchema.parse)
   await requireCoachAccessToAthlete(event, athleteId)
 
-  const workout = await workoutRepository.getById(workoutId, athleteId, {
+  const workoutRecord = await workoutRepository.getById(workoutId, athleteId, {
     include: {
-      streams: true,
       plannedWorkout: true,
       planAdherence: true,
       personalBests: true
     }
   })
 
-  if (!workout) {
+  if (!workoutRecord) {
     throw createError({ statusCode: 404, message: 'Workout not found' })
   }
+
+  const workout = await attachStreamToWorkout(workoutRecord)
 
   return workout
 })
