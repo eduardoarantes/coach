@@ -909,12 +909,11 @@ OUTPUT JSON matching the schema.`
     let structure: any
     let lastAiOutputForRetry: any = null
     let totals: { distance: number; duration: number; tss: number } | null = null
-    let actualModelUsed = 'flash'
+    const actualModelUsed = 'flash'
     for (let attempt = 1; attempt <= 2; attempt++) {
       try {
         const aiStartedAt = Date.now()
         const isRetry = attempt > 1
-        if (isRetry) actualModelUsed = 'pro'
         const aiOptions = buildStructureAiCallOptions({
           attempt,
           userId: workout.userId,
@@ -935,7 +934,6 @@ OUTPUT JSON matching the schema.`
               entityId: entityId!,
               maxRetries: WORKOUT_STRUCTURE_AI_MAX_RETRIES,
               timeoutMs: WORKOUT_STRUCTURE_AI_TIMEOUT_MS,
-              modelOverride: isRetry ? 'gemini-3-pro-preview' : undefined,
               thinkingLevelOverride: isRetry ? 'high' : undefined
             }
           )
@@ -965,7 +963,6 @@ OUTPUT JSON matching the schema.`
               entityId: entityId!,
               maxRetries: WORKOUT_STRUCTURE_AI_MAX_RETRIES,
               timeoutMs: WORKOUT_STRUCTURE_AI_TIMEOUT_MS,
-              modelOverride: isRetry ? 'gemini-3-pro-preview' : undefined,
               thinkingLevelOverride: isRetry ? 'high' : undefined
             }
           )) as any
@@ -976,7 +973,7 @@ OUTPUT JSON matching the schema.`
           aiDurationMs,
           attempt,
           promptChars: promptForAttempt.length,
-          model: isRetry ? 'gemini-3-pro-preview' : 'default',
+          model: 'default',
           hasSteps: Array.isArray(structure?.steps),
           stepsCount: Array.isArray(structure?.steps) ? structure.steps.length : 0,
           exercisesCount: Array.isArray(structure?.exercises) ? structure.exercises.length : 0

@@ -272,7 +272,6 @@ export function buildStructureAiCallOptions(params: {
 
   return {
     ...base,
-    modelOverride: 'gemini-3-pro-preview',
     thinkingLevelOverride: 'low'
   }
 }
