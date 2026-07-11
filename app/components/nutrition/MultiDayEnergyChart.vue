@@ -196,7 +196,7 @@
 
     // Add Workout Intensity Bars (Heatmap)
     if (chartSettings.value.showWorkoutBars && props.workouts?.length) {
-      props.workouts.forEach((w) => {
+      props.workouts.forEach((w, i) => {
         const startTs = new Date(w.startTime).getTime()
         const duration = Number(w.durationSec) || 3600
         const endTs = startTs + duration * 1000
