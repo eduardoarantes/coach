@@ -11,7 +11,7 @@ import { wellnessRepository } from '../server/utils/repositories/wellnessReposit
 import { sportSettingsRepository } from '../server/utils/repositories/sportSettingsRepository'
 import { getUserTimezone, getStartOfDaysAgoUTC, formatUserDate } from '../server/utils/date'
 import { filterGoalsForContext } from '../server/utils/goal-context'
-import { structureGenerationRunTags } from '../server/utils/trigger-run-tags'
+import { enqueuePlannedWorkoutStructureGeneration } from '../server/utils/planned-workout-structure-trigger'
 import { autoUploadPlannedWorkoutToIntervalsIfEnabled } from '../server/utils/intervals-sync'
 
 const adHocWorkoutSchema = {
@@ -229,28 +229,26 @@ export const generateAdHocWorkoutTask = task({
 
     // Trigger Structure Generation. The revision prevents any older job from
     // replacing this newly requested structure.
-    const generation = await prisma.plannedWorkout.update({
-      where: { id: plannedWorkout.id },
-      data: { generationRevision: { increment: 1 } },
-      select: { generationRevision: true }
-    })
-    const tags = structureGenerationRunTags({
+    const queued = await enqueuePlannedWorkoutStructureGeneration({
       userId,
       plannedWorkoutId: plannedWorkout.id,
       source: 'ad-hoc'
     })
-    await tasks.trigger(
-      'generate-structured-workout',
-      {
-        plannedWorkoutId: plannedWorkout.id,
-        generationRevision: generation.generationRevision
-      },
-      {
-        concurrencyKey: userId,
-        tags
-      }
-    )
 
-    return { success: true, plannedWorkoutId: plannedWorkout.id }
+    if (queued.status === 'failed') {
+      return {
+        success: true,
+        plannedWorkoutId: plannedWorkout.id,
+        structure_generation: 'failed',
+        structure_error: queued.error
+      }
+    }
+
+    return {
+      success: true,
+      plannedWorkoutId: plannedWorkout.id,
+      structure_generation: 'queued',
+      run_id: queued.runId
+    }
   }
 })

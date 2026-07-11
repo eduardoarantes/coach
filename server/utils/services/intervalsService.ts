@@ -49,6 +49,27 @@ import { summarizePowerFromWatts } from '../power-metrics'
 import { bodyMeasurementService } from './bodyMeasurementService'
 import { mergeWorkoutTags } from '../workout-tags'
 import { createZoneProfileSnapshot } from '../../../shared/structured-workout-contract'
+import { normalizeWorkoutSport } from '../../../shared/workout-support-matrix'
+
+async function ensureSportSettingsForIntervalsImport(userId: string, workoutType: string) {
+  const sport = normalizeWorkoutSport(workoutType)
+  const profile = await sportSettingsRepository.getForActivityType(userId, workoutType)
+  const hasPaceZones = Array.isArray(profile?.paceZones) && profile.paceZones.length > 0
+  const hasPowerZones = Array.isArray(profile?.powerZones) && profile.powerZones.length > 0
+  const needsPaceProfile = (sport === 'run' || sport === 'swim') && !hasPaceZones
+  const needsPowerProfile = sport === 'ride' && !hasPowerZones
+  if (!needsPaceProfile && !needsPowerProfile) return
+
+  try {
+    await IntervalsService.syncProfile(userId)
+  } catch (error) {
+    console.warn('[Intervals Import] Failed to refresh sport settings before import', {
+      userId,
+      workoutType,
+      error: error instanceof Error ? error.message : String(error)
+    })
+  }
+}
 
 function parseIntervalsActivityDate(activity: any): Date | null {
   const rawDate = activity?.start_date || activity?.start_date_local
@@ -1270,10 +1291,15 @@ export const IntervalsService = {
         userId,
         planned.type || ''
       )
+      await ensureSportSettingsForIntervalsImport(userId, planned.type || '')
+      const refreshedSettings = await sportSettingsRepository.getForActivityType(
+        userId,
+        planned.type || ''
+      )
       const normalizedPlanned = normalizeIntervalsPlannedWorkout(
         planned,
         userId,
-        createZoneProfileSnapshot(plannedSettings)
+        createZoneProfileSnapshot(refreshedSettings || plannedSettings)
       )
 
       // Preserve local exercises/instructions if remote has no structure (Text-only sync)
@@ -1799,11 +1825,21 @@ export const IntervalsService = {
       }
 
       case 'CALENDAR_UPDATED': {
+        const importPlannedWorkouts = intervalsSettings.importPlannedWorkouts !== false
         const changedEvents = Array.isArray(intervalEvent.events) ? intervalEvent.events : []
         const deletedEvents = intervalEvent.deleted_events || []
         if (deletedEvents.length > 0) {
           const deletedIds = getIntervalsDeletedEventIds(deletedEvents)
           await IntervalsService.deletePlannedWorkouts(userId, deletedIds)
+        }
+
+        if (!importPlannedWorkouts) {
+          if (changedEvents.length > 0) {
+            console.log(
+              `[Intervals Webhook] Skipping ${changedEvents.length} planned workout updates (import disabled)`
+            )
+          }
+          break
         }
 
         if (changedEvents.length > 0) {
@@ -1871,10 +1907,15 @@ export const IntervalsService = {
               userId,
               planned.type || ''
             )
+            await ensureSportSettingsForIntervalsImport(userId, planned.type || '')
+            const refreshedSettings = await sportSettingsRepository.getForActivityType(
+              userId,
+              planned.type || ''
+            )
             const normalizedPlanned = normalizeIntervalsPlannedWorkout(
               planned,
               userId,
-              createZoneProfileSnapshot(plannedSettings)
+              createZoneProfileSnapshot(refreshedSettings || plannedSettings)
             )
 
             let existingRecord = existingMap.get(normalizedPlanned.externalId) as any

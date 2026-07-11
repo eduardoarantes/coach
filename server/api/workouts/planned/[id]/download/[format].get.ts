@@ -35,8 +35,10 @@ export default defineEventHandler(async (event) => {
       fileData = serializeCanonicalDownload({
         title: workout.title,
         description: workout.description || '',
-        ftp: workout.user.ftp,
         structure: workout.structuredWorkout,
+        zoneProfileSnapshot: (workout.structuredWorkout as any)?.zoneProfileSnapshot,
+        workout,
+        liveUserFtp: workout.user.ftp,
         format
       })
       contentType = 'application/xml'
@@ -46,8 +48,10 @@ export default defineEventHandler(async (event) => {
       fileData = serializeCanonicalDownload({
         title: workout.title,
         description: workout.description || '',
-        ftp: workout.user.ftp,
         structure: workout.structuredWorkout,
+        zoneProfileSnapshot: (workout.structuredWorkout as any)?.zoneProfileSnapshot,
+        workout,
+        liveUserFtp: workout.user.ftp,
         format
       })
       contentType = 'application/octet-stream'
@@ -57,8 +61,10 @@ export default defineEventHandler(async (event) => {
       fileData = serializeCanonicalDownload({
         title: workout.title,
         description: workout.description || '',
-        ftp: workout.user.ftp,
         structure: workout.structuredWorkout,
+        zoneProfileSnapshot: (workout.structuredWorkout as any)?.zoneProfileSnapshot,
+        workout,
+        liveUserFtp: workout.user.ftp,
         format
       })
       contentType = 'text/plain'
@@ -68,8 +74,10 @@ export default defineEventHandler(async (event) => {
       fileData = serializeCanonicalDownload({
         title: workout.title,
         description: workout.description || '',
-        ftp: workout.user.ftp,
         structure: workout.structuredWorkout,
+        zoneProfileSnapshot: (workout.structuredWorkout as any)?.zoneProfileSnapshot,
+        workout,
+        liveUserFtp: workout.user.ftp,
         format
       })
       contentType = 'text/plain'

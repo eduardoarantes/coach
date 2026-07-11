@@ -65,12 +65,16 @@ export const useUserStore = defineStore('user', () => {
     }
   }
 
+  function cloneSerializable<T>(value: T): T {
+    return JSON.parse(JSON.stringify(toRaw(value)))
+  }
+
   // Update dashboard settings
   async function updateDashboardSettings(settings: any) {
     if (!user.value) return
 
-    const previousDashboardSettings = structuredClone(toRaw(user.value.dashboardSettings || {}))
-    const serializableSettings = structuredClone(toRaw(settings))
+    const previousDashboardSettings = cloneSerializable(user.value.dashboardSettings || {})
+    const serializableSettings = cloneSerializable(settings)
 
     // Optimistic update
     if (!user.value.dashboardSettings) {

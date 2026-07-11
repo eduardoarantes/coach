@@ -38,9 +38,10 @@ export default defineEventHandler(async (event) => {
     title: workout.title,
     description: workout.description || '',
     type: workout.type,
-    ftp: workout.user?.ftp || 250,
     structure: workout.structuredWorkout,
-    zoneProfileSnapshot: (workout.structuredWorkout as any)?.zoneProfileSnapshot
+    zoneProfileSnapshot: (workout.structuredWorkout as any)?.zoneProfileSnapshot,
+    workout,
+    liveUserFtp: workout.user?.ftp
   })
   return { intervalsDescription, hasStructure: true }
 })

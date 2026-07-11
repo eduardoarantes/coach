@@ -181,6 +181,7 @@ const CHAT_SKILL_MANIFESTS: Record<ChatSkillId, ChatSkillManifest> = {
 - If the user approves a prepared planning action, immediately execute that exact approved planning tool call.
 - After approval, do not just acknowledge the action in text. Execute the tool first, then report the result.
 - Do not call patch_planned_workout_structure or set_planned_workout_structure on the same workout in the same turn as generate_planned_workout_structure or adjust_planned_workout — async jobs overwrite direct edits.
+- Before publish_planned_workout, call get_planned_workout_details when sync status, conflicts, or generation state are unclear. Do not publish when sync_conflict is true or structure_generation_in_flight is true.
 - Do not claim a workout was created, updated, moved, published, or deleted unless the planning tool actually ran successfully.`,
     contextFlags: ['planning', 'date_context', 'time'],
     approvalToolNames: [

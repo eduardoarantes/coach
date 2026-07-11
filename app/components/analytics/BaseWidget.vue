@@ -271,23 +271,25 @@
       Object.assign(annotationEntries, response.lapAnnotations)
     }
 
-    response.annotations?.forEach((annotation, index) => {
-      annotationEntries[`response-${index}`] = {
-        type: 'line',
-        scaleID: annotation.scaleID,
-        value: annotation.value,
-        borderColor: annotation.borderColor || '#94a3b8',
-        borderDash: annotation.borderDash || [6, 6],
-        borderWidth: 1.5,
-        label: {
-          display: true,
-          content: annotation.label,
-          color: '#cbd5e1',
-          backgroundColor: 'rgba(15, 23, 42, 0.85)',
-          position: 'end'
+    if (Array.isArray(response.annotations)) {
+      response.annotations.forEach((annotation, index) => {
+        annotationEntries[`response-${index}`] = {
+          type: 'line',
+          scaleID: annotation.scaleID,
+          value: annotation.value,
+          borderColor: annotation.borderColor || '#94a3b8',
+          borderDash: annotation.borderDash || [6, 6],
+          borderWidth: 1.5,
+          label: {
+            display: true,
+            content: annotation.label,
+            color: '#cbd5e1',
+            backgroundColor: 'rgba(15, 23, 42, 0.85)',
+            position: 'end'
+          }
         }
-      }
-    })
+      })
+    }
 
     overlays.forEach((overlay) => {
       if (overlay.value === undefined) return

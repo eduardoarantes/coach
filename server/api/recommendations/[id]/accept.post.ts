@@ -1,13 +1,12 @@
 import { getServerSession } from '../../../utils/session'
 import { prisma } from '../../../utils/db'
-import { tasks } from '@trigger.dev/sdk/v3'
 import {
   syncPlannedWorkoutToIntervals,
   autoUploadPlannedWorkoutToIntervalsIfEnabled
 } from '../../../utils/intervals-sync'
 import { isIntervalsEventId } from '../../../utils/intervals'
 import { validateRecommendationAcceptanceTarget } from '../../../utils/recommendation-guardrails'
-import { structureGenerationRunTags } from '../../../utils/trigger-run-tags'
+import { enqueuePlannedWorkoutStructureGeneration } from '../../../utils/planned-workout-structure-trigger'
 
 defineRouteMeta({
   openAPI: {
@@ -183,27 +182,17 @@ export default defineEventHandler(async (event) => {
   // Trigger regeneration of structured workout based on the new description/title/params.
   // The generation task is responsible for syncing the final structure to Intervals.
   if (requiresStructure) {
-    const generation = await prisma.plannedWorkout.update({
-      where: { id: targetPlannedWorkoutId },
-      data: { generationRevision: { increment: 1 } },
-      select: { generationRevision: true }
-    })
-    const tags = structureGenerationRunTags({
+    const queued = await enqueuePlannedWorkoutStructureGeneration({
       userId,
-      plannedWorkoutId: targetPlannedWorkoutId,
+      plannedWorkoutId: targetPlannedWorkoutId!,
       source: 'recommendation'
     })
-    await tasks.trigger(
-      'generate-structured-workout',
-      {
-        plannedWorkoutId: targetPlannedWorkoutId,
-        generationRevision: generation.generationRevision
-      },
-      {
-        concurrencyKey: userId,
-        tags
-      }
-    )
+    if (queued.status !== 'queued') {
+      console.error(
+        'Failed to trigger structure generation after recommendation accept:',
+        queued.error
+      )
+    }
   } else if (!isLocal) {
     // Rest-day or metadata-only updates can sync immediately because no structured steps are pending.
     await syncPlannedWorkoutToIntervals(

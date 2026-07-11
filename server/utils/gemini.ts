@@ -130,7 +130,13 @@ async function logUsage(params: {
   durationMs?: number
 }) {
   const durationMs = params.durationMs || 0
-  const reasoningTokens = params.usage.reasoningTokens ?? 0
+  const usage = params.usage ?? {
+    inputTokens: 0,
+    outputTokens: 0,
+    cachedTokens: 0,
+    reasoningTokens: 0
+  }
+  const reasoningTokens = usage.reasoningTokens ?? 0
   const estimatedCost = calculateLlmCost(
     params.modelId,
     params.usage.inputTokens,
@@ -470,7 +476,7 @@ export async function generateCoachAnalysis(
     trackingContext?.userId,
     trackingContext?.operation
   )
-  const modelName = trackingContext?.modelOverride || opSettings.modelId
+  const modelName = resolveModelId(trackingContext?.modelOverride || opSettings.modelId)
   const thinkingLevel = trackingContext?.thinkingLevelOverride || opSettings.thinkingLevel
   const thinkingBudget = trackingContext?.thinkingBudgetOverride || opSettings.thinkingBudget
   const startTime = Date.now()
@@ -538,7 +544,7 @@ export async function generateStructuredAnalysis<T>(
     trackingContext?.userId,
     trackingContext?.operation
   )
-  const modelName = trackingContext?.modelOverride || opSettings.modelId
+  const modelName = resolveModelId(trackingContext?.modelOverride || opSettings.modelId)
   const thinkingLevel = trackingContext?.thinkingLevelOverride || opSettings.thinkingLevel
   const thinkingBudget = trackingContext?.thinkingBudgetOverride || opSettings.thinkingBudget
   const startTime = Date.now()

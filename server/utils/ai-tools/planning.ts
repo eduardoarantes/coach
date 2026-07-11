@@ -1,22 +1,13 @@
 import { tool } from 'ai'
 import { z } from 'zod/v3'
 import { prisma } from '../../utils/db'
-import { adjustStructuredWorkoutTask } from '../../../trigger/adjust-structured-workout'
 import {
   syncPlannedWorkoutToIntervals,
   autoUploadPlannedWorkoutToIntervalsIfEnabled
 } from '../../utils/intervals-sync'
-import { WorkoutConverter } from '../../utils/workout-converter'
-import {
-  cleanIntervalsDescription,
-  createIntervalsPlannedWorkout,
-  updateIntervalsPlannedWorkout,
-  isIntervalsEventId
-} from '../../utils/intervals'
 import { plannedWorkoutRepository } from '../repositories/plannedWorkoutRepository'
 import { workoutRepository } from '../repositories/workoutRepository'
 import { sportSettingsRepository } from '../repositories/sportSettingsRepository'
-import { plannedWorkoutPublishRepository } from '../repositories/plannedWorkoutPublishRepository'
 import { trainingPlanRepository } from '../repositories/trainingPlanRepository'
 import { trainingWeekRepository } from '../repositories/trainingWeekRepository'
 import { metabolicService } from '../services/metabolicService'
@@ -35,24 +26,46 @@ import { checkQuota } from '../../utils/quotas/engine'
 import { resolveWorkoutTargeting } from '../../../trigger/utils/workout-targeting'
 import { buildToolIdempotencyKey, hashToolArgs, type ChatToolExecutionContext } from '../chat/turns'
 import {
-  buildStructureEditFields,
-  buildStructurePublishFields
-} from '../planned-workout-structure-sync'
-import {
   normalizeStructuredWorkoutForPersistence,
-  computeStructuredWorkoutMetrics,
   getPendingSyncStatus,
   hasRenderableStructure
 } from '../structured-workout-persistence'
 import { publishTaskRunStartedEvent } from '../task-run-events'
-import { isPlannedWorkoutStructureJobInFlight } from '../trigger-check'
-import { enqueuePlannedWorkoutStructureGeneration } from '../planned-workout-structure-trigger'
+import { hasActiveStructureGenerationRun } from '../structure-generation-run'
+import {
+  buildStructureGenerationMessage,
+  enqueuePlannedWorkoutStructureGeneration,
+  enqueuePlannedWorkoutStructureAdjustment,
+  type StructureGenerationStatus
+} from '../planned-workout-structure-trigger'
+import { publishPlannedWorkoutToIntervals } from '../planned-workout-intervals-publish'
 import {
   adaptStructuredWorkout,
-  createZoneProfileSnapshot,
   validateStructuredWorkoutLimits
 } from '../../../shared/structured-workout-contract'
 import { writeCanonicalPlannedWorkoutStructure } from '../../utils/canonical-planned-workout-write'
+import {
+  buildManualStructureEditStatusMessage,
+  buildPlannedWorkoutOperationalContext,
+  resolveManualEditZoneProfileSnapshot,
+  syncManualPlannedWorkoutStructureToIntervalsIfSynced
+} from '../planned-workout-manual-structure-edit'
+
+const structureEditWorkoutSelect = {
+  id: true,
+  title: true,
+  description: true,
+  syncStatus: true,
+  structuredWorkout: true,
+  type: true,
+  durationSec: true,
+  lastGenerationSettingsSnapshot: true,
+  createdFromSettingsSnapshot: true,
+  user: { select: { ftp: true, lthr: true, maxHr: true } }
+} as const
+
+const structureGenerationInFlightError =
+  'Structure generation or adjustment is already running for this workout. Wait for it to finish before editing structure directly.'
 
 const STEP_INTENT_VALUES = [
   'warmup',
@@ -619,6 +632,7 @@ export const planningTools = (userId: string, timezone: string, aiSettings: AiSe
     execute: async ({ workout_id }) => {
       const workout = await plannedWorkoutRepository.getById(workout_id, userId, {
         include: {
+          user: { select: { ftp: true } },
           trainingWeek: {
             include: {
               block: {
@@ -634,6 +648,16 @@ export const planningTools = (userId: string, timezone: string, aiSettings: AiSe
       if (!workout) return { error: 'Planned workout not found' }
 
       const week = workout.trainingWeek
+      const operational = await buildPlannedWorkoutOperationalContext(userId, {
+        id: workout.id,
+        type: workout.type,
+        syncConflict: workout.syncConflict,
+        pendingRemoteStructuredWorkout: workout.pendingRemoteStructuredWorkout,
+        lastGenerationSettingsSnapshot: workout.lastGenerationSettingsSnapshot,
+        createdFromSettingsSnapshot: workout.createdFromSettingsSnapshot,
+        structuredWorkout: workout.structuredWorkout,
+        user: workout.user
+      })
       return {
         success: true,
         workout_id: workout.id,
@@ -647,6 +671,12 @@ export const planningTools = (userId: string, timezone: string, aiSettings: AiSe
         sync_status: workout.syncStatus,
         completion_status: workout.completionStatus,
         has_structure: hasRenderableStructure(workout.structuredWorkout),
+        sync_conflict: operational.sync_conflict,
+        has_pending_remote_structure: operational.has_pending_remote_structure,
+        structure_generation_in_flight: operational.structure_generation_in_flight,
+        settings_staleness: operational.settings_staleness,
+        has_unresolved_targets: operational.has_unresolved_targets,
+        structure_source: operational.structure_source,
         training_context: week
           ? {
               plan_name: week.block?.plan?.name,
@@ -698,31 +728,31 @@ export const planningTools = (userId: string, timezone: string, aiSettings: AiSe
 
   set_planned_workout_structure: tool({
     description:
-      'Replace the full planned workout structure directly. Use this only when you already know the complete desired structure. For small/localized edits, prefer patch_planned_workout_structure instead of replacing everything.',
+      'Replace the full planned workout structure directly. Use this only when you already know the complete desired structure. For small/localized edits, prefer patch_planned_workout_structure instead of replacing everything. Zone targets are preserved from the existing workout by default; set rebase_zones=true only when you intentionally want current sport settings applied.',
     inputSchema: z.object({
       workout_id: z.string().describe('The ID of the planned workout'),
-      structured_workout: structuredWorkoutSchema
+      structured_workout: structuredWorkoutSchema,
+      rebase_zones: z
+        .boolean()
+        .optional()
+        .describe(
+          'When true, rebind zone/FTP targets to current sport settings instead of preserving the workout snapshot.'
+        )
     }),
     needsApproval: async () => aiSettings.aiRequireToolApproval,
-    execute: async ({ workout_id, structured_workout }) => {
+    execute: async ({ workout_id, structured_workout, rebase_zones }) => {
       const limitError = getStructuredWorkoutLimitError(structured_workout)
       if (limitError) return { success: false, error: limitError }
       const existing = (await plannedWorkoutRepository.getById(workout_id, userId, {
-        select: {
-          id: true,
-          syncStatus: true,
-          type: true,
-          user: { select: { ftp: true, lthr: true, maxHr: true } }
-        }
+        select: structureEditWorkoutSelect
       })) as any
 
       if (!existing) return { error: 'Planned workout not found' }
-      if (await isPlannedWorkoutStructureJobInFlight(userId, workout_id)) {
+      if (await hasActiveStructureGenerationRun(workout_id)) {
         return {
           success: false,
           structure_job_in_flight: true,
-          error:
-            'Structure generation or adjustment is already running for this workout. Wait for it to finish before replacing the structure directly.'
+          error: structureGenerationInFlightError
         }
       }
       const sportSettings = await sportSettingsRepository.getForActivityType(
@@ -747,9 +777,14 @@ export const planningTools = (userId: string, timezone: string, aiSettings: AiSe
       })
       const normalizedLimitError = getStructuredWorkoutLimitError(normalized)
       if (normalizedLimitError) return { success: false, error: normalizedLimitError }
+      const zoneProfileSnapshot = resolveManualEditZoneProfileSnapshot({
+        existingStructuredWorkout: existing.structuredWorkout,
+        sportSettings,
+        rebaseZones: rebase_zones
+      })
       const canonical = adaptStructuredWorkout(normalized, {
         source: 'MANUAL_EDIT',
-        zoneProfileSnapshot: createZoneProfileSnapshot(sportSettings)
+        zoneProfileSnapshot
       })
       if (!canonical || canonical.diagnostics?.length) {
         return {
@@ -770,13 +805,27 @@ export const planningTools = (userId: string, timezone: string, aiSettings: AiSe
         preservePlannedDuration: existing.durationSec
       })
       const updated = write.workout!
+      const sync = await syncManualPlannedWorkoutStructureToIntervalsIfSynced({
+        userId,
+        plannedWorkoutId: workout_id,
+        priorSyncStatus: existing.syncStatus,
+        updatedWorkout: updated,
+        canonical,
+        sportSettings,
+        liveUserFtp: existing.user?.ftp
+      })
 
       return {
         success: true,
         workout_id: updated.id,
-        status: existing.syncStatus === 'LOCAL_ONLY' ? 'LOCAL_ONLY' : 'QUEUED_FOR_SYNC',
-        message:
-          'Planned workout structure updated. Publish to Intervals.icu when you are ready to push changes.',
+        status: sync.sync_status,
+        intervals_synced: sync.synced,
+        zone_profile_rebased: Boolean(rebase_zones),
+        message: buildManualStructureEditStatusMessage({
+          sync_status: sync.sync_status,
+          intervals_synced: sync.synced,
+          zone_profile_rebased: Boolean(rebase_zones)
+        }),
         structured_workout: updated.structuredWorkout
       }
     }
@@ -792,22 +841,15 @@ export const planningTools = (userId: string, timezone: string, aiSettings: AiSe
     needsApproval: async () => aiSettings.aiRequireToolApproval,
     execute: async ({ workout_id, operations }) => {
       const existing = (await plannedWorkoutRepository.getById(workout_id, userId, {
-        select: {
-          id: true,
-          syncStatus: true,
-          structuredWorkout: true,
-          type: true,
-          user: { select: { ftp: true, lthr: true, maxHr: true } }
-        }
+        select: structureEditWorkoutSelect
       })) as any
 
       if (!existing) return { error: 'Planned workout not found' }
-      if (await isPlannedWorkoutStructureJobInFlight(userId, workout_id)) {
+      if (await hasActiveStructureGenerationRun(workout_id)) {
         return {
           success: false,
           structure_job_in_flight: true,
-          error:
-            'Structure generation or adjustment is already running for this workout. Wait for it to finish before patching structure directly.'
+          error: structureGenerationInFlightError
         }
       }
       if (!existing.structuredWorkout || typeof existing.structuredWorkout !== 'object') {
@@ -849,9 +891,10 @@ export const planningTools = (userId: string, timezone: string, aiSettings: AiSe
         if (normalizedLimitError) return { success: false, error: normalizedLimitError }
         const canonical = adaptStructuredWorkout(normalized, {
           source: 'MANUAL_EDIT',
-          zoneProfileSnapshot:
-            (existing.structuredWorkout as any)?.zoneProfileSnapshot ||
-            createZoneProfileSnapshot(sportSettings)
+          zoneProfileSnapshot: resolveManualEditZoneProfileSnapshot({
+            existingStructuredWorkout: existing.structuredWorkout,
+            sportSettings
+          })
         })
         if (!canonical || canonical.diagnostics?.length) {
           return {
@@ -874,12 +917,26 @@ export const planningTools = (userId: string, timezone: string, aiSettings: AiSe
           preservePlannedDuration: existing.durationSec
         })
         const updated = write.workout!
+        const sync = await syncManualPlannedWorkoutStructureToIntervalsIfSynced({
+          userId,
+          plannedWorkoutId: workout_id,
+          priorSyncStatus: existing.syncStatus,
+          updatedWorkout: updated,
+          canonical,
+          sportSettings,
+          liveUserFtp: existing.user?.ftp
+        })
 
         return {
           success: true,
           workout_id: updated.id,
-          status: existing.syncStatus === 'LOCAL_ONLY' ? 'LOCAL_ONLY' : 'QUEUED_FOR_SYNC',
+          status: sync.sync_status,
+          intervals_synced: sync.synced,
           applied_operations: operations.length,
+          message: buildManualStructureEditStatusMessage({
+            sync_status: sync.sync_status,
+            intervals_synced: sync.synced
+          }),
           structured_workout: updated.structuredWorkout
         }
       } catch (e: any) {
@@ -1027,7 +1084,7 @@ export const planningTools = (userId: string, timezone: string, aiSettings: AiSe
       }
 
       const shouldGenerate = args.generate_structure !== false
-      const structureStatus: StructureGenerationStatus = 'skipped'
+      let structureStatus: StructureGenerationStatus = shouldGenerate ? 'failed' : 'skipped'
       let runId: string | undefined
       let structureError: string | undefined
       if (args.generate_structure !== false) {
@@ -1039,9 +1096,11 @@ export const planningTools = (userId: string, timezone: string, aiSettings: AiSe
             source: 'chat'
           })
           if (queued.status !== 'queued') throw new Error(queued.error)
+          structureStatus = 'queued'
           runId = queued.runId
         } catch (e) {
           console.error('Failed to trigger structured workout generation:', e)
+          structureStatus = 'failed'
           structureError = e instanceof Error ? e.message : String(e)
         }
       }
@@ -1299,40 +1358,24 @@ export const planningTools = (userId: string, timezone: string, aiSettings: AiSe
 
       // Trigger adjustment task
       try {
-        const generation = await prisma.plannedWorkout.update({
-          where: { id: workout_id },
-          data: { generationRevision: { increment: 1 } },
-          select: { generationRevision: true }
-        })
-        const tags = structureGenerationRunTags({
+        const queued = await enqueuePlannedWorkoutStructureAdjustment({
           userId,
           plannedWorkoutId: workout_id,
-          source: 'chat'
-        })
-        const handle = await adjustStructuredWorkoutTask.trigger(
-          {
-            plannedWorkoutId: workout_id,
-            adjustments: {
-              feedback: instructions,
-              durationMinutes: duration_minutes,
-              intensity: intensity
-            },
-            targetingOverride: targeting_override || null,
-            generationRevision: generation.generationRevision,
-            quotaCheckedAtEnqueue: true
+          adjustments: {
+            feedback: instructions,
+            durationMinutes: duration_minutes,
+            intensity
           },
-          {
-            tags,
-            concurrencyKey: userId
-          }
-        )
-        await publishTaskRunStartedEvent(userId, 'adjust-structured-workout', handle, {
-          tags
+          targetingOverride: targeting_override || null,
+          source: 'chat',
+          quotaCheckedAtEnqueue: true
         })
+        if (queued.status !== 'queued') throw new Error(queued.error)
         return {
           success: true,
           workout_id,
-          run_id: handle.id,
+          run_id: queued.runId,
+          generation_run_id: queued.generationRunId,
           message: 'Workout adjustment started.'
         }
       } catch (e) {
@@ -1382,132 +1425,30 @@ export const planningTools = (userId: string, timezone: string, aiSettings: AiSe
   }),
 
   publish_planned_workout: tool({
-    description: 'Publish or update a planned workout to Intervals.icu.',
+    description:
+      'Publish or update a planned workout to Intervals.icu. Check get_planned_workout_details first when sync_conflict or structure_generation_in_flight is true.',
     inputSchema: z.object({
       workout_id: z.string()
     }),
     needsApproval: async () => aiSettings.aiRequireToolApproval,
     execute: async ({ workout_id }) => {
-      // Use repository to find the workout
-      const workout = (await plannedWorkoutRepository.getById(workout_id, userId, {
-        include: { user: { select: { ftp: true } } }
-      })) as any // Cast because of complex include
-
-      if (!workout) return { error: 'Planned workout not found' }
-
-      if (!hasRenderableStructure(workout.structuredWorkout)) {
+      const result = await publishPlannedWorkoutToIntervals(userId, workout_id)
+      if (!result.success) {
         return {
           success: false,
-          error:
-            'Workout structure is not ready yet. Wait for structure generation to finish or use Build Structure first.'
+          code: result.code,
+          error: result.error,
+          ...(result.diagnostics ? { diagnostics: result.diagnostics } : {}),
+          ...(result.settings_staleness ? { settings_staleness: result.settings_staleness } : {})
         }
       }
 
-      // Logic copied from publish endpoint, simplified
-      // Ideally this should be in a service but for now we implement directly using utils
-      const integration = await prisma.integration.findFirst({
-        where: { userId, provider: 'intervals' }
-      })
-
-      if (!integration) return { error: 'Intervals.icu integration not found' }
-
-      const provider = 'intervals'
-      const existingTarget = await plannedWorkoutPublishRepository.getByProvider(
-        workout_id,
-        provider
-      )
-      const existingExternalId =
-        existingTarget?.externalId && isIntervalsEventId(existingTarget.externalId)
-          ? existingTarget.externalId
-          : isIntervalsEventId(workout.externalId)
-            ? workout.externalId
-            : null
-      const isLocal = !existingExternalId
-
-      // Fetch sport settings to check preferences
-      const sportSettings = await sportSettingsRepository.getForActivityType(
-        userId,
-        workout.type || 'Ride'
-      )
-
-      let workoutDoc = ''
-      if (workout.structuredWorkout) {
-        const workoutData = {
-          title: workout.title,
-          description: workout.description || '',
-          type: workout.type || 'Ride',
-          steps: (workout.structuredWorkout as any).steps || [],
-          exercises: (workout.structuredWorkout as any).exercises,
-          messages: (workout.structuredWorkout as any).messages || [],
-          ftp: (workout.user as any).ftp || 250,
-          sportSettings: sportSettings || undefined,
-          generationSettingsSnapshot:
-            workout.lastGenerationSettingsSnapshot || workout.createdFromSettingsSnapshot || null
-        }
-        workoutDoc = WorkoutConverter.toIntervalsICU(workoutData)
-      }
-
-      const cleanDescription = cleanIntervalsDescription(workout.description || '')
-
-      try {
-        if (isLocal) {
-          const intervalsWorkout = await createIntervalsPlannedWorkout(integration, {
-            date: workout.date,
-            startTime: workout.startTime,
-            title: workout.title,
-            description: cleanDescription,
-            type: workout.type || 'Ride',
-            durationSec: workout.durationSec || 3600,
-            tss: workout.tss ?? undefined,
-            workout_doc: workoutDoc,
-            managedBy: workout.managedBy
-          })
-
-          await plannedWorkoutRepository.update(workout_id, userId, {
-            externalId: String(intervalsWorkout.id),
-            syncStatus: 'SYNCED',
-            lastSyncedAt: new Date(),
-            ...buildStructurePublishFields(workout.structuredWorkout)
-          })
-          await plannedWorkoutPublishRepository.upsert(workout_id, provider, {
-            externalId: String(intervalsWorkout.id),
-            status: 'SYNCED',
-            error: null,
-            lastSyncedAt: new Date()
-          })
-          return { success: true, message: 'Workout published to Intervals.icu.' }
-        } else {
-          await updateIntervalsPlannedWorkout(integration, existingExternalId!, {
-            date: workout.date,
-            startTime: workout.startTime,
-            title: workout.title,
-            description: cleanDescription,
-            type: workout.type || 'Ride',
-            durationSec: workout.durationSec || 3600,
-            tss: workout.tss ?? undefined,
-            workout_doc: workoutDoc,
-            managedBy: workout.managedBy
-          })
-
-          await plannedWorkoutRepository.update(workout_id, userId, {
-            syncStatus: 'SYNCED',
-            lastSyncedAt: new Date(),
-            ...buildStructurePublishFields(workout.structuredWorkout)
-          })
-          await plannedWorkoutPublishRepository.upsert(workout_id, provider, {
-            externalId: existingExternalId!,
-            status: 'SYNCED',
-            error: null,
-            lastSyncedAt: new Date()
-          })
-          return { success: true, message: 'Workout updated on Intervals.icu.' }
-        }
-      } catch (e: any) {
-        await plannedWorkoutPublishRepository.upsert(workout_id, provider, {
-          status: 'FAILED',
-          error: e.message || 'Failed to publish.'
-        })
-        return { success: false, error: e.message || 'Failed to publish.' }
+      return {
+        success: true,
+        action: result.action,
+        message: result.message,
+        sync_status: 'SYNCED',
+        ...(result.warnings ? { warnings: result.warnings } : {})
       }
     }
   }),

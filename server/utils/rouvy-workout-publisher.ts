@@ -4,6 +4,11 @@ import { pushRouvyWorkout } from './rouvy'
 import { plannedWorkoutPublishRepository } from './repositories/plannedWorkoutPublishRepository'
 import { buildStructurePublishFields } from './planned-workout-structure-sync'
 import { serializeCanonicalDownload } from './canonical-workout-serializer'
+import {
+  appendPublishStalenessWarning,
+  buildPublishWarnings,
+  loadPlannedWorkoutPublishContext
+} from './planned-workout-publish-guards'
 
 function buildRouvyFilename(title: string) {
   const basename = title
@@ -15,20 +20,20 @@ function buildRouvyFilename(title: string) {
 }
 
 export async function publishPlannedWorkoutToRouvy(workoutId: string, userId: string) {
-  const workout = await prisma.plannedWorkout.findFirst({
-    where: { id: workoutId, userId },
-    include: {
-      user: { select: { ftp: true, name: true, timezone: true } }
-    }
-  })
-
-  if (!workout) {
-    throw createError({ statusCode: 404, message: 'Workout not found' })
+  const precondition = await loadPlannedWorkoutPublishContext(userId, workoutId)
+  if (!precondition.ok) {
+    throw createError({
+      statusCode:
+        precondition.code === 'not_found' ? 404 : precondition.code === 'no_structure' ? 422 : 409,
+      message: precondition.error,
+      data: {
+        code: precondition.code,
+        settings_staleness: precondition.settings_staleness
+      }
+    })
   }
 
-  if (!workout.structuredWorkout) {
-    throw createError({ statusCode: 400, message: 'Workout has no structured workout to publish' })
-  }
+  const { workout, sportSettings, settingsStaleness } = precondition.context
 
   const integration = await prisma.integration.findFirst({
     where: { userId, provider: 'rouvy' }
@@ -38,17 +43,34 @@ export async function publishPlannedWorkoutToRouvy(workoutId: string, userId: st
     throw createError({ statusCode: 400, message: 'ROUVY integration not found' })
   }
 
-  const zwoContent = serializeCanonicalDownload({
-    title: workout.title,
-    description: workout.description || '',
-    structure: workout.structuredWorkout,
-    ftp: workout.user.ftp || 250,
-    format: 'zwo'
-  }) as string
+  let zwoContent: string
+  try {
+    zwoContent = serializeCanonicalDownload({
+      title: workout.title,
+      description: workout.description || '',
+      structure: workout.structuredWorkout,
+      zoneProfileSnapshot: (workout.structuredWorkout as any)?.zoneProfileSnapshot,
+      workout,
+      liveSportSettings: sportSettings,
+      liveUserFtp: workout.user?.ftp || 250,
+      format: 'zwo'
+    }) as string
+  } catch (error: any) {
+    throw createError({
+      statusCode: 422,
+      message: error?.message || 'Workout cannot be exported to ROUVY.',
+      data: {
+        code: 'export_blocked',
+        diagnostics: error?.data?.issues || error?.data?.diagnostics,
+        settings_staleness: settingsStaleness.stale ? settingsStaleness : undefined
+      }
+    })
+  }
+
   const plannedAt = buildZonedDateTimeFromUtcDate(
     workout.date,
     workout.startTime,
-    workout.user.timezone || 'UTC'
+    workout.user?.timezone || 'UTC'
   ).toISOString()
 
   try {
@@ -80,11 +102,14 @@ export async function publishPlannedWorkoutToRouvy(workoutId: string, userId: st
       lastSyncedAt: syncedAt
     })
 
+    const warnings = buildPublishWarnings(settingsStaleness)
+
     return {
       success: true,
-      message: 'Workout published to ROUVY.',
+      message: appendPublishStalenessWarning('Workout published to ROUVY.', settingsStaleness),
       result,
-      plannedAt
+      plannedAt,
+      ...(warnings ? { warnings } : {})
     }
   } catch (error: any) {
     await prisma.plannedWorkout.update({

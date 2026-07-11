@@ -510,6 +510,7 @@
 </template>
 
 <script setup lang="ts">
+  import { toRaw } from 'vue'
   import { countries } from '~/utils/countries'
   import { cmToFtIn, ftInToCm, LBS_TO_KG } from '~/utils/metrics'
   import { useTranslate } from '@tolgee/vue'
@@ -798,10 +799,11 @@
 
   function pickBasicProfilePayload(profile: Record<string, unknown>) {
     const payload: Record<string, unknown> = {}
+    const rawProfile = toRaw(profile)
 
     for (const key of BASIC_PROFILE_FIELDS) {
-      if (key in profile) {
-        payload[key] = profile[key]
+      if (key in rawProfile) {
+        payload[key] = toRaw(rawProfile[key])
       }
     }
 

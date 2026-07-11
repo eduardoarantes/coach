@@ -17,6 +17,8 @@ import {
   type StructureSource,
   type ZoneProfileSnapshot
 } from '../../shared/structured-workout-contract'
+import { validateCanonicalSemantics } from '../../shared/workout-canonical-validation'
+import { supersedeActiveStructureGenerationRuns } from './structure-generation-run'
 
 type WriteSource = Extract<
   StructureSource,
@@ -65,7 +67,15 @@ export function buildCanonicalPlannedWorkoutWriteData(options: CanonicalWriteOpt
   })
   if (!canonical) throw createError({ statusCode: 400, message: 'Invalid structured workout' })
   const limitIssues = validateStructuredWorkoutLimits(canonical)
-  const issues = [...limitIssues, ...(options.allowDiagnostics ? [] : canonical.diagnostics || [])]
+  const semanticIssues =
+    options.source === 'AI_GENERATION' || options.source === 'MANUAL_EDIT'
+      ? validateCanonicalSemantics(canonical)
+      : []
+  const issues = [
+    ...limitIssues,
+    ...semanticIssues,
+    ...(options.allowDiagnostics ? [] : canonical.diagnostics || [])
+  ]
   if (issues.length) {
     throw createError({ statusCode: 422, message: issues[0]!.message, data: { issues } })
   }
@@ -236,6 +246,11 @@ export async function writeCanonicalPlannedWorkoutStructure(
 ) {
   const { canonical, metrics, data } = buildCanonicalPlannedWorkoutWriteData(options)
   const client = options.tx || prisma
+
+  if (options.source === 'MANUAL_EDIT' && options.incrementRevision !== false) {
+    await supersedeActiveStructureGenerationRuns(options.plannedWorkoutId, options.tx)
+    ;(data as any).generationRevision = { increment: 1 }
+  }
 
   if (options.expectedGenerationRevision !== undefined) {
     const result = await client.plannedWorkout.updateMany({

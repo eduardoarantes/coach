@@ -16,7 +16,7 @@ import { getCurrentFitnessSummary } from '../server/utils/training-stress'
 import { getUserAiSettings } from '../server/utils/ai-user-settings'
 import { TRAINING_BLOCK_TYPES, TRAINING_BLOCK_FOCUSES } from '../app/utils/training-constants'
 import { availabilityRepository } from '../server/utils/repositories/availabilityRepository'
-import { structureGenerationRunTags } from '../server/utils/trigger-run-tags'
+import { enqueuePlannedWorkoutStructureGeneration } from '../server/utils/planned-workout-structure-trigger'
 
 const trainingBlockSchema = {
   type: 'object',
@@ -628,6 +628,7 @@ Return valid JSON matching the schema provided.`
         { timeout: 40000 }
       )
 
+      const structureFailures: Array<{ workoutId: string; error: string }> = []
       if (workoutIdsToStructure.length > 0) {
         logger.log(
           `[GenerateBlock] Triggering structure generation for ${workoutIdsToStructure.length} workouts`,
@@ -637,25 +638,31 @@ Return valid JSON matching the schema provided.`
           }
         )
         for (const workoutId of workoutIdsToStructure) {
-          const generation = await prisma.plannedWorkout.update({
-            where: { id: workoutId },
-            data: { generationRevision: { increment: 1 } },
-            select: { generationRevision: true }
-          })
-          const tags = structureGenerationRunTags({
+          const queued = await enqueuePlannedWorkoutStructureGeneration({
             userId,
             plannedWorkoutId: workoutId,
             source: 'block'
           })
-          await tasks.trigger(
-            'generate-structured-workout',
-            { plannedWorkoutId: workoutId, generationRevision: generation.generationRevision },
-            { tags, concurrencyKey: userId }
-          )
+          if (queued.status === 'failed') {
+            structureFailures.push({ workoutId, error: queued.error })
+          }
+        }
+        if (structureFailures.length > 0) {
+          logger.warn('[GenerateBlock] Some structure generation jobs failed to enqueue', {
+            blockId,
+            failureCount: structureFailures.length,
+            structureFailures
+          })
         }
       }
 
       logger.log('[GenerateBlock] Transaction and sub-tasks queued successfully', { blockId })
+
+      return {
+        success: true,
+        blockId,
+        structure_failures: structureFailures.length > 0 ? structureFailures : undefined
+      }
     } catch (dbErr: any) {
       logger.error('[GenerateBlock] DB Transaction Failed', {
         error: dbErr.message,
@@ -664,8 +671,6 @@ Return valid JSON matching the schema provided.`
       })
       throw dbErr
     }
-
-    return { success: true, blockId }
   }
 })
 

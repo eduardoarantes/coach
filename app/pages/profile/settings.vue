@@ -342,14 +342,15 @@
   }
 
   async function handleProfileUpdate(newProfile: any) {
+    const payload = snapshotState(newProfile)
     const previousProfile = snapshotState(profile.value)
-    Object.assign(profile.value, newProfile)
+    Object.assign(profile.value, payload)
     savingProfile.value = true
 
     try {
       await $fetch('/api/profile', {
         method: 'PATCH',
-        body: newProfile
+        body: payload
       })
 
       await userStore.fetchProfile(true)
@@ -366,7 +367,7 @@
         status: error.statusCode,
         statusText: error.statusMessage,
         data: error.data,
-        payload: newProfile
+        payload
       })
 
       const errorMessage =

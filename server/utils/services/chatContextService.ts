@@ -819,6 +819,9 @@ You MUST use tools to make changes to the training plan:
 - **DELETE workout** → call \`delete_planned_workout\`
 - **CHANGE availability** → call \`update_training_availability\`
 
+Before \`publish_planned_workout\`, call \`get_planned_workout_details\` when sync status, conflicts, or generation state are unclear.
+Do not publish when \`sync_conflict\` is true or \`structure_generation_in_flight\` is true — resolve or wait first.
+
 **DO NOT** describe the action without calling the tool.
 For date/time moves, **do not** delete + recreate unless the user explicitly asks for replacement.`
     : ''

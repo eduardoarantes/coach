@@ -1,16 +1,10 @@
 import { prisma } from '../../../../utils/db'
-import {
-  createIntervalsPlannedWorkout,
-  updateIntervalsPlannedWorkout,
-  cleanIntervalsDescription,
-  isIntervalsEventId,
-  normalizeIntervalsSportType
-} from '../../../../utils/intervals'
 import { getServerSession } from '../../../../utils/session'
-import { plannedWorkoutPublishRepository } from '../../../../utils/repositories/plannedWorkoutPublishRepository'
-import { buildStructurePublishFields } from '../../../../utils/planned-workout-structure-sync'
+import {
+  publishPlannedWorkoutToIntervals,
+  throwPublishPlannedWorkoutHttpError
+} from '../../../../utils/planned-workout-intervals-publish'
 import { publishPlannedWorkoutToRouvy } from '../../../../utils/rouvy-workout-publisher'
-import { serializeCanonicalForIntervals } from '../../../../utils/canonical-workout-serializer'
 
 export default defineEventHandler(async (event) => {
   const session = await getServerSession(event)
@@ -45,206 +39,16 @@ export default defineEventHandler(async (event) => {
     }
   }
 
-  // Fetch the workout
-  const workout = await prisma.plannedWorkout.findUnique({
-    where: { id, userId },
-    include: {
-      user: { select: { ftp: true } }
-    }
-  })
-
-  if (!workout) {
-    throw createError({ statusCode: 404, message: 'Workout not found' })
+  const result = await publishPlannedWorkoutToIntervals(userId, id)
+  if (!result.success) {
+    throwPublishPlannedWorkoutHttpError(result)
   }
 
-  const intervalsType = normalizeIntervalsSportType(workout.type)
-
-  // Get Intervals integration
-  const integration = await prisma.integration.findFirst({
-    where: { userId, provider: 'intervals' }
-  })
-
-  if (!integration) {
-    console.error('[Publish] Intervals integration not found for user:', userId)
-    throw createError({ statusCode: 400, message: 'Intervals.icu integration not found' })
-  }
-
-  const existingTarget = await plannedWorkoutPublishRepository.getByProvider(id, provider)
-  const existingExternalId =
-    existingTarget?.externalId && isIntervalsEventId(existingTarget.externalId)
-      ? existingTarget.externalId
-      : isIntervalsEventId(workout.externalId)
-        ? workout.externalId
-        : null
-
-  // Check if already published/synced for Intervals
-  const isLocal = !existingExternalId
-
-  // Prepare workout data
-  let workoutDoc = ''
-  if (workout.structuredWorkout) {
-    workoutDoc = serializeCanonicalForIntervals({
-      title: workout.title,
-      description: workout.description || '',
-      type: intervalsType,
-      ftp: (workout.user as any).ftp || 250,
-      structure: workout.structuredWorkout,
-      zoneProfileSnapshot: (workout.structuredWorkout as any)?.zoneProfileSnapshot
-    })
-  }
-
-  // Clean the description to ensure we don't append workout doc to an already dirty description
-  const cleanDescription = cleanIntervalsDescription(workout.description || '')
-
-  try {
-    let resultWorkout
-    let message = ''
-
-    if (isLocal) {
-      // CREATE
-      console.log('[Publish] Creating new workout on Intervals.icu:', { localId: workout.id })
-      const intervalsWorkout = await createIntervalsPlannedWorkout(integration, {
-        date: workout.date,
-        title: workout.title,
-        description: cleanDescription,
-        type: intervalsType,
-        durationSec: workout.durationSec || 3600,
-        tss: workout.tss ?? undefined,
-        workout_doc: workoutDoc,
-        managedBy: workout.managedBy
-      })
-
-      resultWorkout = intervalsWorkout
-      message = 'Workout published successfully'
-
-      // Update local record with new external ID
-      const syncedAt = new Date()
-      await prisma.plannedWorkout.update({
-        where: { id },
-        data: {
-          externalId: String(intervalsWorkout.id),
-          syncStatus: 'SYNCED',
-          lastSyncedAt: syncedAt,
-          ...buildStructurePublishFields(workout.structuredWorkout, syncedAt)
-        }
-      })
-      await plannedWorkoutPublishRepository.upsert(id, provider, {
-        externalId: String(intervalsWorkout.id),
-        status: 'SYNCED',
-        error: null,
-        lastSyncedAt: syncedAt
-      })
-    } else {
-      // UPDATE
-      console.log('[Publish] Updating existing workout on Intervals.icu:', {
-        localId: workout.id,
-        externalId: existingExternalId
-      })
-      try {
-        const intervalsWorkout = await updateIntervalsPlannedWorkout(
-          integration,
-          existingExternalId!,
-          {
-            date: workout.date,
-            title: workout.title,
-            description: cleanDescription,
-            type: intervalsType,
-            durationSec: workout.durationSec || 3600,
-            tss: workout.tss ?? undefined,
-            workout_doc: workoutDoc,
-            managedBy: workout.managedBy
-          }
-        )
-
-        resultWorkout = intervalsWorkout
-        message = 'Workout updated on Intervals.icu'
-
-        // Update local sync status
-        const syncedAt = new Date()
-        await prisma.plannedWorkout.update({
-          where: { id },
-          data: {
-            syncStatus: 'SYNCED',
-            lastSyncedAt: syncedAt,
-            ...buildStructurePublishFields(workout.structuredWorkout, syncedAt)
-          }
-        })
-        await plannedWorkoutPublishRepository.upsert(id, provider, {
-          externalId: existingExternalId!,
-          status: 'SYNCED',
-          error: null,
-          lastSyncedAt: syncedAt
-        })
-      } catch (updateError: any) {
-        // If the event was deleted on Intervals.icu (404), we should recreate it
-        if (
-          updateError.message &&
-          (updateError.message.includes('404') || updateError.message.includes('Event not found'))
-        ) {
-          console.warn('[Publish] Workout not found on Intervals.icu (404), recreating it:', {
-            localId: workout.id
-          })
-
-          const intervalsWorkout = await createIntervalsPlannedWorkout(integration, {
-            date: workout.date,
-            title: workout.title,
-            description: cleanDescription,
-            type: intervalsType,
-            durationSec: workout.durationSec || 3600,
-            tss: workout.tss ?? undefined,
-            workout_doc: workoutDoc,
-            managedBy: workout.managedBy
-          })
-
-          resultWorkout = intervalsWorkout
-          message = 'Workout recreated on Intervals.icu'
-
-          // Update local record with new external ID
-          const syncedAt = new Date()
-          await prisma.plannedWorkout.update({
-            where: { id },
-            data: {
-              externalId: String(intervalsWorkout.id),
-              syncStatus: 'SYNCED',
-              lastSyncedAt: syncedAt,
-              ...buildStructurePublishFields(workout.structuredWorkout, syncedAt)
-            }
-          })
-          await plannedWorkoutPublishRepository.upsert(id, provider, {
-            externalId: String(intervalsWorkout.id),
-            status: 'SYNCED',
-            error: null,
-            lastSyncedAt: syncedAt
-          })
-        } else {
-          // Re-throw other errors
-          throw updateError
-        }
-      }
-    }
-
-    // Return the updated local workout
-    const updatedWorkout = await prisma.plannedWorkout.findUnique({ where: { id } })
-
-    return {
-      success: true,
-      message,
-      workout: updatedWorkout
-    }
-  } catch (error: any) {
-    console.error('Error publishing/updating workout:', error)
-    await plannedWorkoutPublishRepository.upsert(id, provider, {
-      status: 'FAILED',
-      error: error.message || 'Failed to sync workout with Intervals.icu'
-    })
-
-    if (error.code === 'P2002') {
-      throw createError({ statusCode: 409, message: 'A workout with this ID already exists' })
-    }
-
-    throw createError({
-      statusCode: 500,
-      message: error.message || 'Failed to sync workout with Intervals.icu'
-    })
+  return {
+    success: true,
+    message: result.message,
+    action: result.action,
+    warnings: result.warnings,
+    workout: result.workout
   }
 })

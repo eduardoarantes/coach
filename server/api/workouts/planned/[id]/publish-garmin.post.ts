@@ -2,7 +2,6 @@ import { prisma } from '../../../../utils/db'
 import { getServerSession } from '../../../../utils/session'
 import {
   buildGarminCoursePayload,
-  buildGarminTrainingPayload,
   createGarminCourse,
   createGarminWorkout,
   createGarminWorkoutSchedule,
@@ -16,6 +15,13 @@ import {
   parseGarminScope
 } from '../../../../utils/garmin'
 import { plannedWorkoutPublishRepository } from '../../../../utils/repositories/plannedWorkoutPublishRepository'
+import { serializeCanonicalForGarmin } from '../../../../utils/canonical-workout-serializer'
+import {
+  appendPublishStalenessWarning,
+  buildPublishWarnings,
+  loadPlannedWorkoutPublishContext
+} from '../../../../utils/planned-workout-publish-guards'
+import { throwPublishPreconditionHttpError } from '../../../../utils/planned-workout-intervals-publish'
 
 type PublishDestination = 'training' | 'course'
 
@@ -70,10 +76,14 @@ export default defineEventHandler(async (event) => {
 
   const userId = (session.user as any).id as string
 
-  const workout = await prisma.plannedWorkout.findUnique({
-    where: { id, userId }
-  })
-  if (!workout) throw createError({ statusCode: 404, message: 'Workout not found' })
+  const precondition = await loadPlannedWorkoutPublishContext(userId, id)
+  if (!precondition.ok) {
+    throwPublishPreconditionHttpError(precondition.code, precondition.error, {
+      settings_staleness: precondition.settings_staleness
+    })
+  }
+
+  const { workout, sportSettings, settingsStaleness } = precondition.context
 
   const integration = await prisma.integration.findFirst({
     where: { userId, provider: 'garmin' }
@@ -122,9 +132,16 @@ export default defineEventHandler(async (event) => {
 
   try {
     if (destination === 'training') {
-      const payload = buildGarminTrainingPayload({
-        ...workout,
-        steps: (workout.structuredWorkout as any)?.steps || []
+      const payload = serializeCanonicalForGarmin({
+        title: workout.title,
+        description: workout.description || '',
+        type: workout.type,
+        structure: workout.structuredWorkout,
+        zoneProfileSnapshot: (workout.structuredWorkout as any)?.zoneProfileSnapshot,
+        durationSec: workout.durationSec,
+        distanceMeters: workout.distanceMeters,
+        workout,
+        liveSportSettings: sportSettings
       })
 
       let workoutId = existingTarget?.externalId || null
@@ -182,8 +199,14 @@ export default defineEventHandler(async (event) => {
 
       return {
         success: true,
-        message: 'Workout published to Garmin Training API.',
+        message: appendPublishStalenessWarning(
+          'Workout published to Garmin Training API.',
+          settingsStaleness
+        ),
         destination,
+        ...(buildPublishWarnings(settingsStaleness)
+          ? { warnings: buildPublishWarnings(settingsStaleness) }
+          : {}),
         target: {
           provider,
           externalId: workoutId,
@@ -214,8 +237,14 @@ export default defineEventHandler(async (event) => {
 
     return {
       success: true,
-      message: 'Course published to Garmin Courses API.',
+      message: appendPublishStalenessWarning(
+        'Course published to Garmin Courses API.',
+        settingsStaleness
+      ),
       destination,
+      ...(buildPublishWarnings(settingsStaleness)
+        ? { warnings: buildPublishWarnings(settingsStaleness) }
+        : {}),
       target: {
         provider,
         externalId: courseId,

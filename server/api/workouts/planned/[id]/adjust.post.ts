@@ -1,9 +1,8 @@
-import { prisma } from '../../../../utils/db'
-import { tasks } from '@trigger.dev/sdk/v3'
 import { z } from 'zod/v3'
 import { getServerSession } from '../../../../utils/session'
 import { publishTaskRunStartedEvent } from '../../../../utils/task-run-events'
-import { structureGenerationRunTags } from '../../../../utils/trigger-run-tags'
+import { enqueuePlannedWorkoutStructureAdjustment } from '../../../../utils/planned-workout-structure-trigger'
+import { prisma } from '../../../../utils/db'
 
 const adjustSchema = z.object({
   durationMinutes: z.number().optional(),
@@ -33,30 +32,15 @@ export default defineEventHandler(async (event) => {
   }
 
   const userId = (session.user as any).id
-  const generation = await prisma.plannedWorkout.update({
-    where: { id: workout.id },
-    data: { generationRevision: { increment: 1 } },
-    select: { generationRevision: true }
-  })
-  const tags = structureGenerationRunTags({
+  const queued = await enqueuePlannedWorkoutStructureAdjustment({
     userId,
     plannedWorkoutId: workout.id,
+    adjustments,
     source: 'api'
   })
-  const handle = await tasks.trigger(
-    'adjust-structured-workout',
-    {
-      plannedWorkoutId: workout.id,
-      adjustments,
-      generationRevision: generation.generationRevision
-    },
-    {
-      concurrencyKey: userId,
-      tags
-    }
-  )
+  if (queued.status !== 'queued') {
+    throw createError({ statusCode: 500, message: queued.error })
+  }
 
-  await publishTaskRunStartedEvent(userId, 'adjust-structured-workout', handle, { tags })
-
-  return { success: true, jobId: handle.id }
+  return { success: true, jobId: queued.runId, generationRunId: queued.generationRunId }
 })

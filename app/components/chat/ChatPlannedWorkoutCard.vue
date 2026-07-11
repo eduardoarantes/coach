@@ -223,6 +223,10 @@
   })
 
   const syncStatusLabel = computed(() => {
+    if (props.response?.structure_job_in_flight) {
+      return 'Structure generation running — direct edit blocked'
+    }
+
     const status = (plannedWorkout.value?.syncStatus || props.response?.status || '').toUpperCase()
     const waitingForStructure = expectsStructure.value && !hasVisualization.value
     const structureJobActive = Boolean(runStatus.value && ACTIVE_RUN_STATUSES.has(runStatus.value))
@@ -230,6 +234,7 @@
     if (structureJobActive && waitingForStructure) return 'Structure generation running'
     if (waitingForStructure) return 'Waiting for structured workout'
     if (!status) return null
+    if (props.response?.intervals_synced && status === 'SYNCED') return 'Pushed to Intervals.icu'
     if (expectsStructure.value && status === 'SYNCED' && !isOperationComplete.value) {
       return 'Waiting for structure sync'
     }

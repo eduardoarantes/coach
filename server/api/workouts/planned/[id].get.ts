@@ -1,6 +1,9 @@
 import { getServerSession } from '../../../utils/session'
 import { prisma } from '../../../utils/db'
 import { sportSettingsRepository } from '../../../utils/repositories/sportSettingsRepository'
+import { assessWorkoutSettingsStaleness } from '../../../../shared/workout-settings-staleness'
+import { hasActiveStructureGenerationRun } from '../../../utils/structure-generation-run'
+import { hasRenderableStructure } from '../../../utils/structured-workout-persistence'
 
 export default defineEventHandler(async (event) => {
   const session = await getServerSession(event)
@@ -98,6 +101,14 @@ export default defineEventHandler(async (event) => {
     user.id,
     workout.type || ''
   )
+  const settingsStaleness = assessWorkoutSettingsStaleness({
+    workoutType: workout.type,
+    lastGenerationSettingsSnapshot: workout.lastGenerationSettingsSnapshot,
+    createdFromSettingsSnapshot: workout.createdFromSettingsSnapshot,
+    liveSportSettings: sportSettings,
+    liveUserFtp: user.ftp
+  })
+  const structureGenerationInFlight = await hasActiveStructureGenerationRun(id)
 
   return {
     workout,
@@ -105,6 +116,9 @@ export default defineEventHandler(async (event) => {
     llmUsageId: llmUsage?.id,
     initialFeedback: llmUsage?.feedback,
     initialFeedbackText: llmUsage?.feedbackText,
-    sportSettings
+    sportSettings,
+    settingsStaleness,
+    structureGenerationInFlight,
+    hasRenderableStructure: hasRenderableStructure(workout.structuredWorkout)
   }
 })

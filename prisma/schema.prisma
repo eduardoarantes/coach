@@ -139,6 +139,7 @@ model User {
   oauthConsents                      OAuthConsent[]
   oauthTokens                        OAuthToken[]
   plannedWorkouts                    PlannedWorkout[]
+  workoutStructureGenerationRuns     WorkoutStructureGenerationRun[]
   recommendations                    Recommendation[]
   reports                            Report[]
   reportTemplates                    ReportTemplate[]
@@ -927,6 +928,7 @@ model PlannedWorkout {
   recommendations   ActivityRecommendation[]
   planAdherences    PlanAdherence[]
   publishTargets    PlannedWorkoutPublishTarget[]
+  structureGenerationRuns WorkoutStructureGenerationRun[]
   trainingWeek      TrainingWeek?            @relation(fields: [trainingWeekId], references: [id])
   user              User                     @relation(fields: [userId], references: [id], onDelete: Cascade)
   completedWorkouts Workout[]
@@ -934,6 +936,30 @@ model PlannedWorkout {
   @@unique([userId, externalId])
   @@index([userId, date])
   @@index([userId, syncStatus])
+}
+
+model WorkoutStructureGenerationRun {
+  id                 String         @id @default(uuid())
+  plannedWorkoutId   String
+  userId             String
+  mode               String
+  generationRevision Int
+  idempotencyKey     String         @unique
+  status             String         @default("PENDING")
+  source             String?
+  triggerRunId       String?
+  requestSnapshot    Json?
+  error              String?
+  startedAt          DateTime?
+  completedAt        DateTime?
+  createdAt          DateTime       @default(now())
+  updatedAt          DateTime       @updatedAt
+  plannedWorkout     PlannedWorkout @relation(fields: [plannedWorkoutId], references: [id], onDelete: Cascade)
+  user               User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([plannedWorkoutId, generationRevision])
+  @@index([plannedWorkoutId, status])
+  @@index([userId, createdAt])
 }
 
 model PlannedWorkoutPublishTarget {

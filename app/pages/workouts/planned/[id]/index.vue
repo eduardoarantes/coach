@@ -27,7 +27,9 @@
             size="sm"
             class="font-bold"
             :icon="isLocalWorkout ? 'i-heroicons-cloud-arrow-up' : 'i-heroicons-arrow-path'"
-            @click="showPublishModal = true"
+            :disabled="!canPublishWorkout"
+            :title="publishBlockedReason || undefined"
+            @click="openPublishModal"
           >
             <span class="hidden sm:inline">{{ isLocalWorkout ? 'Publish' : 'Update' }}</span>
           </UButton>
@@ -97,6 +99,13 @@
 
         <!-- Workout Content -->
         <div v-else-if="workout" class="space-y-4 sm:space-y-8">
+          <UAlert
+            v-if="settingsStalenessMessage"
+            color="info"
+            icon="i-heroicons-information-circle"
+            title="Sport settings have changed since this structure was built"
+            :description="settingsStalenessMessage"
+          />
           <UAlert
             v-if="workout.syncConflict"
             color="warning"
@@ -911,6 +920,20 @@
   >
     <template #body>
       <div class="p-6 space-y-4">
+        <UAlert
+          v-if="publishBlockedReason"
+          color="warning"
+          icon="i-heroicons-exclamation-triangle"
+          title="Publishing is blocked"
+          :description="publishBlockedReason"
+        />
+        <UAlert
+          v-else-if="settingsStalenessMessage"
+          color="info"
+          icon="i-heroicons-information-circle"
+          title="Sport settings have changed"
+          :description="settingsStalenessMessage"
+        />
         <p class="text-sm text-gray-600 dark:text-gray-300">
           This workout is scheduled for
           <strong>{{ formatDateUTC(workout.date, 'EEEE, MMMM d, yyyy') }}</strong
@@ -950,6 +973,7 @@
           :label="isLocalWorkout ? 'Publish Workout' : 'Update Workout'"
           color="primary"
           :loading="publishing"
+          :disabled="!canPublishWorkout"
           @click="publishWorkout"
         />
         <UButton
@@ -958,6 +982,7 @@
           color="neutral"
           variant="outline"
           :loading="publishingRouvy"
+          :disabled="!canPublishWorkout"
           @click="publishWorkoutToRouvy"
         />
         <UButton
@@ -966,6 +991,7 @@
           color="neutral"
           variant="outline"
           :loading="publishingGarminTraining"
+          :disabled="!canPublishWorkout"
           @click="publishWorkoutToGarmin('training')"
         />
       </div>
@@ -1279,6 +1305,42 @@
   const nutritionSettings = ref<any>(null)
   const workoutFuelingPlan = ref<any>(null)
   const sportSettings = ref<any>(null)
+  const settingsStaleness = ref<any>(null)
+  const structureGenerationInFlight = ref(false)
+  const workoutHasRenderableStructure = ref(true)
+
+  const publishBlockedReason = computed(() => {
+    if (!workout.value) return null
+    if (workout.value.syncConflict) {
+      return 'Resolve the sync conflict before publishing.'
+    }
+    if (structureGenerationInFlight.value) {
+      return 'Structure generation is still running. Wait for it to finish before publishing.'
+    }
+    if (!workoutHasRenderableStructure.value) {
+      return 'Workout structure is not ready yet. Build or generate structure first.'
+    }
+    return null
+  })
+
+  const canPublishWorkout = computed(() => !publishBlockedReason.value)
+
+  const settingsStalenessMessage = computed(() => {
+    if (!settingsStaleness.value?.stale) return ''
+    const labels: Record<string, string> = {
+      profile_changed: 'sport profile',
+      ftp_changed: 'FTP',
+      lthr_changed: 'LTHR',
+      threshold_pace_changed: 'threshold pace',
+      zones_changed: 'zone boundaries'
+    }
+    const changed = (settingsStaleness.value.reasons || [])
+      .map((reason: string) => labels[reason] || reason)
+      .join(', ')
+    return changed
+      ? `Your current ${changed} differ from when this structure was generated. Charts still use the original snapshot; re-exporting or publishing may use different absolute targets unless you regenerate.`
+      : ''
+  })
 
   const structureConflictDiff = computed(() => {
     if (!workout.value?.syncConflict || !workout.value?.pendingRemoteStructuredWorkout) return null
@@ -1431,6 +1493,15 @@
     if (garminConnected.value || rouvyConnected.value) return 'Publish Workout'
     return isLocalWorkout.value ? 'Publish to Intervals.icu' : 'Update on Intervals.icu'
   })
+
+  function openPublishModal() {
+    if (!canPublishWorkout.value) return
+    showPublishModal.value = true
+  }
+
+  function publishToastDescription(response: any, fallback: string) {
+    return response?.message || fallback
+  }
 
   // Eject logic
   const showEjectModal = ref(false)
@@ -1991,7 +2062,7 @@
   }
 
   async function publishWorkout() {
-    if (!workout.value?.id) return
+    if (!workout.value?.id || !canPublishWorkout.value) return
 
     publishing.value = true
     try {
@@ -2009,8 +2080,11 @@
 
         toast.add({
           title: 'Published',
-          description: 'Workout published to Intervals.icu successfully.',
-          color: 'success'
+          description: publishToastDescription(
+            response,
+            'Workout published to Intervals.icu successfully.'
+          ),
+          color: response.warnings?.settings_staleness?.stale ? 'warning' : 'success'
         })
       }
     } catch (error: any) {
@@ -2043,7 +2117,7 @@
   }
 
   async function publishWorkoutToRouvy() {
-    if (!workout.value?.id || !rouvyConnected.value) return
+    if (!workout.value?.id || !rouvyConnected.value || !canPublishWorkout.value) return
 
     publishingRouvy.value = true
     try {
@@ -2061,8 +2135,8 @@
 
         toast.add({
           title: 'Published',
-          description: response.message || 'Workout published to ROUVY.',
-          color: 'success'
+          description: publishToastDescription(response, 'Workout published to ROUVY.'),
+          color: response.warnings?.settings_staleness?.stale ? 'warning' : 'success'
         })
       }
     } catch (error: any) {
@@ -2078,7 +2152,7 @@
   }
 
   async function publishWorkoutToGarmin(destination: 'training' | 'course') {
-    if (!workout.value?.id || !garminConnected.value) return
+    if (!workout.value?.id || !garminConnected.value || !canPublishWorkout.value) return
 
     const isTraining = destination === 'training'
     if (isTraining) publishingGarminTraining.value = true
@@ -2097,11 +2171,13 @@
         showPublishModal.value = false
         toast.add({
           title: 'Published',
-          description:
+          description: publishToastDescription(
+            response,
             destination === 'training'
               ? 'Workout published to Garmin Training API successfully.'
-              : 'Workout route published to Garmin Courses API successfully.',
-          color: 'success'
+              : 'Workout route published to Garmin Courses API successfully.'
+          ),
+          color: response.warnings?.settings_staleness?.stale ? 'warning' : 'success'
         })
       }
     } catch (error: any) {
@@ -2258,6 +2334,9 @@
       initialFeedback.value = data.initialFeedback
       initialFeedbackText.value = data.initialFeedbackText
       sportSettings.value = data.sportSettings
+      settingsStaleness.value = data.settingsStaleness
+      structureGenerationInFlight.value = Boolean(data.structureGenerationInFlight)
+      workoutHasRenderableStructure.value = data.hasRenderableStructure !== false
       dayNutrition.value = null
       nutritionSettings.value = null
 

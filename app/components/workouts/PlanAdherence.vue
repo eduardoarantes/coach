@@ -154,10 +154,7 @@
       </div>
 
       <!-- Deviations HUD Grid -->
-      <div
-        v-if="adherence.deviations && adherence.deviations.length > 0"
-        class="flex flex-col gap-4"
-      >
+      <div v-if="visibleDeviations.length > 0" class="flex flex-col gap-4">
         <h3
           class="font-mono text-[10px] font-black text-zinc-400 dark:text-zinc-500 uppercase tracking-[0.3em]"
         >
@@ -165,7 +162,7 @@
         </h3>
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div
-            v-for="(dev, idx) in adherence.deviations"
+            v-for="(dev, idx) in visibleDeviations"
             :key="idx"
             class="bg-white dark:bg-white/[0.01] rounded-2xl border border-zinc-200 dark:border-white/5 overflow-hidden group/dev hover:bg-zinc-50 dark:hover:bg-white/[0.03] transition-all duration-300 shadow-sm dark:shadow-none"
           >
@@ -179,8 +176,7 @@
               <div
                 class="px-2 py-0.5 rounded border font-black uppercase tracking-widest text-[8px] transition-colors duration-500"
                 :class="[
-                  dev.deviation.toLowerCase().includes('high') ||
-                  dev.deviation.toLowerCase().includes('low')
+                  isExtremeDeviation(dev.deviation)
                     ? 'border-red-500/30 text-red-500 dark:text-red-400 bg-red-500/5'
                     : 'border-orange-500/30 text-orange-600 dark:text-orange-400 bg-orange-500/5'
                 ]"
@@ -325,6 +321,17 @@
   }>()
 
   defineEmits(['regenerate', 'unlink'])
+
+  const visibleDeviations = computed(() =>
+    (props.adherence?.deviations || []).filter(
+      (dev: any) => typeof dev?.deviation === 'string' && dev.deviation.length > 0
+    )
+  )
+
+  function isExtremeDeviation(deviation: string) {
+    const normalized = deviation.toLowerCase()
+    return normalized.includes('high') || normalized.includes('low')
+  }
 
   const { formatDuration } = useFormatters()
   const { formatShortDate } = useFormat()

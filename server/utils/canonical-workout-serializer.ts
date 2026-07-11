@@ -4,7 +4,28 @@ import {
   type StructureSource,
   type ZoneProfileSnapshot
 } from '../../shared/structured-workout-contract'
+import {
+  validateCanonicalForDestination,
+  type WorkoutDestination
+} from '../../shared/workout-support-matrix'
 import { WorkoutConverter } from './workout-converter'
+import { buildGarminTrainingPayload } from './garmin-push'
+import {
+  resolveWorkoutExportContext,
+  type PlannedWorkoutExportSource
+} from './workout-export-settings'
+
+export type WorkoutExportDestination =
+  'intervals' | 'garmin' | 'rouvy' | 'zwo' | 'fit' | 'mrc' | 'erg'
+
+const DOWNLOAD_DESTINATIONS = new Set<WorkoutExportDestination>(['zwo', 'fit', 'mrc', 'erg'])
+
+function mapExportDestination(destination: WorkoutExportDestination): WorkoutDestination {
+  if (destination === 'rouvy') return 'rouvy'
+  if (destination === 'garmin') return 'garmin'
+  if (DOWNLOAD_DESTINATIONS.has(destination)) return destination
+  return 'intervals'
+}
 
 function converterStep(step: any): any {
   if (!step || typeof step !== 'object') return step
@@ -37,6 +58,119 @@ export function canonicalizeForProvider(
   return canonical
 }
 
+export type CanonicalExportOptions = {
+  destination: WorkoutExportDestination
+  title: string
+  description: string
+  type?: string | null
+  /** @deprecated Prefer `workout` so export uses frozen generation snapshots. */
+  ftp?: number | null
+  structure: unknown
+  zoneProfileSnapshot?: ZoneProfileSnapshot
+  durationSec?: number | null
+  distanceMeters?: number | null
+  workout?: PlannedWorkoutExportSource | null
+  liveSportSettings?: any | null
+  liveUserFtp?: number | null
+}
+
+function buildConverterWorkout(
+  canonical: CanonicalStructuredWorkout,
+  options: CanonicalExportOptions,
+  exportContext: ReturnType<typeof resolveWorkoutExportContext>
+) {
+  return {
+    title: options.title,
+    description: options.description,
+    ftp: exportContext.ftp,
+    steps: canonical.steps.map(converterStep),
+    exercises: canonical.exercises,
+    messages: canonical.messages,
+    sportSettings: exportContext.sportSettings,
+    generationSettingsSnapshot: exportContext.generationSettingsSnapshot
+  }
+}
+
+/** Single export adapter for Intervals, Garmin, Rouvy, and device download formats. */
+export function serializeCanonicalForProvider(
+  options: CanonicalExportOptions
+): string | Uint8Array | Record<string, unknown> {
+  const canonical = canonicalizeForProvider(options.structure, {
+    zoneProfileSnapshot: options.zoneProfileSnapshot
+  })
+
+  const destinationIssues = validateCanonicalForDestination(
+    canonical,
+    options.type,
+    mapExportDestination(options.destination)
+  )
+  if (destinationIssues.length > 0) {
+    throw createError({
+      statusCode: 422,
+      message: destinationIssues[0]!.message,
+      data: { issues: destinationIssues }
+    })
+  }
+
+  const exportContext = resolveWorkoutExportContext({
+    workout: options.workout,
+    liveSportSettings: options.liveSportSettings,
+    liveUserFtp: options.liveUserFtp,
+    explicitFtp: options.ftp
+  })
+  const generationSettingsSnapshot =
+    exportContext.generationSettingsSnapshot ||
+    ({
+      thresholds: {
+        ftp: exportContext.ftp,
+        lthr: exportContext.sportSettings?.lthr ?? null,
+        thresholdPace:
+          exportContext.sportSettings?.thresholdPace ??
+          canonical.zoneProfileSnapshot.pace?.thresholdMps ??
+          null
+      },
+      zones: {
+        pace: canonical.zoneProfileSnapshot.pace?.ranges || [],
+        heartRate: canonical.zoneProfileSnapshot.heartRate?.ranges || [],
+        power: canonical.zoneProfileSnapshot.power?.ranges || []
+      },
+      targetPolicy: exportContext.sportSettings?.targetPolicy ?? null,
+      loadPreference: exportContext.sportSettings?.loadPreference ?? null
+    } as Record<string, unknown>)
+  const workout = buildConverterWorkout(canonical, options, {
+    ...exportContext,
+    generationSettingsSnapshot
+  })
+
+  switch (options.destination) {
+    case 'intervals':
+      return WorkoutConverter.toIntervalsICU({
+        ...workout,
+        type: options.type || undefined
+      })
+    case 'garmin':
+      return buildGarminTrainingPayload({
+        title: options.title,
+        description: options.description,
+        type: options.type,
+        durationSec: options.durationSec,
+        distanceMeters: options.distanceMeters,
+        steps: workout.steps
+      })
+    case 'rouvy':
+    case 'zwo':
+      return WorkoutConverter.toZWO(workout)
+    case 'fit':
+      return WorkoutConverter.toFIT(workout)
+    case 'mrc':
+      return WorkoutConverter.toMRC(workout)
+    case 'erg':
+      return WorkoutConverter.toERG(workout)
+    default:
+      throw createError({ statusCode: 400, message: 'Unsupported export destination' })
+  }
+}
+
 export function serializeCanonicalForIntervals(options: {
   title: string
   description: string
@@ -44,25 +178,32 @@ export function serializeCanonicalForIntervals(options: {
   ftp?: number | null
   structure: unknown
   zoneProfileSnapshot?: ZoneProfileSnapshot
+  workout?: PlannedWorkoutExportSource | null
+  liveSportSettings?: any | null
+  liveUserFtp?: number | null
 }) {
-  const canonical = canonicalizeForProvider(options.structure, {
-    zoneProfileSnapshot: options.zoneProfileSnapshot
-  })
-  return WorkoutConverter.toIntervalsICU({
-    title: options.title,
-    description: options.description,
-    type: options.type || undefined,
-    ftp: options.ftp || 250,
-    steps: canonical.steps.map(converterStep),
-    exercises: canonical.exercises,
-    messages: canonical.messages,
-    generationSettingsSnapshot: {
-      zones: {
-        pace: canonical.zoneProfileSnapshot.pace?.ranges || [],
-        heartRate: canonical.zoneProfileSnapshot.heartRate?.ranges || []
-      }
-    } as any
-  })
+  return serializeCanonicalForProvider({
+    destination: 'intervals',
+    ...options
+  }) as string
+}
+
+export function serializeCanonicalForGarmin(options: {
+  title: string
+  description: string
+  type?: string | null
+  structure: unknown
+  zoneProfileSnapshot?: ZoneProfileSnapshot
+  durationSec?: number | null
+  distanceMeters?: number | null
+  workout?: PlannedWorkoutExportSource | null
+  liveSportSettings?: any | null
+  liveUserFtp?: number | null
+}) {
+  return serializeCanonicalForProvider({
+    destination: 'garmin',
+    ...options
+  }) as Record<string, unknown>
 }
 
 export function serializeCanonicalDownload(options: {
@@ -72,20 +213,19 @@ export function serializeCanonicalDownload(options: {
   structure: unknown
   zoneProfileSnapshot?: ZoneProfileSnapshot
   format: 'zwo' | 'fit' | 'mrc' | 'erg'
+  workout?: PlannedWorkoutExportSource | null
+  liveSportSettings?: any | null
+  liveUserFtp?: number | null
 }) {
-  const canonical = canonicalizeForProvider(options.structure, {
-    zoneProfileSnapshot: options.zoneProfileSnapshot
-  })
-  const workout = {
+  return serializeCanonicalForProvider({
+    destination: options.format,
     title: options.title,
     description: options.description,
-    ftp: options.ftp || 250,
-    steps: canonical.steps.map(converterStep),
-    exercises: canonical.exercises,
-    messages: canonical.messages
-  }
-  if (options.format === 'zwo') return WorkoutConverter.toZWO(workout)
-  if (options.format === 'fit') return WorkoutConverter.toFIT(workout)
-  if (options.format === 'mrc') return WorkoutConverter.toMRC(workout)
-  return WorkoutConverter.toERG(workout)
+    ftp: options.ftp,
+    structure: options.structure,
+    zoneProfileSnapshot: options.zoneProfileSnapshot,
+    workout: options.workout,
+    liveSportSettings: options.liveSportSettings,
+    liveUserFtp: options.liveUserFtp
+  })
 }

@@ -5,6 +5,17 @@ import { sportSettingsRepository } from '../../../../../server/utils/repositorie
 import { trainingWeekRepository } from '../../../../../server/utils/repositories/trainingWeekRepository'
 import { workoutRepository } from '../../../../../server/utils/repositories/workoutRepository'
 import { metabolicService } from '../../../../../server/utils/services/metabolicService'
+import { writeCanonicalPlannedWorkoutStructure } from '../../../../../server/utils/canonical-planned-workout-write'
+import { hasActiveStructureGenerationRun } from '../../../../../server/utils/structure-generation-run'
+import {
+  buildPlannedWorkoutOperationalContext,
+  syncManualPlannedWorkoutStructureToIntervalsIfSynced
+} from '../../../../../server/utils/planned-workout-manual-structure-edit'
+import { publishPlannedWorkoutToIntervals } from '../../../../../server/utils/planned-workout-intervals-publish'
+
+vi.mock('../../../../../server/utils/planned-workout-intervals-publish', () => ({
+  publishPlannedWorkoutToIntervals: vi.fn()
+}))
 
 vi.mock('../../../../../server/utils/repositories/plannedWorkoutRepository', () => ({
   plannedWorkoutRepository: {
@@ -42,6 +53,25 @@ vi.mock('../../../../../server/utils/services/metabolicService', () => ({
   }
 }))
 
+vi.mock('../../../../../server/utils/canonical-planned-workout-write', () => ({
+  writeCanonicalPlannedWorkoutStructure: vi.fn()
+}))
+
+vi.mock('../../../../../server/utils/structure-generation-run', () => ({
+  hasActiveStructureGenerationRun: vi.fn()
+}))
+
+vi.mock('../../../../../server/utils/planned-workout-manual-structure-edit', async () => {
+  const actual = await vi.importActual<
+    typeof import('../../../../../server/utils/planned-workout-manual-structure-edit')
+  >('../../../../../server/utils/planned-workout-manual-structure-edit')
+  return {
+    ...actual,
+    buildPlannedWorkoutOperationalContext: vi.fn(),
+    syncManualPlannedWorkoutStructureToIntervalsIfSynced: vi.fn()
+  }
+})
+
 describe('planningTools', () => {
   const userId = 'user-123'
   const timezone = 'UTC'
@@ -49,6 +79,11 @@ describe('planningTools', () => {
 
   beforeEach(() => {
     vi.clearAllMocks()
+    vi.mocked(hasActiveStructureGenerationRun).mockResolvedValue(false)
+    vi.mocked(syncManualPlannedWorkoutStructureToIntervalsIfSynced).mockResolvedValue({
+      synced: false,
+      sync_status: 'PENDING'
+    })
     vi.mocked(sportSettingsRepository.getForActivityType).mockResolvedValue({
       ftp: 250,
       lthr: 168,
@@ -328,15 +363,33 @@ describe('planningTools', () => {
     it('updates structure and marks sync pending for synced workouts', async () => {
       vi.mocked(plannedWorkoutRepository.getById).mockResolvedValue({
         id: 'pw-1',
-        syncStatus: 'SYNCED'
-      } as any)
-      vi.mocked(plannedWorkoutRepository.update).mockResolvedValue({
-        id: 'pw-1',
+        title: 'Tempo',
+        description: 'Hard',
+        syncStatus: 'SYNCED',
+        type: 'Ride',
+        durationSec: 3600,
         structuredWorkout: {
-          description: 'Updated structure',
-          steps: [{ type: 'Active', name: '4x5m' }]
+          source: 'AI_GENERATION',
+          zoneProfileSnapshot: { thresholds: { ftp: 250 } }
+        },
+        user: { ftp: 250, lthr: 168, maxHr: 185 }
+      } as any)
+      vi.mocked(writeCanonicalPlannedWorkoutStructure).mockResolvedValue({
+        workout: {
+          id: 'pw-1',
+          title: 'Tempo',
+          description: 'Hard',
+          type: 'Ride',
+          structuredWorkout: {
+            description: 'Updated structure',
+            steps: [{ type: 'Active', name: '4x5m' }]
+          }
         }
       } as any)
+      vi.mocked(syncManualPlannedWorkoutStructureToIntervalsIfSynced).mockResolvedValue({
+        synced: true,
+        sync_status: 'SYNCED'
+      })
 
       const result = await tools.set_planned_workout_structure.execute(
         {
@@ -349,20 +402,18 @@ describe('planningTools', () => {
         { toolCallId: '1', messages: [] }
       )
 
-      expect(plannedWorkoutRepository.update).toHaveBeenCalledWith(
-        'pw-1',
-        userId,
+      expect(writeCanonicalPlannedWorkoutStructure).toHaveBeenCalledWith(
         expect.objectContaining({
-          modifiedLocally: true,
-          syncStatus: 'PENDING',
-          syncError: null
+          plannedWorkoutId: 'pw-1',
+          preservePlannedDuration: 3600
         })
       )
       expect(result).toEqual(
         expect.objectContaining({
           success: true,
           workout_id: 'pw-1',
-          status: 'QUEUED_FOR_SYNC'
+          status: 'SYNCED',
+          intervals_synced: true
         })
       )
     })
@@ -370,14 +421,27 @@ describe('planningTools', () => {
     it('keeps LOCAL_ONLY status for local workouts', async () => {
       vi.mocked(plannedWorkoutRepository.getById).mockResolvedValue({
         id: 'pw-local',
-        syncStatus: 'LOCAL_ONLY'
+        title: 'Easy',
+        syncStatus: 'LOCAL_ONLY',
+        type: 'Ride',
+        durationSec: 1800,
+        structuredWorkout: null,
+        user: { ftp: 250, lthr: 168, maxHr: 185 }
       } as any)
-      vi.mocked(plannedWorkoutRepository.update).mockResolvedValue({
-        id: 'pw-local',
-        structuredWorkout: { steps: [{ type: 'Warmup', name: '10m' }] }
+      vi.mocked(writeCanonicalPlannedWorkoutStructure).mockResolvedValue({
+        workout: {
+          id: 'pw-local',
+          title: 'Easy',
+          type: 'Ride',
+          structuredWorkout: { steps: [{ type: 'Warmup', name: '10m' }] }
+        }
       } as any)
+      vi.mocked(syncManualPlannedWorkoutStructureToIntervalsIfSynced).mockResolvedValue({
+        synced: false,
+        sync_status: 'LOCAL_ONLY'
+      })
 
-      await tools.set_planned_workout_structure.execute(
+      const result = await tools.set_planned_workout_structure.execute(
         {
           workout_id: 'pw-local',
           structured_workout: { steps: [{ type: 'Warmup', name: '10m' }] }
@@ -385,11 +449,10 @@ describe('planningTools', () => {
         { toolCallId: '1', messages: [] }
       )
 
-      expect(plannedWorkoutRepository.update).toHaveBeenCalledWith(
-        'pw-local',
-        userId,
+      expect(result).toEqual(
         expect.objectContaining({
-          syncStatus: 'LOCAL_ONLY'
+          status: 'LOCAL_ONLY',
+          intervals_synced: false
         })
       )
     })
@@ -397,12 +460,19 @@ describe('planningTools', () => {
     it('normalizes legacy repeat fields into reps', async () => {
       vi.mocked(plannedWorkoutRepository.getById).mockResolvedValue({
         id: 'pw-repeat',
-        syncStatus: 'SYNCED'
+        title: 'Repeats',
+        syncStatus: 'SYNCED',
+        type: 'Ride',
+        durationSec: 2400,
+        structuredWorkout: null,
+        user: { ftp: 250, lthr: 168, maxHr: 185 }
       } as any)
-      vi.mocked(plannedWorkoutRepository.update).mockResolvedValue({
-        id: 'pw-repeat',
-        structuredWorkout: {
-          steps: [{ name: 'Main Set', steps: [{ name: 'On' }], reps: 4 }]
+      vi.mocked(writeCanonicalPlannedWorkoutStructure).mockResolvedValue({
+        workout: {
+          id: 'pw-repeat',
+          structuredWorkout: {
+            steps: [{ name: 'Main Set', steps: [{ name: 'On' }], reps: 4 }]
+          }
         }
       } as any)
 
@@ -416,11 +486,9 @@ describe('planningTools', () => {
         { toolCallId: '1', messages: [] }
       )
 
-      expect(plannedWorkoutRepository.update).toHaveBeenCalledWith(
-        'pw-repeat',
-        userId,
+      expect(writeCanonicalPlannedWorkoutStructure).toHaveBeenCalledWith(
         expect.objectContaining({
-          structuredWorkout: expect.objectContaining({
+          structure: expect.objectContaining({
             steps: [
               expect.objectContaining({
                 reps: 4
@@ -436,18 +504,26 @@ describe('planningTools', () => {
     it('replaces a nested step field', async () => {
       vi.mocked(plannedWorkoutRepository.getById).mockResolvedValue({
         id: 'pw-1',
+        title: 'Patch test',
         syncStatus: 'SYNCED',
+        type: 'Ride',
+        durationSec: 3600,
         structuredWorkout: {
           steps: [{ type: 'Warmup', name: 'Easy start' }],
           coachInstructions: 'Old'
-        }
+        },
+        user: { ftp: 250, lthr: 168, maxHr: 185 }
       } as any)
 
-      vi.mocked(plannedWorkoutRepository.update).mockResolvedValue({
-        id: 'pw-1',
-        structuredWorkout: {
-          steps: [{ type: 'Warmup', name: 'Revised warmup' }],
-          coachInstructions: 'Old'
+      vi.mocked(writeCanonicalPlannedWorkoutStructure).mockResolvedValue({
+        workout: {
+          id: 'pw-1',
+          title: 'Patch test',
+          type: 'Ride',
+          structuredWorkout: {
+            steps: [{ type: 'Warmup', name: 'Revised warmup' }],
+            coachInstructions: 'Old'
+          }
         }
       } as any)
 
@@ -459,19 +535,17 @@ describe('planningTools', () => {
         { toolCallId: '1', messages: [] }
       )
 
-      expect(plannedWorkoutRepository.update).toHaveBeenCalledWith(
-        'pw-1',
-        userId,
+      expect(writeCanonicalPlannedWorkoutStructure).toHaveBeenCalledWith(
         expect.objectContaining({
-          modifiedLocally: true,
-          syncStatus: 'PENDING',
-          syncError: null
+          plannedWorkoutId: 'pw-1',
+          preservePlannedDuration: 3600
         })
       )
       expect(result).toEqual(
         expect.objectContaining({
           success: true,
-          applied_operations: 1
+          applied_operations: 1,
+          status: 'PENDING'
         })
       )
     })
@@ -479,20 +553,30 @@ describe('planningTools', () => {
     it('adds and removes items in arrays', async () => {
       vi.mocked(plannedWorkoutRepository.getById).mockResolvedValue({
         id: 'pw-2',
+        title: 'Strength',
         syncStatus: 'LOCAL_ONLY',
+        type: 'WeightTraining',
+        durationSec: 1800,
         structuredWorkout: {
           messages: ['A', 'B'],
           exercises: [{ name: 'Squat' }]
-        }
+        },
+        user: { ftp: 250, lthr: 168, maxHr: 185 }
       } as any)
 
-      vi.mocked(plannedWorkoutRepository.update).mockResolvedValue({
-        id: 'pw-2',
-        structuredWorkout: {
-          messages: ['A', 'C'],
-          exercises: [{ name: 'Squat' }, { name: 'Lunge' }]
+      vi.mocked(writeCanonicalPlannedWorkoutStructure).mockResolvedValue({
+        workout: {
+          id: 'pw-2',
+          structuredWorkout: {
+            messages: ['A', 'C'],
+            exercises: [{ name: 'Squat' }, { name: 'Lunge' }]
+          }
         }
       } as any)
+      vi.mocked(syncManualPlannedWorkoutStructureToIntervalsIfSynced).mockResolvedValue({
+        synced: false,
+        sync_status: 'LOCAL_ONLY'
+      })
 
       const result = await tools.patch_planned_workout_structure.execute(
         {
@@ -506,13 +590,6 @@ describe('planningTools', () => {
         { toolCallId: '1', messages: [] }
       )
 
-      expect(plannedWorkoutRepository.update).toHaveBeenCalledWith(
-        'pw-2',
-        userId,
-        expect.objectContaining({
-          syncStatus: 'LOCAL_ONLY'
-        })
-      )
       expect(result).toEqual(
         expect.objectContaining({
           success: true,
@@ -570,18 +647,24 @@ describe('planningTools', () => {
     it('normalizes repeat field after patch operations', async () => {
       vi.mocked(plannedWorkoutRepository.getById).mockResolvedValue({
         id: 'pw-5',
+        title: 'Repeat patch',
         syncStatus: 'SYNCED',
+        type: 'Ride',
+        durationSec: 2400,
         structuredWorkout: {
           steps: [{ type: 'Active', name: 'Main', steps: [{ type: 'Active', name: 'Work' }] }]
-        }
+        },
+        user: { ftp: 250, lthr: 168, maxHr: 185 }
       } as any)
 
-      vi.mocked(plannedWorkoutRepository.update).mockResolvedValue({
-        id: 'pw-5',
-        structuredWorkout: {
-          steps: [
-            { type: 'Active', name: 'Main', steps: [{ type: 'Active', name: 'Work' }], reps: 4 }
-          ]
+      vi.mocked(writeCanonicalPlannedWorkoutStructure).mockResolvedValue({
+        workout: {
+          id: 'pw-5',
+          structuredWorkout: {
+            steps: [
+              { type: 'Active', name: 'Main', steps: [{ type: 'Active', name: 'Work' }], reps: 4 }
+            ]
+          }
         }
       } as any)
 
@@ -593,17 +676,109 @@ describe('planningTools', () => {
         { toolCallId: '1', messages: [] }
       )
 
-      expect(plannedWorkoutRepository.update).toHaveBeenCalledWith(
-        'pw-5',
-        userId,
+      expect(writeCanonicalPlannedWorkoutStructure).toHaveBeenCalledWith(
         expect.objectContaining({
-          structuredWorkout: expect.objectContaining({
+          structure: expect.objectContaining({
             steps: [
               expect.objectContaining({
                 reps: 4
               })
             ]
           })
+        })
+      )
+    })
+  })
+
+  describe('get_planned_workout_details', () => {
+    it('returns operational context for conflict and staleness awareness', async () => {
+      vi.mocked(plannedWorkoutRepository.getById).mockResolvedValue({
+        id: 'pw-details',
+        title: 'Threshold',
+        date: new Date('2026-02-20T00:00:00Z'),
+        type: 'Ride',
+        durationSec: 3600,
+        syncStatus: 'SYNCED',
+        completionStatus: 'PENDING',
+        structuredWorkout: { source: 'AI_GENERATION', diagnostics: [] },
+        syncConflict: true,
+        pendingRemoteStructuredWorkout: { steps: [] },
+        user: { ftp: 260 },
+        trainingWeek: null
+      } as any)
+      vi.mocked(buildPlannedWorkoutOperationalContext).mockResolvedValue({
+        sync_conflict: true,
+        has_pending_remote_structure: true,
+        structure_generation_in_flight: false,
+        settings_staleness: {
+          stale: true,
+          reasons: ['ftp_changed'],
+          snapshotProfileId: 'a',
+          liveProfileId: 'b'
+        },
+        has_unresolved_targets: false,
+        structure_source: 'AI_GENERATION',
+        unresolved_diagnostics_count: 0
+      })
+
+      const result = await tools.get_planned_workout_details.execute(
+        { workout_id: 'pw-details' },
+        { toolCallId: '1', messages: [] }
+      )
+
+      expect(result).toEqual(
+        expect.objectContaining({
+          success: true,
+          sync_conflict: true,
+          has_pending_remote_structure: true,
+          structure_generation_in_flight: false,
+          settings_staleness: expect.objectContaining({ stale: true }),
+          structure_source: 'AI_GENERATION'
+        })
+      )
+    })
+  })
+
+  describe('publish_planned_workout', () => {
+    it('delegates to the shared intervals publish service', async () => {
+      vi.mocked(publishPlannedWorkoutToIntervals).mockResolvedValue({
+        success: true,
+        action: 'updated',
+        message: 'Workout updated on Intervals.icu.',
+        workout: { id: 'pw-pub', syncStatus: 'SYNCED' }
+      })
+
+      const result = await tools.publish_planned_workout.execute(
+        { workout_id: 'pw-pub' },
+        { toolCallId: '1', messages: [] }
+      )
+
+      expect(publishPlannedWorkoutToIntervals).toHaveBeenCalledWith(userId, 'pw-pub')
+      expect(result).toEqual(
+        expect.objectContaining({
+          success: true,
+          action: 'updated',
+          sync_status: 'SYNCED'
+        })
+      )
+    })
+
+    it('returns structured failure details from the publish service', async () => {
+      vi.mocked(publishPlannedWorkoutToIntervals).mockResolvedValue({
+        success: false,
+        code: 'sync_conflict',
+        error: 'This workout has a sync conflict. Resolve the conflict before publishing.'
+      })
+
+      const result = await tools.publish_planned_workout.execute(
+        { workout_id: 'pw-conflict' },
+        { toolCallId: '1', messages: [] }
+      )
+
+      expect(result).toEqual(
+        expect.objectContaining({
+          success: false,
+          code: 'sync_conflict'
         })
       )
     })

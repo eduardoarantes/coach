@@ -31,6 +31,20 @@ function hydrateQueuedSyncPayload(payload: any) {
   return hydrated
 }
 
+async function resolvePlannedWorkoutStructureRevision(
+  entityType: string,
+  entityId: string,
+  payload: any
+): Promise<number | null> {
+  if (entityType !== 'planned_workout') return null
+  if (typeof payload?.structureRevision === 'number') return payload.structureRevision
+  const current = await prisma.plannedWorkout.findUnique({
+    where: { id: entityId },
+    select: { structureRevision: true }
+  })
+  return current?.structureRevision ?? null
+}
+
 /**
  * Sync a planned workout to Intervals.icu with retry logic
  * Returns success status and any error messages
@@ -129,13 +143,20 @@ export async function syncPlannedWorkoutToIntervals(
   } catch (error: any) {
     console.error(`Failed to sync workout ${operation} to Intervals.icu:`, error.message)
 
-    // Queue for retry
+    const structureRevision = await resolvePlannedWorkoutStructureRevision(
+      'planned_workout',
+      workoutData.id,
+      workoutData
+    )
+    const payload = structureRevision === null ? workoutData : { ...workoutData, structureRevision }
+
     await queueSyncOperation({
       userId,
       entityType: 'planned_workout',
       entityId: workoutData.id,
       operation,
-      payload: workoutData,
+      payload,
+      structureRevision,
       error: error.message
     })
 

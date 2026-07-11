@@ -36,6 +36,11 @@
     annotationPlugin
   )
 
+  ChartJS.defaults.plugins = ChartJS.defaults.plugins || {}
+  ChartJS.defaults.plugins.annotation = {
+    annotations: {}
+  }
+
   /**
    * Crosshair plugin — draws a synchronized vertical cursor line across all charts.
    * The line follows the hovered position and responds to scrub events from the bus.
@@ -457,37 +462,50 @@
       datasets
     }
   })
+
+  const hasRenderableChartData = computed(
+    () => Array.isArray(processedData.value?.datasets) && processedData.value.datasets.length > 0
+  )
 </script>
 
 <template>
   <div class="relative h-full w-full p-0 sm:p-2">
     <Line
-      v-if="visualType === 'line'"
+      v-if="visualType === 'line' && hasRenderableChartData"
       ref="chartRef"
       :data="processedData"
       :options="chartOptions"
       :plugins="[wellnessOverlayPlugin, crosshairPlugin]"
+      :destroy-delay="0"
     />
     <Bar
       v-else-if="
-        visualType === 'bar' ||
-        visualType === 'combo' ||
-        visualType === 'stackedBar' ||
-        visualType === 'horizontalBar'
+        hasRenderableChartData &&
+        (visualType === 'bar' ||
+          visualType === 'combo' ||
+          visualType === 'stackedBar' ||
+          visualType === 'horizontalBar')
       "
       ref="chartRef"
       :data="processedData"
       :options="chartOptions"
       :plugins="[wellnessOverlayPlugin, crosshairPlugin]"
+      :destroy-delay="0"
     />
     <Scatter
-      v-else-if="visualType === 'scatter'"
+      v-else-if="visualType === 'scatter' && hasRenderableChartData"
       ref="chartRef"
       :data="processedData"
       :options="chartOptions"
       :plugins="[wellnessOverlayPlugin, crosshairPlugin]"
+      :destroy-delay="0"
     />
-    <Radar v-else-if="visualType === 'radar'" :data="processedData" :options="chartOptions" />
+    <Radar
+      v-else-if="visualType === 'radar' && hasRenderableChartData"
+      :data="processedData"
+      :options="chartOptions"
+      :destroy-delay="0"
+    />
     <div v-else class="flex h-full items-center justify-center text-xs italic text-neutral-400">
       Unsupported chart type: {{ visualType }}
     </div>

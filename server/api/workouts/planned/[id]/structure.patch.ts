@@ -1,19 +1,18 @@
 import { getServerSession } from '../../../../utils/session'
 import { prisma } from '../../../../utils/db'
 import { WorkoutParser } from '../../../../utils/workout-parser'
-import { syncPlannedWorkoutToIntervals } from '../../../../utils/intervals-sync'
 import { sportSettingsRepository } from '../../../../utils/repositories/sportSettingsRepository'
 import { resolveWorkoutTargeting } from '../../../../../trigger/utils/workout-targeting'
 import { normalizeStructuredWorkoutForPersistence } from '../../../../utils/structured-workout-persistence'
-import { buildStructurePublishFields } from '../../../../utils/planned-workout-structure-sync'
 import { normalizeStructuredStrengthWorkout } from '../../../../utils/strength-exercise-library'
 import {
   adaptStructuredWorkout,
   createZoneProfileSnapshot,
   validateStructuredWorkoutLimits
 } from '../../../../../shared/structured-workout-contract'
-import { serializeCanonicalForIntervals } from '../../../../utils/canonical-workout-serializer'
 import { writeCanonicalPlannedWorkoutStructure } from '../../../../utils/canonical-planned-workout-write'
+import { hasActiveStructureGenerationRun } from '../../../../utils/structure-generation-run'
+import { syncManualPlannedWorkoutStructureToIntervalsIfSynced } from '../../../../utils/planned-workout-manual-structure-edit'
 
 export default defineEventHandler(async (event) => {
   const session = await getServerSession(event)
@@ -64,6 +63,14 @@ export default defineEventHandler(async (event) => {
 
   if (workout.userId !== userId) {
     throw createError({ statusCode: 403, message: 'Access denied' })
+  }
+
+  if (await hasActiveStructureGenerationRun(id)) {
+    throw createError({
+      statusCode: 409,
+      message:
+        'Structure generation is still running for this workout. Wait for it to finish or regenerate before editing.'
+    })
   }
 
   // 2. Parse text to JSON or use provided steps
@@ -171,17 +178,6 @@ export default defineEventHandler(async (event) => {
     })
   }
 
-  // Publish the same normalized representation we persist. Sending raw editor text
-  // here allowed Intervals to execute a different workout from the local renderer.
-  const syncText = serializeCanonicalForIntervals({
-    title: workout.title,
-    description: workout.description || '',
-    type: workout.type,
-    ftp: (workout.user as any)?.ftp || 250,
-    structure: canonical,
-    zoneProfileSnapshot: canonical.zoneProfileSnapshot
-  })
-
   // 3. Update DB
   const persisted = await writeCanonicalPlannedWorkoutStructure({
     plannedWorkoutId: id,
@@ -198,34 +194,21 @@ export default defineEventHandler(async (event) => {
   })
   const updatedWorkout = persisted.workout!
 
-  // 4. If already synced to Intervals, push update
-  if (workout.syncStatus === 'SYNCED') {
-    // Convert structure back to text to ensure it's clean (or just send the raw text from user)
-    // Sending the raw text from user is better as it preserves comments/formatting Intervals might like.
-    const syncResult = await syncPlannedWorkoutToIntervals(
-      'UPDATE',
-      {
-        ...updatedWorkout,
-        workout_doc: syncText // Preserving user's text exactly for Intervals
-      },
-      userId
-    )
-
-    if (syncResult.synced) {
-      await prisma.plannedWorkout.update({
-        where: { id },
-        data: {
-          ...buildStructurePublishFields(updatedWorkout.structuredWorkout),
-          syncStatus: 'SYNCED',
-          lastSyncedAt: new Date(),
-          syncError: null
-        }
-      })
-    }
-  }
+  const sync = await syncManualPlannedWorkoutStructureToIntervalsIfSynced({
+    userId,
+    plannedWorkoutId: id,
+    priorSyncStatus: workout.syncStatus,
+    updatedWorkout,
+    canonical,
+    sportSettings,
+    liveUserFtp: (workout.user as any)?.ftp
+  })
 
   return {
     success: true,
-    workout: updatedWorkout
+    workout: sync.synced
+      ? await prisma.plannedWorkout.findUnique({ where: { id } })
+      : updatedWorkout,
+    intervals_synced: sync.synced
   }
 })

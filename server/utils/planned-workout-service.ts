@@ -13,6 +13,7 @@ import { isNutritionTrackingEnabled } from './nutrition/feature'
 import { sportSettingsRepository } from './repositories/sportSettingsRepository'
 import { createZoneProfileSnapshot } from '../../shared/structured-workout-contract'
 import { serializeCanonicalForIntervals } from './canonical-workout-serializer'
+import { buildExportOptionsFromPlannedWorkout } from './workout-export-settings'
 import {
   buildCanonicalPlannedWorkoutWriteData,
   writeCanonicalPlannedWorkoutStructure
@@ -38,19 +39,23 @@ async function buildWorkoutDoc(userId: string, workout: any, body: any) {
 
   const intervalsType = normalizeIntervalsSportType(body?.type || workout?.type || 'Ride')
   const sportSettings = await sportSettingsRepository.getForActivityType(userId, intervalsType)
-  const user = await prisma.user.findUnique({
-    where: { id: userId },
-    select: { ftp: true }
-  })
 
   return serializeCanonicalForIntervals({
-    title: body?.title || workout?.title || 'Workout',
-    description: body?.description ?? workout?.description ?? '',
-    type: intervalsType,
-    ftp: user?.ftp || 250,
-    structure: structuredWorkout,
-    zoneProfileSnapshot:
-      (structuredWorkout as any)?.zoneProfileSnapshot || createZoneProfileSnapshot(sportSettings)
+    ...buildExportOptionsFromPlannedWorkout(
+      {
+        title: body?.title || workout?.title || 'Workout',
+        description: body?.description ?? workout?.description ?? '',
+        type: intervalsType,
+        structuredWorkout,
+        lastGenerationSettingsSnapshot: workout?.lastGenerationSettingsSnapshot,
+        createdFromSettingsSnapshot: workout?.createdFromSettingsSnapshot,
+        user: {
+          ftp: (await prisma.user.findUnique({ where: { id: userId }, select: { ftp: true } }))?.ftp
+        }
+      },
+      sportSettings
+    ),
+    structure: structuredWorkout
   })
 }
 

@@ -1,7 +1,6 @@
 import { prisma } from '../../../../utils/db'
 import { getServerSession } from '../../../../utils/session'
-import { WorkoutConverter } from '../../../../utils/workout-converter'
-import { sportSettingsRepository } from '../../../../utils/repositories/sportSettingsRepository'
+import { serializeCanonicalForIntervals } from '../../../../utils/canonical-workout-serializer'
 import {
   getLibraryAccessContext,
   getReadableLibraryOwnerIds,
@@ -39,26 +38,13 @@ export default defineEventHandler(async (event) => {
     select: { ftp: true }
   })
 
-  const sportSettings = await sportSettingsRepository.getForActivityType(
-    context.effectiveUserId,
-    template.type || ''
-  )
-
-  const workoutData = {
+  const intervalsDescription = serializeCanonicalForIntervals({
     title: template.title,
     description: template.description || '',
     type: template.type || '',
-    steps: (template.structuredWorkout as any).steps || [],
-    exercises: (template.structuredWorkout as any).exercises || [],
-    messages: (template.structuredWorkout as any).messages || [],
     ftp: user?.ftp || 250,
-    sportSettings: sportSettings || undefined,
-    generationSettingsSnapshot:
-      (template as any).lastGenerationSettingsSnapshot ||
-      (template as any).createdFromSettingsSnapshot ||
-      null
-  }
-
-  const intervalsDescription = WorkoutConverter.toIntervalsICU(workoutData)
+    structure: template.structuredWorkout,
+    zoneProfileSnapshot: (template.structuredWorkout as any)?.zoneProfileSnapshot
+  })
   return { intervalsDescription, hasStructure: true }
 })
