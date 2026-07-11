@@ -152,7 +152,7 @@
 
 <script setup lang="ts">
   import { useAppLogout } from '#imports'
-  import { MCP_SCOPE_LABELS } from '../../../shared/oauth-scope-labels'
+  import { MCP_SCOPE_LABELS } from '#shared/oauth-scope-labels'
 
   definePageMeta({
     layout: 'simple',
