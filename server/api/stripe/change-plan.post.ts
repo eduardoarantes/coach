@@ -2,6 +2,7 @@ import { z } from 'zod/v3'
 import { getServerSession } from '../../utils/session'
 import { prisma } from '../../utils/db'
 import { stripe } from '../../utils/stripe'
+import { isLifetimeSubscriber, stripeBillingResetData } from '../../utils/lifetime-subscription'
 
 const changePlanSchema = z.object({
   priceId: z.string(),
@@ -28,11 +29,26 @@ export default defineEventHandler(async (event) => {
     select: {
       stripeSubscriptionId: true,
       subscriptionTier: true,
-      stripeCustomerId: true
+      stripeCustomerId: true,
+      subscriptionStatus: true
     }
   })
 
-  if (!user || !user.stripeSubscriptionId) {
+  if (!user) {
+    throw createError({
+      statusCode: 404,
+      message: 'User not found'
+    })
+  }
+
+  if (isLifetimeSubscriber(user)) {
+    throw createError({
+      statusCode: 409,
+      message: 'Lifetime access cannot be changed through Stripe billing.'
+    })
+  }
+
+  if (!user.stripeSubscriptionId) {
     throw createError({
       statusCode: 400,
       message: 'No active subscription found to change. Please use checkout instead.'
@@ -52,15 +68,7 @@ export default defineEventHandler(async (event) => {
 
     await prisma.user.update({
       where: { id: userId },
-      data: {
-        stripeCustomerId: null,
-        stripeSubscriptionId: null,
-        subscriptionTier: 'FREE',
-        subscriptionStatus: 'NONE',
-        subscriptionPeriodEnd: null,
-        pendingSubscriptionTier: null,
-        pendingSubscriptionPeriodEnd: null
-      }
+      data: stripeBillingResetData(isLifetimeSubscriber(user))
     })
 
     return {

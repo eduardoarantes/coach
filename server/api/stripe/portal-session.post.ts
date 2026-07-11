@@ -3,6 +3,7 @@ import { getServerSession } from '../../utils/session'
 import { prisma } from '../../utils/db'
 import { stripe } from '../../utils/stripe'
 import { ensureStripeCustomerForUser } from '../../utils/stripe-customer'
+import { isLifetimeSubscriber, stripeBillingResetData } from '../../utils/lifetime-subscription'
 
 const portalSessionSchema = z.object({
   returnUrl: z.string().optional()
@@ -29,7 +30,8 @@ export default defineEventHandler(async (event) => {
       id: true,
       email: true,
       name: true,
-      stripeCustomerId: true
+      stripeCustomerId: true,
+      subscriptionStatus: true
     }
   })
 
@@ -71,15 +73,7 @@ export default defineEventHandler(async (event) => {
 
     await prisma.user.update({
       where: { id: userId },
-      data: {
-        stripeCustomerId: null,
-        stripeSubscriptionId: null,
-        subscriptionTier: 'FREE',
-        subscriptionStatus: 'NONE',
-        subscriptionPeriodEnd: null,
-        pendingSubscriptionTier: null,
-        pendingSubscriptionPeriodEnd: null
-      }
+      data: stripeBillingResetData(isLifetimeSubscriber(user))
     })
 
     throw createError({

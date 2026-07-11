@@ -69,6 +69,19 @@ describe('resolveEffectiveTier', () => {
     ).toBe('PRO')
   })
 
+  it('maps CONTRIBUTOR lifetime grants to PRO regardless of stored tier', () => {
+    expect(
+      resolveEffectiveTier({
+        subscriptionTier: 'FREE',
+        subscriptionStatus: 'CONTRIBUTOR',
+        subscriptionPeriodEnd: null,
+        trialEndsAt: null,
+        promotionalGrantTier: null,
+        now
+      })
+    ).toBe('PRO')
+  })
+
   it('upgrades FREE users with an active PRO promotional grant', () => {
     expect(
       resolveEffectiveTier({

@@ -222,7 +222,8 @@
       status === 'CONTRIBUTOR' ||
       (periodEnd && new Date(periodEnd) > new Date())
 
-    const effectiveTier = isEffectivePremium ? tier : 'FREE'
+    // Match server resolveEffectiveTier: lifetime contributors are always Pro.
+    const effectiveTier = status === 'CONTRIBUTOR' ? 'PRO' : isEffectivePremium ? tier : 'FREE'
 
     return {
       tier: effectiveTier,

@@ -162,6 +162,7 @@ enum SubscriptionStatus {
   PAST_DUE      // Payment failed, retrying
   UNPAID        // Payment failed multiple times
   NONE          // Never subscribed or fully expired
+  CONTRIBUTOR   // Manual lifetime grant — not managed by Stripe
 }
 
 model User {
@@ -191,12 +192,15 @@ export function getUserEntitlements(user: User): UserEntitlements {
 
   // A user is effectively "Premium" if:
   // 1. Status is ACTIVE
-  // 2. OR Status is CANCELED (or NONE/PAST_DUE) but we are still before periodEnd (Grace Period)
+  // 2. Status is CONTRIBUTOR (manual lifetime grant)
+  // 3. OR Status is CANCELED (or NONE/PAST_DUE) but we are still before periodEnd (Grace Period)
+  const isContributor = user.subscriptionStatus === 'CONTRIBUTOR'
   const isEffectivePremium =
-    user.subscriptionStatus === 'ACTIVE' || (user.subscriptionPeriodEnd && now < periodEnd)
+    user.subscriptionStatus === 'ACTIVE' ||
+    isContributor ||
+    (user.subscriptionPeriodEnd && now < periodEnd)
 
-  // Fallback to FREE if subscription is dead
-  const effectiveTier = isEffectivePremium ? user.subscriptionTier : 'FREE'
+  const effectiveTier = isContributor ? 'PRO' : isEffectivePremium ? user.subscriptionTier : 'FREE'
 
   return {
     tier: effectiveTier,
@@ -220,6 +224,27 @@ How we map incoming Stripe events to DB status.
 | `past_due`    | `PAST_DUE`                    | **Grace Period Logic applies.** Don't cut access immediately, wait for Stripe retry settings.                                                                                                                                         |
 | `canceled`    | `CANCELED`                    | **Important:** Stripe sends this when the period _actually ends_ (if configured to cancel at period end). If explicit cancel happens mid-cycle, update `subscriptionStatus` to `CANCELED` but keep `subscriptionPeriodEnd` in future. |
 | `unpaid`      | `UNPAID`                      | Cut access (Grace period over).                                                                                                                                                                                                       |
+
+### 10.4 Lifetime / Complimentary Access (`CONTRIBUTOR`)
+
+Some users receive permanent Pro access outside Stripe billing — for contributors, beta testers, or support cases.
+
+| Field                   | Value                            |
+| :---------------------- | :------------------------------- |
+| `subscriptionStatus`    | `CONTRIBUTOR`                    |
+| `subscriptionTier`      | `PRO` (or `SUPPORTER` if needed) |
+| `subscriptionPeriodEnd` | `null`                           |
+
+**Stripe sync behavior:** Webhooks, user-initiated sync, bulk CLI sync, and stale-customer recovery all skip users with `CONTRIBUTOR` status. Their tier is never downgraded by Stripe events.
+
+**How to grant:**
+
+1. **Admin UI (recommended):** `/admin/users/[id]` → Subscription → **Grant Lifetime Pro**
+2. **CLI:** `pnpm cw:cli users contributor add user@example.com [--prod]`
+
+**How to revoke:** Admin UI → **Revoke Lifetime Access**, or `pnpm cw:cli users contributor remove user@example.com [--prod]`.
+
+Do not set `subscriptionTier: PRO` with `subscriptionStatus: ACTIVE` manually — that state is owned by Stripe and will be overwritten on the next sync.
 
 ## 11. Implementation Checklist
 

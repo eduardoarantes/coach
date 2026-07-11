@@ -33,7 +33,7 @@ contributorCommand
         data: {
           subscriptionTier: 'PRO',
           subscriptionStatus: 'CONTRIBUTOR',
-          subscriptionPeriodEnd: null // Lifetime access
+          subscriptionPeriodEnd: null
         }
       })
 

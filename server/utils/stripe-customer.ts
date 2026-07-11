@@ -1,6 +1,7 @@
 import { createError } from 'h3'
 import { prisma } from './db'
 import { stripe } from './stripe'
+import { isLifetimeSubscriber, stripeBillingResetData } from './lifetime-subscription'
 
 type BillingUser = {
   id: string
@@ -79,17 +80,16 @@ export async function ensureStripeCustomerForUser(
         throw error
       }
 
+      const existingUser = await prisma.user.findUnique({
+        where: { id: user.id },
+        select: { subscriptionStatus: true }
+      })
+
       await prisma.user.update({
         where: { id: user.id },
-        data: {
-          stripeCustomerId: null,
-          stripeSubscriptionId: null,
-          subscriptionTier: 'FREE',
-          subscriptionStatus: 'NONE',
-          subscriptionPeriodEnd: null,
-          pendingSubscriptionTier: null,
-          pendingSubscriptionPeriodEnd: null
-        }
+        data: stripeBillingResetData(
+          isLifetimeSubscriber(existingUser ?? { subscriptionStatus: 'NONE' })
+        )
       })
     }
   }

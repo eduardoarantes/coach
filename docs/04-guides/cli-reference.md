@@ -63,9 +63,20 @@ Manage user accounts, statistics, and quotas.
 - `search <query> [--prod]`: Search for users by email, name, or ID.
 - `stats`: View registration and activity statistics.
 - `admins`: Manage administrative user status.
+- `contributor add <email> [--prod]`: Grant lifetime Pro access (`subscriptionStatus: CONTRIBUTOR`). Stripe sync skips these users.
+- `contributor remove <email> [--prod]`: Revoke lifetime access and downgrade to Free.
 - `location`: Manage user countries based on last login IP.
 - `quota`: View or manage user AI/API usage quotas.
 - `reset-quota`: Reset usage quotas for specific users.
+
+#### 2b. Subscriptions (`subscriptions`)
+
+Audit and reconcile Stripe subscription state.
+
+- `list [--prod]`: List users with subscription data.
+- `sync [--prod] [--fix] [--email <email>]`: Compare DB subscription fields against Stripe. Users with `CONTRIBUTOR` status are skipped. Use `--fix` to apply Stripe state to the database.
+
+> **Warning:** Do not use `debug subscription set ... ACTIVE` for complimentary or lifetime access — Stripe webhooks and sync will overwrite it. Use `users contributor add` or the admin user page instead.
 
 #### 3. Trigger.dev (`trigger`)
 

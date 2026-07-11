@@ -16,6 +16,9 @@
   const impersonating = ref(false)
   const deletingUser = ref(false)
   const togglingDeactivation = ref(false)
+  const togglingLifetimeSubscription = ref(false)
+  const isLifetimeModalOpen = ref(false)
+  const lifetimeAction = ref<'grant' | 'revoke'>('grant')
   const sendingEmailIds = ref<string[]>([])
   const isDeleteModalOpen = ref(false)
   const isDeactivationModalOpen = ref(false)
@@ -131,6 +134,64 @@
   }
 
   const isDeactivated = computed(() => !!data.value?.profile.deactivatedAt)
+  const isLifetimeSubscriber = computed(
+    () => data.value?.profile.subscriptionStatus === 'CONTRIBUTOR'
+  )
+
+  const subscriptionStatusColor = (status: string) => {
+    switch (status) {
+      case 'ACTIVE':
+      case 'CONTRIBUTOR':
+        return 'success'
+      case 'PAST_DUE':
+      case 'UNPAID':
+        return 'warning'
+      case 'CANCELED':
+        return 'neutral'
+      default:
+        return 'neutral'
+    }
+  }
+
+  async function updateLifetimeSubscription() {
+    if (togglingLifetimeSubscription.value) return
+
+    togglingLifetimeSubscription.value = true
+    try {
+      await $fetch(`/api/admin/users/${userId}/lifetime-subscription`, {
+        method: 'POST',
+        body: {
+          action: lifetimeAction.value,
+          tier: 'PRO'
+        }
+      })
+
+      toast.add({
+        title:
+          lifetimeAction.value === 'grant' ? 'Lifetime Pro granted' : 'Lifetime access revoked',
+        description:
+          lifetimeAction.value === 'grant'
+            ? 'This user now has permanent Pro access that Stripe sync will not overwrite.'
+            : 'The user has been downgraded to the free tier.',
+        color: lifetimeAction.value === 'grant' ? 'success' : 'warning'
+      })
+
+      isLifetimeModalOpen.value = false
+      await refresh()
+    } catch (error: any) {
+      toast.add({
+        title: 'Error',
+        description:
+          error?.data?.statusMessage ||
+          error?.data?.message ||
+          error?.message ||
+          'Failed to update lifetime subscription',
+        color: 'error'
+      })
+    } finally {
+      togglingLifetimeSubscription.value = false
+    }
+  }
 
   async function deactivateUserAccount() {
     if (togglingDeactivation.value || isOwnAdminAccount.value) return
@@ -535,6 +596,89 @@
             </UCard>
           </div>
 
+          <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <UCard class="lg:col-span-2">
+              <template #header>
+                <div class="flex items-center justify-between gap-4">
+                  <h3 class="font-semibold">Subscription</h3>
+                  <UBadge v-if="isLifetimeSubscriber" color="success" variant="subtle" size="sm">
+                    Lifetime
+                  </UBadge>
+                </div>
+              </template>
+
+              <dl class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                <div class="flex justify-between gap-4">
+                  <dt class="text-gray-500">Tier</dt>
+                  <dd class="font-medium">{{ data.profile.subscriptionTier }}</dd>
+                </div>
+                <div class="flex justify-between gap-4">
+                  <dt class="text-gray-500">Status</dt>
+                  <dd>
+                    <UBadge
+                      :color="subscriptionStatusColor(data.profile.subscriptionStatus)"
+                      variant="subtle"
+                      size="xs"
+                    >
+                      {{ data.profile.subscriptionStatus }}
+                    </UBadge>
+                  </dd>
+                </div>
+                <div class="flex justify-between gap-4">
+                  <dt class="text-gray-500">Period End</dt>
+                  <dd>
+                    {{
+                      data.profile.subscriptionPeriodEnd
+                        ? new Date(data.profile.subscriptionPeriodEnd).toLocaleDateString()
+                        : isLifetimeSubscriber
+                          ? 'Never'
+                          : '—'
+                    }}
+                  </dd>
+                </div>
+                <div class="flex justify-between gap-4">
+                  <dt class="text-gray-500">Stripe Customer</dt>
+                  <dd class="font-mono text-xs truncate max-w-[12rem]">
+                    {{ data.profile.stripeCustomerId || '—' }}
+                  </dd>
+                </div>
+              </dl>
+
+              <div
+                class="mt-6 pt-6 border-t border-gray-100 dark:border-gray-800 flex flex-wrap gap-2"
+              >
+                <UButton
+                  v-if="!isLifetimeSubscriber"
+                  color="primary"
+                  variant="soft"
+                  icon="i-lucide-infinity"
+                  label="Grant Lifetime Pro"
+                  :loading="togglingLifetimeSubscription"
+                  @click="
+                    () => {
+                      lifetimeAction = 'grant'
+                      isLifetimeModalOpen = true
+                    }
+                  "
+                />
+                <UButton
+                  v-else
+                  color="warning"
+                  variant="soft"
+                  icon="i-lucide-infinity"
+                  label="Revoke Lifetime Access"
+                  :loading="togglingLifetimeSubscription"
+                  @click="
+                    () => {
+                      lifetimeAction = 'revoke'
+                      isLifetimeModalOpen = true
+                    }
+                  "
+                />
+              </div>
+            </UCard>
+          </div>
+
           <!-- Recent Activity -->
           <UCard>
             <template #header>
@@ -811,6 +955,54 @@
           "
         >
           Delete Account
+        </UButton>
+      </div>
+    </template>
+  </UModal>
+
+  <UModal
+    v-model:open="isLifetimeModalOpen"
+    :title="lifetimeAction === 'grant' ? 'Grant Lifetime Pro' : 'Revoke Lifetime Access'"
+    :description="
+      lifetimeAction === 'grant'
+        ? 'Give this user permanent Pro access that Stripe sync will not overwrite.'
+        : 'Remove lifetime access and downgrade this user to the free tier.'
+    "
+  >
+    <template #body>
+      <p v-if="lifetimeAction === 'grant'" class="mb-4">
+        <strong>{{ data?.profile.email }}</strong> will receive permanent Pro access with no billing
+        period end. Stripe webhooks and sync jobs will skip this user.
+      </p>
+      <p v-else class="mb-4">
+        This will remove lifetime access for <strong>{{ data?.profile.email }}</strong> and set
+        their subscription to the free tier.
+      </p>
+    </template>
+
+    <template #footer>
+      <div class="flex gap-2 justify-end w-full">
+        <UButton
+          color="neutral"
+          variant="ghost"
+          @click="
+            () => {
+              isLifetimeModalOpen = false
+            }
+          "
+        >
+          Cancel
+        </UButton>
+        <UButton
+          :color="lifetimeAction === 'grant' ? 'primary' : 'warning'"
+          :loading="togglingLifetimeSubscription"
+          @click="
+            () => {
+              void updateLifetimeSubscription()
+            }
+          "
+        >
+          {{ lifetimeAction === 'grant' ? 'Grant Lifetime Pro' : 'Revoke Lifetime Access' }}
         </UButton>
       </div>
     </template>

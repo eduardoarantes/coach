@@ -96,6 +96,11 @@ const syncCommand = new Command('sync')
       for (const u of users) {
         process.stdout.write(`Checking ${u.email}... `)
 
+        if (u.subscriptionStatus === 'CONTRIBUTOR') {
+          console.log(chalk.blue('SKIPPED (lifetime contributor)'))
+          continue
+        }
+
         try {
           // List subscriptions for this customer
           const subscriptions = await stripe.subscriptions.list({
