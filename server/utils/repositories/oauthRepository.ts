@@ -1,14 +1,13 @@
 import { prisma } from '../db'
 import bcrypt from 'bcrypt'
 import { v4 as uuidv4 } from 'uuid'
+import { validateRedirectUris } from '../oauth/redirect-uri'
+import { mcpMetrics } from '../mcp/metrics'
 
 /**
  * Repository for managing OAuth 2.0 applications and related entities.
  */
 export const oauthRepository = {
-  /**
-   * Lists all OAuth applications owned by a specific user.
-   */
   async listAppsForUser(userId: string) {
     return prisma.oAuthApp.findMany({
       where: { ownerId: userId },
@@ -24,6 +23,8 @@ export const oauthRepository = {
         redirectUris: true,
         isTrusted: true,
         isPublic: true,
+        isPublicClient: true,
+        registrationType: true,
         createdAt: true,
         updatedAt: true,
         _count: {
@@ -36,9 +37,6 @@ export const oauthRepository = {
     })
   },
 
-  /**
-   * Gets a specific OAuth application by ID.
-   */
   async getApp(id: string) {
     return prisma.oAuthApp.findUnique({
       where: { id },
@@ -54,9 +52,6 @@ export const oauthRepository = {
     })
   },
 
-  /**
-   * Creates a new OAuth application for a user.
-   */
   async createApp(
     userId: string,
     data: {
@@ -67,7 +62,6 @@ export const oauthRepository = {
       redirectUris: string[]
     }
   ) {
-    // Generate a high-entropy client secret
     const secret = uuidv4().replace(/-/g, '') + uuidv4().replace(/-/g, '')
     const hashedSecret = await bcrypt.hash(secret, 12)
 
@@ -83,16 +77,80 @@ export const oauthRepository = {
       }
     })
 
-    // Return the app along with the raw secret (ONLY ONCE)
     return {
       ...app,
       clientSecret: secret
     }
   },
 
-  /**
-   * Updates an existing OAuth application.
-   */
+  async createPublicMcpClient(data: {
+    ownerId: string
+    name: string
+    redirectUris: string[]
+    description?: string
+    homepageUrl?: string
+  }) {
+    const redirectUris = validateRedirectUris(data.redirectUris)
+    const secret = uuidv4().replace(/-/g, '') + uuidv4().replace(/-/g, '')
+    const hashedSecret = await bcrypt.hash(secret, 12)
+
+    return prisma.oAuthApp.create({
+      data: {
+        name: data.name,
+        description: data.description || 'Pre-registered MCP client for Cursor',
+        homepageUrl: data.homepageUrl,
+        redirectUris,
+        clientSecret: hashedSecret,
+        ownerId: data.ownerId,
+        isPublicClient: true,
+        registrationType: 'manual'
+      },
+      select: {
+        id: true,
+        clientId: true,
+        name: true,
+        redirectUris: true,
+        isPublicClient: true,
+        registrationType: true,
+        createdAt: true
+      }
+    })
+  },
+
+  async registerPublicClient(data: {
+    ownerId: string
+    name: string
+    redirectUris: string[]
+    clientUri?: string
+    logoUri?: string
+  }) {
+    const redirectUris = validateRedirectUris(data.redirectUris)
+    const secret = uuidv4().replace(/-/g, '') + uuidv4().replace(/-/g, '')
+    const hashedSecret = await bcrypt.hash(secret, 12)
+
+    return prisma.oAuthApp.create({
+      data: {
+        name: data.name,
+        description: 'Dynamically registered MCP client',
+        homepageUrl: data.clientUri,
+        logoUrl: data.logoUri,
+        redirectUris,
+        clientSecret: hashedSecret,
+        ownerId: data.ownerId,
+        isPublicClient: true,
+        registrationType: 'dcr'
+      },
+      select: {
+        clientId: true,
+        name: true,
+        redirectUris: true,
+        createdAt: true,
+        registrationType: true,
+        isPublicClient: true
+      }
+    })
+  },
+
   async updateApp(
     id: string,
     userId: string,
@@ -107,7 +165,6 @@ export const oauthRepository = {
       isPublic?: boolean
     }
   ) {
-    // We use updateMany to ensure ownership
     const result = await prisma.oAuthApp.updateMany({
       where: { id, ownerId: userId },
       data
@@ -120,9 +177,6 @@ export const oauthRepository = {
     return prisma.oAuthApp.findUnique({ where: { id } })
   },
 
-  /**
-   * Deletes an OAuth application.
-   */
   async deleteApp(id: string, userId: string) {
     const result = await prisma.oAuthApp.deleteMany({
       where: { id, ownerId: userId }
@@ -135,9 +189,6 @@ export const oauthRepository = {
     return true
   },
 
-  /**
-   * Regenerates the client secret for an application.
-   */
   async regenerateSecret(id: string, userId: string) {
     const secret = uuidv4().replace(/-/g, '') + uuidv4().replace(/-/g, '')
     const hashedSecret = await bcrypt.hash(secret, 12)
@@ -156,9 +207,6 @@ export const oauthRepository = {
     return secret
   },
 
-  /**
-   * Regenerates the webhook secret for an application.
-   */
   async regenerateWebhookSecret(id: string, userId: string) {
     const secret = 'wh_' + uuidv4().replace(/-/g, '')
 
@@ -176,28 +224,24 @@ export const oauthRepository = {
     return secret
   },
 
-  /**
-   * Verifies if a client ID and secret match.
-   */
   async verifyClient(clientId: string, clientSecret: string) {
     const app = await prisma.oAuthApp.findUnique({
       where: { clientId }
     })
 
     if (!app) return null
+    if (app.isPublicClient) return null
 
     const isValid = await bcrypt.compare(clientSecret, app.clientSecret)
     return isValid ? app : null
   },
 
-  /**
-   * Creates a new authorization code.
-   */
   async createAuthCode(data: {
     appId: string
     userId: string
     redirectUri: string
     scopes: string[]
+    resource?: string
     codeChallenge?: string
     codeChallengeMethod?: string
   }) {
@@ -211,16 +255,14 @@ export const oauthRepository = {
         userId: data.userId,
         redirectUri: data.redirectUri,
         scopes: data.scopes,
+        resource: data.resource,
         codeChallenge: data.codeChallenge,
         codeChallengeMethod: data.codeChallengeMethod || 'S256',
-        expiresAt: new Date(Date.now() + 10 * 60 * 1000) // 10 minutes
+        expiresAt: new Date(Date.now() + 10 * 60 * 1000)
       }
     })
   },
 
-  /**
-   * Gets an authorization code by its value.
-   */
   async getAuthCode(code: string) {
     return prisma.oAuthAuthCode.findUnique({
       where: { code },
@@ -231,28 +273,28 @@ export const oauthRepository = {
     })
   },
 
-  /**
-   * Deletes an authorization code.
-   */
   async deleteAuthCode(code: string) {
     try {
       return await prisma.oAuthAuthCode.delete({
         where: { code }
       })
-    } catch (e) {
+    } catch {
       return null
     }
   },
 
-  /**
-   * Creates a new access token (and refresh token).
-   */
-  async createToken(data: { appId: string; userId: string; scopes: string[] }) {
+  async createToken(data: {
+    appId: string
+    userId: string
+    scopes: string[]
+    resource?: string
+    includeRefreshToken?: boolean
+  }) {
     const crypto = await import('node:crypto')
     const accessToken = crypto.randomBytes(32).toString('hex')
-    const refreshToken = crypto.randomBytes(32).toString('hex')
+    const refreshToken =
+      data.includeRefreshToken === false ? null : crypto.randomBytes(32).toString('hex')
 
-    // Create consent if it doesn't exist
     await prisma.oAuthConsent.upsert({
       where: {
         userId_appId: {
@@ -277,17 +319,13 @@ export const oauthRepository = {
         appId: data.appId,
         userId: data.userId,
         scopes: data.scopes,
-        accessTokenExpiresAt: new Date(Date.now() + 3600 * 1000), // 1 hour
-        // Temporary compatibility mode: keep refresh tokens non-expiring until
-        // patched client applications have been deployed.
-        refreshTokenExpiresAt: null
+        resource: data.resource,
+        accessTokenExpiresAt: new Date(Date.now() + 3600 * 1000),
+        refreshTokenExpiresAt: data.resource ? new Date(Date.now() + 90 * 24 * 3600 * 1000) : null
       }
     })
   },
 
-  /**
-   * Gets an access token by its value.
-   */
   async getAccessToken(token: string) {
     return prisma.oAuthToken.findUnique({
       where: { accessToken: token },
@@ -298,16 +336,94 @@ export const oauthRepository = {
     })
   },
 
-  /**
-   * Rotates a refresh token for a new access token.
-   */
-  async rotateRefreshToken(refreshToken: string) {
+  async rotateRefreshToken(
+    refreshToken: string,
+    options?: { clientId?: string; resource?: string }
+  ) {
     const oldToken = await prisma.oAuthToken.findUnique({
-      where: { refreshToken }
+      where: { refreshToken },
+      include: { app: true }
     })
 
-    if (!oldToken) {
+    if (!oldToken || !oldToken.refreshToken) {
       return null
+    }
+
+    if (oldToken.refreshTokenExpiresAt && oldToken.refreshTokenExpiresAt < new Date()) {
+      await prisma.oAuthToken.delete({ where: { id: oldToken.id } })
+      return null
+    }
+
+    if (options?.clientId && oldToken.app.clientId !== options.clientId) {
+      throw new Error('Client mismatch')
+    }
+
+    if (oldToken.resource) {
+      if (!options?.resource || options.resource !== oldToken.resource) {
+        throw new Error('Resource mismatch')
+      }
+
+      if (oldToken.refreshTokenRotatedAt) {
+        await prisma.oAuthToken.deleteMany({
+          where: {
+            appId: oldToken.appId,
+            userId: oldToken.userId,
+            resource: oldToken.resource
+          }
+        })
+        mcpMetrics.recordRefreshReuseDetected()
+        throw new Error('Refresh token reuse detected')
+      }
+
+      const crypto = await import('node:crypto')
+      const accessToken = crypto.randomBytes(32).toString('hex')
+      const nextRefreshToken = crypto.randomBytes(32).toString('hex')
+
+      return prisma.$transaction(async (tx) => {
+        const current = await tx.oAuthToken.findUnique({ where: { refreshToken } })
+        if (!current) {
+          return null
+        }
+
+        const claimed = await tx.oAuthToken.updateMany({
+          where: {
+            id: current.id,
+            refreshTokenRotatedAt: null
+          },
+          data: {
+            refreshTokenRotatedAt: new Date(),
+            accessTokenExpiresAt: new Date(0)
+          }
+        })
+
+        if (claimed.count === 0) {
+          await tx.oAuthToken.deleteMany({
+            where: {
+              appId: current.appId,
+              userId: current.userId,
+              resource: current.resource
+            }
+          })
+          mcpMetrics.recordRefreshReuseDetected()
+          throw new Error('Refresh token reuse detected')
+        }
+
+        const newToken = await tx.oAuthToken.create({
+          data: {
+            accessToken,
+            refreshToken: nextRefreshToken,
+            appId: current.appId,
+            userId: current.userId,
+            scopes: current.scopes,
+            resource: current.resource,
+            accessTokenExpiresAt: new Date(Date.now() + 3600 * 1000),
+            refreshTokenExpiresAt: new Date(Date.now() + 90 * 24 * 3600 * 1000),
+            lastUsedAt: new Date()
+          }
+        })
+
+        return newToken
+      })
     }
 
     const crypto = await import('node:crypto')
@@ -323,11 +439,7 @@ export const oauthRepository = {
     })
   },
 
-  /**
-   * Revokes a token.
-   */
   async revokeToken(token: string) {
-    // Check if it's access or refresh token
     const byAccess = await prisma.oAuthToken.findUnique({ where: { accessToken: token } })
     if (byAccess) {
       return prisma.oAuthToken.delete({ where: { id: byAccess.id } })

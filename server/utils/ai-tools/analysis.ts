@@ -331,7 +331,7 @@ export const analysisTools = (userId: string, timezone: string, settings: AiSett
       const endDate = formatUserDate(new Date(), timezone, 'yyyy-MM-dd')
 
       try {
-        await ingestAllTask.trigger(
+        const handle = await ingestAllTask.trigger(
           { userId, startDate, endDate },
           {
             tags: [`user:${userId}`, 'manual-sync'],
@@ -340,7 +340,8 @@ export const analysisTools = (userId: string, timezone: string, settings: AiSett
         )
         return {
           success: true,
-          message: `Data synchronization for the last ${days} days has been started.`
+          run_id: handle.id,
+          message: `Data synchronization for the last ${days} days has been started. Poll with get_async_job_status using job_type=trigger_run.`
         }
       } catch (e: any) {
         return { error: `Failed to trigger sync: ${e.message}` }
@@ -403,7 +404,7 @@ export const analysisTools = (userId: string, timezone: string, settings: AiSett
         return {
           success: true,
           report_id: report.id,
-          message: `${type.replace('_', ' ')} report generation has started and will be available in your reports section shortly.`
+          message: `${type.replace('_', ' ')} report generation has started. Poll with get_async_job_status using job_type=report and this report_id.`
         }
       } catch (e: any) {
         return { error: `Failed to trigger report generation: ${e.message}` }

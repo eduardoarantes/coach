@@ -14,6 +14,8 @@ import { availabilityTools } from './ai-tools/availability'
 import { memoryTools } from './ai-tools/memory'
 import { timeTools } from './ai-tools/time'
 import { temporalTools } from './ai-tools/temporal'
+import { summaryTools } from './ai-tools/summary'
+import { integrationTools } from './ai-tools/integrations'
 import type { AiSettings } from './ai-user-settings'
 import type { ChatToolExecutionContext } from './chat/turns'
 import { wrapChatToolsForExecution } from './chat/tool-execution'
@@ -65,7 +67,9 @@ export const getToolsWithContext = (
     ...availabilityTools(userId, settings),
     ...memoryTools(userId, chatRoomId),
     ...timeTools(userId, timezone),
-    ...temporalTools(userId, timezone)
+    ...temporalTools(userId, timezone),
+    ...summaryTools(userId, timezone),
+    ...integrationTools(userId)
   }
 
   const filteredTools = filterChatToolsForChat(tools)

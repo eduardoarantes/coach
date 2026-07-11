@@ -16,6 +16,23 @@ When requesting authorization, you must specify which scopes your application ne
 | `nutrition:write` | Log nutrition data.                    | Log calories, carbs, protein  |
 | `offline_access`  | Long-lived access.                     | Returns a `refresh_token`     |
 
+## MCP scopes
+
+These scopes are used by the remote MCP server at `/mcp` (see [mcp-server.md](./mcp-server.md)):
+
+| Scope                   | Description                                           |
+| :---------------------- | :---------------------------------------------------- |
+| `planning:read`         | Read planned workouts, availability, and current plan |
+| `planning:write`        | Create and modify planned workouts                    |
+| `analysis:read`         | Training load analysis and forecasts                  |
+| `memory:read`           | List stored AI memories                               |
+| `memory:write`          | Create, update, or forget memories                    |
+| `recommendations:read`  | Read recommendations                                  |
+| `recommendations:write` | Accept or dismiss recommendations                     |
+| `ai:generate`           | Reserved for future async/AI tools                    |
+
+MCP also reuses the profile, workout, health, and nutrition scopes above.
+
 ## Best Practices
 
 - **Least Privilege:** Only request scopes you actually need.

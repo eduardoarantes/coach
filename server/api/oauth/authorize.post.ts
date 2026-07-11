@@ -1,6 +1,12 @@
 import { oauthRepository } from '../../utils/repositories/oauthRepository'
 import { getEffectiveUserId } from '../../utils/coaching'
 import { prisma } from '../../utils/db'
+import {
+  parseScopeString,
+  validateMcpOAuthScopes,
+  validateRestOAuthScopes
+} from '../../utils/oauth/scopes'
+import { assertMcpResource, isMcpResourceRequest } from '../../utils/oauth/resource'
 
 function normalizeBodyValue(value: unknown) {
   return typeof value === 'string' ? value : undefined
@@ -32,50 +38,13 @@ defineRouteMeta({
   openAPI: {
     tags: ['OAuth'],
     summary: 'Approve Authorization Request',
-    description: 'Called by the consent screen to approve or deny an authorization request.',
-    requestBody: {
-      content: {
-        'application/json': {
-          schema: {
-            type: 'object',
-            required: ['client_id', 'redirect_uri', 'action'],
-            properties: {
-              client_id: { type: 'string' },
-              redirect_uri: { type: 'string', format: 'uri' },
-              scope: { type: 'string' },
-              state: { type: 'string' },
-              code_challenge: { type: 'string' },
-              code_challenge_method: { type: 'string' },
-              action: { type: 'string', enum: ['approve', 'deny'] }
-            }
-          }
-        },
-        'application/x-www-form-urlencoded': {
-          schema: {
-            type: 'object',
-            required: ['client_id', 'redirect_uri', 'action'],
-            properties: {
-              client_id: { type: 'string' },
-              redirect_uri: { type: 'string', format: 'uri' },
-              scope: { type: 'string' },
-              state: { type: 'string' },
-              code_challenge: { type: 'string' },
-              code_challenge_method: { type: 'string' },
-              action: { type: 'string', enum: ['approve', 'deny'] }
-            }
-          }
-        }
-      }
-    },
-    responses: {
-      303: { description: 'Redirect to client callback URL' },
-      400: { description: 'Bad Request' },
-      401: { description: 'Unauthorized' }
-    }
+    description: 'Called by the consent screen to approve or deny an authorization request.'
   }
 })
 
 export default defineEventHandler(async (event) => {
+  const config = useRuntimeConfig()
+  const siteUrl = config.public.siteUrl
   const userId = await getEffectiveUserId(event)
   const body = normalizeAuthorizeBody(await readBody(event))
   const query = getQuery(event)
@@ -89,6 +58,7 @@ export default defineEventHandler(async (event) => {
   const state = normalizePayloadString(payload.state)
   const code_challenge = normalizePayloadString(payload.code_challenge)
   const code_challenge_method = normalizePayloadString(payload.code_challenge_method)
+  const resource = normalizePayloadString(payload.resource)
   const action = normalizePayloadString(payload.action)
 
   if (!client_id || !redirect_uri || !action) {
@@ -111,6 +81,23 @@ export default defineEventHandler(async (event) => {
     })
   }
 
+  const isMcpFlow = isMcpResourceRequest(resource, siteUrl)
+
+  if (isMcpFlow) {
+    if (!code_challenge) {
+      throw createError({
+        statusCode: 400,
+        message: 'PKCE code_challenge is required for MCP authorization.'
+      })
+    }
+    if (code_challenge_method && code_challenge_method !== 'S256') {
+      throw createError({
+        statusCode: 400,
+        message: 'Only S256 PKCE is supported for MCP authorization.'
+      })
+    }
+  }
+
   // Handle Denial
   if (action !== 'approve') {
     const errorUrl = new URL(redirect_uri)
@@ -121,16 +108,32 @@ export default defineEventHandler(async (event) => {
     return sendRedirect(event, errorUrl.toString(), 303)
   }
 
-  // Handle Approval
-  const scopes = scope ? scope.split(/[\s,]+/) : ['profile:read']
+  const requestedScopes = parseScopeString(scope)
+  const scopes = requestedScopes.length > 0 ? requestedScopes : isMcpFlow ? [] : ['profile:read']
+
+  try {
+    if (isMcpFlow) {
+      validateMcpOAuthScopes(scopes)
+    } else {
+      validateRestOAuthScopes(scopes)
+    }
+  } catch (error) {
+    throw createError({
+      statusCode: 400,
+      message: error instanceof Error ? error.message : 'Invalid scopes'
+    })
+  }
+
+  const normalizedResource = isMcpFlow ? assertMcpResource(resource, siteUrl) : undefined
 
   const authCode = await oauthRepository.createAuthCode({
     appId: app.id,
     userId,
     redirectUri: redirect_uri,
     scopes,
+    resource: normalizedResource,
     codeChallenge: code_challenge,
-    codeChallengeMethod: code_challenge_method
+    codeChallengeMethod: isMcpFlow ? 'S256' : code_challenge_method
   })
 
   const successUrl = new URL(redirect_uri)

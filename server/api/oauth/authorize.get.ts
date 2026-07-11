@@ -1,44 +1,19 @@
 import { prisma } from '../../utils/db'
+import { parseScopeString, validateMcpOAuthScopes } from '../../utils/oauth/scopes'
+import { assertMcpResource, isMcpResourceRequest } from '../../utils/oauth/resource'
 
 defineRouteMeta({
   openAPI: {
     tags: ['OAuth'],
     summary: 'Authorize OAuth Application',
     description:
-      'Initiates the OAuth 2.0 authorization code flow. Validates parameters and redirects to the consent screen.',
-    inputSchema: [
-      {
-        name: 'response_type',
-        in: 'query',
-        required: true,
-        schema: { type: 'string', enum: ['code'] }
-      },
-      { name: 'client_id', in: 'query', required: true, schema: { type: 'string' } },
-      {
-        name: 'redirect_uri',
-        in: 'query',
-        required: true,
-        schema: { type: 'string', format: 'uri' }
-      },
-      { name: 'scope', in: 'query', required: false, schema: { type: 'string' } },
-      { name: 'state', in: 'query', required: false, schema: { type: 'string' } },
-      { name: 'prompt', in: 'query', required: false, schema: { type: 'string' } },
-      { name: 'code_challenge', in: 'query', required: false, schema: { type: 'string' } },
-      {
-        name: 'code_challenge_method',
-        in: 'query',
-        required: false,
-        schema: { type: 'string', enum: ['S256', 'plain'] }
-      }
-    ],
-    responses: {
-      302: { description: 'Redirect to Consent Screen' },
-      400: { description: 'Bad Request' }
-    }
+      'Initiates the OAuth 2.0 authorization code flow. Validates parameters and redirects to the consent screen.'
   }
 })
 
 export default defineEventHandler(async (event) => {
+  const config = useRuntimeConfig()
+  const siteUrl = config.public.siteUrl
   const query = getQuery(event)
   const responseType = query.response_type as string
   const clientId = query.client_id as string
@@ -48,8 +23,8 @@ export default defineEventHandler(async (event) => {
   const prompt = query.prompt as string
   const codeChallenge = query.code_challenge as string
   const codeChallengeMethod = query.code_challenge_method as string
+  const resource = query.resource as string
 
-  // 1. Basic Parameter Validation
   if (!responseType || !clientId || !redirectUri) {
     throw createError({
       statusCode: 400,
@@ -65,7 +40,6 @@ export default defineEventHandler(async (event) => {
     })
   }
 
-  // 2. Client Validation
   const app = await prisma.oAuthApp.findUnique({
     where: { clientId }
   })
@@ -74,7 +48,6 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 400, message: 'Invalid client_id.' })
   }
 
-  // 3. Redirect URI Validation
   if (!app.redirectUris.includes(redirectUri)) {
     throw createError({
       statusCode: 400,
@@ -83,19 +56,49 @@ export default defineEventHandler(async (event) => {
     })
   }
 
-  // 4. Redirect to Consent Screen
-  const config = useRuntimeConfig()
-  const siteUrl = config.public.siteUrl
+  const isMcpFlow = isMcpResourceRequest(resource, siteUrl)
+
+  if (isMcpFlow) {
+    if (!codeChallenge) {
+      throw createError({
+        statusCode: 400,
+        message: 'PKCE code_challenge is required for MCP authorization.'
+      })
+    }
+    if (codeChallengeMethod && codeChallengeMethod !== 'S256') {
+      throw createError({
+        statusCode: 400,
+        message: 'Only S256 PKCE is supported for MCP authorization.'
+      })
+    }
+
+    try {
+      assertMcpResource(resource, siteUrl)
+      const scopes = parseScopeString(scope)
+      if (scopes.length > 0) {
+        validateMcpOAuthScopes(scopes)
+      }
+    } catch (error) {
+      throw createError({
+        statusCode: 400,
+        message: error instanceof Error ? error.message : 'Invalid MCP authorization request'
+      })
+    }
+  }
 
   const consentUrl = new URL('/oauth/authorize', siteUrl)
   consentUrl.searchParams.set('client_id', clientId)
   consentUrl.searchParams.set('redirect_uri', redirectUri)
-  consentUrl.searchParams.set('scope', scope || 'profile:read')
+  consentUrl.searchParams.set('scope', scope || (isMcpFlow ? '' : 'profile:read'))
   if (state) consentUrl.searchParams.set('state', state)
   if (prompt) consentUrl.searchParams.set('prompt', prompt)
+  if (resource) consentUrl.searchParams.set('resource', resource)
   if (codeChallenge) {
     consentUrl.searchParams.set('code_challenge', codeChallenge)
-    consentUrl.searchParams.set('code_challenge_method', codeChallengeMethod || 'S256')
+    consentUrl.searchParams.set(
+      'code_challenge_method',
+      isMcpFlow ? 'S256' : codeChallengeMethod || 'S256'
+    )
   }
 
   return sendRedirect(event, consentUrl.toString())

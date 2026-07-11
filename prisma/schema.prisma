@@ -138,6 +138,7 @@ model User {
   oauthCodes                         OAuthAuthCode[]
   oauthConsents                      OAuthConsent[]
   oauthTokens                        OAuthToken[]
+  mcpToolExecutions                  McpToolExecution[]
   plannedWorkouts                    PlannedWorkout[]
   workoutStructureGenerationRuns     WorkoutStructureGenerationRun[]
   recommendations                    Recommendation[]
@@ -254,26 +255,30 @@ model UserSystemMessageDismissal {
 }
 
 model OAuthApp {
-  id            String          @id @default(uuid())
-  name          String
-  sourceName    String?
-  description   String?
-  homepageUrl   String?
-  logoUrl       String?
-  clientId      String          @unique @default(dbgenerated("gen_random_uuid()"))
-  clientSecret  String
-  webhookSecret String?
-  redirectUris  String[]
-  isTrusted     Boolean         @default(false)
-  isPublic      Boolean         @default(false)
-  ownerId       String
-  createdAt     DateTime        @default(now())
-  updatedAt     DateTime        @updatedAt
-  owner         User            @relation(fields: [ownerId], references: [id], onDelete: Cascade)
-  codes         OAuthAuthCode[]
-  consents      OAuthConsent[]
-  tokens        OAuthToken[]
-  workouts      Workout[]       @relation("WorkoutOAuthApp")
+  id                       String          @id @default(uuid())
+  name                     String
+  sourceName               String?
+  description              String?
+  homepageUrl              String?
+  logoUrl                  String?
+  clientId                 String          @unique @default(dbgenerated("gen_random_uuid()"))
+  clientSecret             String
+  webhookSecret            String?
+  redirectUris             String[]
+  isTrusted                Boolean         @default(false)
+  isPublic                 Boolean         @default(false)
+  isPublicClient           Boolean         @default(false)
+  registrationType         String          @default("manual")
+  ownerId                  String
+  createdAt                DateTime        @default(now())
+  updatedAt                DateTime        @updatedAt
+  owner                    User            @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  codes                    OAuthAuthCode[]
+  consents                 OAuthConsent[]
+  tokens                   OAuthToken[]
+  workouts                 Workout[]       @relation("WorkoutOAuthApp")
+  mcpToolExecutions        McpToolExecution[]
+  mcpIdempotencyKeys       McpIdempotencyKey[]
 
   @@index([ownerId])
 }
@@ -297,6 +302,7 @@ model OAuthAuthCode {
   userId              String
   redirectUri         String
   scopes              String[]
+  resource            String?
   codeChallenge       String?
   codeChallengeMethod String?  @default("S256")
   expiresAt           DateTime
@@ -314,14 +320,57 @@ model OAuthToken {
   appId                 String
   userId                String
   scopes                String[]
+  resource              String?
+  refreshTokenRotatedAt DateTime?
   createdAt             DateTime  @default(now())
   lastUsedAt            DateTime?
   lastIp                String?
   app                   OAuthApp  @relation(fields: [appId], references: [id], onDelete: Cascade)
   user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  mcpToolExecutions     McpToolExecution[]
+  mcpIdempotencyKeys    McpIdempotencyKey[]
 
   @@index([accessToken])
   @@index([refreshToken])
+}
+
+model McpToolExecution {
+  id          String    @id @default(uuid())
+  userId      String
+  appId       String
+  tokenId     String?
+  requestId   String
+  toolName    String
+  argsHash    String
+  status      String
+  errorCode   String?
+  durationMs  Int?
+  createdAt   DateTime  @default(now())
+  completedAt DateTime?
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  app         OAuthApp  @relation(fields: [appId], references: [id], onDelete: Cascade)
+  token       OAuthToken? @relation(fields: [tokenId], references: [id], onDelete: SetNull)
+
+  @@index([userId, createdAt])
+  @@index([appId, createdAt])
+  @@index([requestId])
+}
+
+model McpIdempotencyKey {
+  id           String   @id @default(uuid())
+  appId        String
+  tokenId      String
+  toolName     String
+  idempotencyKey String
+  status       String
+  responseHash String?
+  createdAt    DateTime @default(now())
+  expiresAt    DateTime
+  app          OAuthApp @relation(fields: [appId], references: [id], onDelete: Cascade)
+  token        OAuthToken @relation(fields: [tokenId], references: [id], onDelete: Cascade)
+
+  @@unique([appId, tokenId, toolName, idempotencyKey])
+  @@index([expiresAt])
 }
 
 model AuditLog {

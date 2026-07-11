@@ -1,6 +1,6 @@
 # Sentry Issue Tracking
 
-Live tracker for **coach-watts** ([Sentry dashboard](https://newpush-y4.sentry.io/issues/?project=coach-watts&query=is%3Aunresolved)). Last synced from Sentry: **2026-07-09**.
+Live tracker for **coach-watts** ([Sentry dashboard](https://newpush-y4.sentry.io/issues/?project=coach-watts&query=is%3Aunresolved)). Last synced from Sentry: **2026-07-11**.
 
 Related docs:
 
@@ -19,15 +19,11 @@ Sorted by recency. Fix committed locally but still firing → see **Fix committe
 | [COACH-WATTS-23](https://newpush-y4.sentry.io/issues/COACH-WATTS-23)   | `FetchError: /api/auth/session` — no response                    | 8     | 14     | ~1h ago   | `/dashboard`                     | Dev server restart / network blip                                                              |
 | [COACH-WATTS-1DF](https://newpush-y4.sentry.io/issues/COACH-WATTS-1DF) | `FetchError: /_nuxt/builds/meta/dev.json` — no response          | 1     | 1      | ~1h ago   | `/dashboard`                     | Local dev only                                                                                 |
 | [COACH-WATTS-1C4](https://newpush-y4.sentry.io/issues/COACH-WATTS-1C4) | `FetchError: /api/auth/session` — 503                            | 1     | 1      | ~2h ago   | `/dashboard`                     | Server unavailable during restart                                                              |
-| [COACH-WATTS-3J](https://newpush-y4.sentry.io/issues/COACH-WATTS-3J)   | `UnhandledRejection: value: undefined`                           | 9     | 10     | ~2h ago   | `/workouts/:id()`                | Fixed — safe task callbacks + page lifecycle guards in workout detail                          |
 | [COACH-WATTS-1DE](https://newpush-y4.sentry.io/issues/COACH-WATTS-1DE) | `PrismaClientValidationError`                                    | 0     | 1      | ~2h ago   | `summarize-chat.ts`              | Dev-only; source uses `promptTokens`/`completionTokens` — stale trigger deploy                 |
-| [COACH-WATTS-16B](https://newpush-y4.sentry.io/issues/COACH-WATTS-16B) | `Failed to refresh Ultrahuman token: 400`                        | 0     | 22     | ~2h ago   | `ultrahuman.ts`                  | Fix committed; mark FAILED on 400 — verify deploy                                              |
 | [COACH-WATTS-1DD](https://newpush-y4.sentry.io/issues/COACH-WATTS-1DD) | `Cannot read properties of null (reading 'subTree')`             | 1     | 1      | ~4h ago   | `/chat`                          | Fixed — chat lifecycle guards + room-scoped message list remount                               |
 | [COACH-WATTS-1DC](https://newpush-y4.sentry.io/issues/COACH-WATTS-1DC) | `Cannot read properties of null (reading 'flags')`               | 1     | 1      | ~4h ago   | `/chat`                          | Same cluster                                                                                   |
 | [COACH-WATTS-1DB](https://newpush-y4.sentry.io/issues/COACH-WATTS-1DB) | `Cannot read properties of null (reading 'unmount')`             | 1     | 1      | ~4h ago   | `/chat`                          | Same cluster                                                                                   |
 | [COACH-WATTS-1DA](https://newpush-y4.sentry.io/issues/COACH-WATTS-1DA) | `Cannot read properties of null (reading 'parentNode')`          | 1     | 2      | ~4h ago   | `/chat`                          | Same cluster as historical COACH-WATTS-1P                                                      |
-| [COACH-WATTS-6Z](https://newpush-y4.sentry.io/issues/COACH-WATTS-6Z)   | `Failed to refresh Withings token: Status 503`                   | 0     | 1      | ~5h ago   | `withings.ts`                    | Integration config / provider outage                                                           |
-| [COACH-WATTS-YD](https://newpush-y4.sentry.io/issues/COACH-WATTS-YD)   | `Failed to refresh Whoop token: 400`                             | 0     | 1      | ~5h ago   | `whoop.ts`                       | Invalid/revoked token for user                                                                 |
 | [COACH-WATTS-1AA](https://newpush-y4.sentry.io/issues/COACH-WATTS-1AA) | `FetchError: /api/auth/session` — no response                    | 3     | 4      | ~7h ago   | `/dashboard`                     | Same class as COACH-WATTS-23                                                                   |
 | [COACH-WATTS-1D8](https://newpush-y4.sentry.io/issues/COACH-WATTS-1D8) | `ReferenceError: pollStartedAt is not defined`                   | 7     | 40     | ~8h ago   | `/chat`                          | Fixed in [#062](./docs/issues/062-chat-planned-workout-pollstartedat-crash.md); pending deploy |
 | [COACH-WATTS-9](https://newpush-y4.sentry.io/issues/COACH-WATTS-9)     | `Importing a module script failed`                               | 15    | 18     | ~8h ago   | `/chat`                          | Deployment chunk invalidation; reload plugin handles                                           |
@@ -42,17 +38,22 @@ Sorted by recency. Fix committed locally but still firing → see **Fix committe
 
 ## Fix Committed — Pending Deploy Verification
 
-| Issue ID              | Local fix                                                 | Doc                                                                   |
-| --------------------- | --------------------------------------------------------- | --------------------------------------------------------------------- |
-| COACH-WATTS-66        | Bounded `flattenWorkoutSteps` (depth/reps/step caps)      | `app/utils/workout-analytics.ts`, `MiniWorkoutChart.vue`              |
-| COACH-WATTS-1CG       | Empty stream label guards                                 | `BaseStreamChart.vue`, `map.vue`                                      |
-| COACH-WATTS-1D9       | MDC render error fallback                                 | `ChatMdcContent.vue`                                                  |
-| COACH-WATTS-1DA–1DD   | Chat teardown lifecycle guards                            | `chat.vue`, `ChatPlannedWorkoutCard.vue`, `ChatMessageList.vue`       |
-| COACH-WATTS-3J        | Safe task callbacks + workout page lifecycle guards       | `useUserRuns.ts`, `workouts/[id]/index.vue`                           |
-| COACH-WATTS-1D6 / 1D8 | `pollStartedAt` ref added in `ChatPlannedWorkoutCard.vue` | [#062](./docs/issues/062-chat-planned-workout-pollstartedat-crash.md) |
-| COACH-WATTS-16B       | Ultrahuman 400 → mark integration FAILED                  | [resolution plan](./conductor/sentry-issues-resolution-plan.md)       |
-| COACH-WATTS-18B       | Null checks in `AdvancedWorkoutMetrics.vue`               | [resolution plan](./conductor/sentry-issues-resolution-plan.md)       |
-| COACH-WATTS-118       | try/catch in `ChatTurnService.claimNextQueuedTurn`        | [resolution plan](./conductor/sentry-issues-resolution-plan.md)       |
+| Issue ID                                      | Local fix                                                 | Doc                                                                                                                                  |
+| --------------------------------------------- | --------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
+| COACH-WATTS-66                                | Bounded `flattenWorkoutSteps` (depth/reps/step caps)      | `app/utils/workout-analytics.ts`, `MiniWorkoutChart.vue`                                                                             |
+| COACH-WATTS-1CG                               | Empty stream label guards                                 | `BaseStreamChart.vue`, `map.vue`                                                                                                     |
+| COACH-WATTS-1D9                               | MDC render error fallback                                 | `ChatMdcContent.vue`                                                                                                                 |
+| COACH-WATTS-1DA–1DD                           | Chat teardown lifecycle guards                            | `chat.vue`, `ChatPlannedWorkoutCard.vue`, `ChatMessageList.vue`                                                                      |
+| COACH-WATTS-3J                                | Safe task callbacks + workout page lifecycle guards       | `useUserRuns.ts`, `workouts/[id]/index.vue`                                                                                          |
+| COACH-WATTS-1D6 / 1D8                         | `pollStartedAt` ref added in `ChatPlannedWorkoutCard.vue` | [#062](./docs/issues/062-chat-planned-workout-pollstartedat-crash.md)                                                                |
+| COACH-WATTS-18B                               | Null checks in `AdvancedWorkoutMetrics.vue`               | [resolution plan](./conductor/sentry-issues-resolution-plan.md)                                                                      |
+| COACH-WATTS-118                               | try/catch in `ChatTurnService.claimNextQueuedTurn`        | [resolution plan](./conductor/sentry-issues-resolution-plan.md)                                                                      |
+| COACH-WATTS-1E2 / 1E0 / 1DS / 1DR / 1DP / 1DY | `DataCloneError` on profile save / dashboard settings     | `BasicSettings.vue` (`pickBasicProfilePayload` + `toRaw`), `profile/settings.vue` (`snapshotState`), `user.ts` (`cloneSerializable`) |
+| COACH-WATTS-1E1                               | `deviation.toLowerCase()` on undefined                    | `PlanAdherence.vue` — filter invalid deviations + safe helper                                                                        |
+| COACH-WATTS-1DT / 1DV                         | Chart.js annotation plugin race during update/destroy     | `ChartRenderer.vue`, `BaseWidget.vue`                                                                                                |
+| COACH-WATTS-1DX / 1DW                         | Deprecated `gemini-3-pro-preview` + undefined `usage`     | `ai-config.ts` (model alias), `gemini.ts` (`resolveModelId`, `logUsage` guard)                                                       |
+| COACH-WATTS-1DJ                               | `reasoningText` passed to Prisma instead of `reasoning`   | `activityRecommendationRepository.createProcessingPlaceholder`, `today.post.ts`                                                      |
+| COACH-WATTS-16B / YD / 6Z                     | Token refresh spamming Sentry on revoked/outage tokens    | `integration-errors.ts`, `ultrahuman.ts` / `whoop.ts` / `withings.ts`, ingest tasks, `trigger/init.ts`                               |
 
 After deploy: resolve in Sentry if no new events for 24–48h.
 
@@ -63,6 +64,7 @@ After deploy: resolve in Sentry if no new events for 24–48h.
 | [COACH-WATTS-117](https://newpush-y4.sentry.io/issues/COACH-WATTS-117) | `Object Not Found Matching Id:2, MethodName:update` | Filtered via `ignoreErrors` in `sentry.client.config.ts` ([#196](./docs/issues/196-sentry-no-cefsharp-scanner-filter.md)) |
 | COACH-WATTS-D / 9                                                      | Chunk / dynamic import failures                     | `app/plugins/chunk-error.client.ts` auto-reload                                                                           |
 | COACH-WATTS-23 / 1AA / 1DF / 1C4                                       | Auth session / dev.json fetch failures              | Dev server restarts; not app bugs                                                                                         |
+| COACH-WATTS-16B / YD / 6Z                                              | Integration token refresh 400/503                   | Revoked tokens or provider outage; `IntegrationAuthError` no longer reported to Sentry; user must reconnect integration   |
 | [COACH-WATTS-MP](https://newpush-y4.sentry.io/issues/COACH-WATTS-MP)   | `runtime.sendMessage(). Tab not found`              | Browser extension noise                                                                                                   |
 
 ## Recently Resolved

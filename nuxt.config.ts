@@ -266,6 +266,18 @@ export default defineNuxtConfig({
     authBypassUser: process.env.AUTH_BYPASS_USER || '',
     authBypassName: process.env.AUTH_BYPASS_NAME || '',
 
+    // MCP server
+    mcpEnabled: process.env.NUXT_MCP_ENABLED !== 'false',
+    mcpExecutionEnabled: process.env.NUXT_MCP_EXECUTION_ENABLED !== 'false',
+    mcpReadEnabled: process.env.NUXT_MCP_READ_ENABLED !== 'false',
+    mcpWriteEnabled: process.env.NUXT_MCP_WRITE_ENABLED !== 'false',
+    mcpAsyncEnabled: process.env.NUXT_MCP_ASYNC_ENABLED !== 'false',
+    mcpDcrEnabled: process.env.NUXT_MCP_DCR_ENABLED !== 'false',
+    mcpDcrOwnerUserId: process.env.NUXT_MCP_DCR_OWNER_USER_ID || '',
+    mcpDcrOwnerEmail: process.env.NUXT_MCP_DCR_OWNER_EMAIL || '',
+    mcpClientAllowlist: process.env.NUXT_MCP_CLIENT_ALLOWLIST || '',
+    mcpDcrRateLimitPerHour: process.env.NUXT_MCP_DCR_RATE_LIMIT_PER_HOUR || '10',
+
     // Redis / DragonflyDB
     redisUrl: process.env.REDIS_URL || '',
 
@@ -332,7 +344,14 @@ export default defineNuxtConfig({
   },
 
   build: {
-    transpile: ['@vue-leaflet/vue-leaflet', '@tolgee/vue', '@tolgee/web', '@tolgee/format-icu']
+    transpile: [
+      '@vue-leaflet/vue-leaflet',
+      '@tolgee/vue',
+      '@tolgee/web',
+      '@tolgee/format-icu',
+      '@modelcontextprotocol/server',
+      '@modelcontextprotocol/node'
+    ]
   },
 
   vite: {
@@ -354,12 +373,15 @@ export default defineNuxtConfig({
         '@internationalized/date',
         '@sentry/nuxt',
         '@vueuse/core',
-        '@vueuse/shared',
         'chart.js',
         'chartjs-adapter-date-fns',
+        'chartjs-plugin-annotation',
+        'chartjs-plugin-datalabels',
         'date-fns',
         'date-fns-tz',
         'leaflet',
+        'marked',
+        'qrcode',
         'vue-chartjs',
         'vuedraggable',
         'zod'

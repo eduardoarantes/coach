@@ -36,6 +36,12 @@ importers:
       '@markw65/fit-file-writer':
         specifier: ^0.1.7
         version: 0.1.7
+      '@modelcontextprotocol/node':
+        specifier: 2.0.0-beta.3
+        version: 2.0.0-beta.3(@modelcontextprotocol/server@2.0.0-beta.3)(hono@4.12.28)
+      '@modelcontextprotocol/server':
+        specifier: 2.0.0-beta.3
+        version: 2.0.0-beta.3
       '@next-auth/prisma-adapter':
         specifier: ^1.0.7
         version: 1.0.7(@prisma/client@7.8.0(prisma@7.8.0(@types/react@19.2.7)(better-sqlite3@12.11.1)(magicast@0.3.5)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.9.3))(typescript@5.9.3))(next-auth@4.21.1(next@14.2.35(@babel/core@7.29.7)(@opentelemetry/api@1.9.1)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(react-dom@18.3.1(react@18.3.1))(react@18.3.1))
@@ -3055,6 +3061,26 @@ packages:
       {
         integrity: sha512-Y28PR25bHXUg88kCV7nivXrP2Nj2RueZ3/l/jdx6J9f8J4nsEGcgX0Qe6lt7Pa+J79+kPiJU3LguR6O/6zrLOw==
       }
+
+  '@modelcontextprotocol/node@2.0.0-beta.3':
+    resolution:
+      {
+        integrity: sha512-jmrJEKjPCBU+vu1YRcYaoyeRnB3VwuV2qBeEHlqgfJWN9sp6zisFqRXGZwVgRuZ2aZkEi1gO5JNSxarR8R/8Ig==
+      }
+    engines: { node: '>=20' }
+    peerDependencies:
+      '@modelcontextprotocol/server': ^2.0.0-beta.3
+      hono: ^4.11.4
+    peerDependenciesMeta:
+      hono:
+        optional: true
+
+  '@modelcontextprotocol/server@2.0.0-beta.3':
+    resolution:
+      {
+        integrity: sha512-EQxVIWf2XMAgjR38ZRZnX1iiOWH42tT/YJG8N4dVjAnrEGSEfPirR6FYfDC72yuNSvVYbPDTD1H3KHLLHPd18A==
+      }
+    engines: { node: '>=20' }
 
   '@msgpackr-extract/msgpackr-extract-darwin-arm64@3.0.4':
     resolution:
@@ -19958,6 +19984,17 @@ snapshots:
   '@microsoft/fetch-event-source@2.0.1': {}
 
   '@mixmark-io/domino@2.2.0': {}
+
+  '@modelcontextprotocol/node@2.0.0-beta.3(@modelcontextprotocol/server@2.0.0-beta.3)(hono@4.12.28)':
+    dependencies:
+      '@hono/node-server': 1.19.11(hono@4.12.28)
+      '@modelcontextprotocol/server': 2.0.0-beta.3
+    optionalDependencies:
+      hono: 4.12.28
+
+  '@modelcontextprotocol/server@2.0.0-beta.3':
+    dependencies:
+      zod: 4.4.3
 
   '@msgpackr-extract/msgpackr-extract-darwin-arm64@3.0.4':
     optional: true

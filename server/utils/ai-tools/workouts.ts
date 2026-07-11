@@ -15,6 +15,9 @@ import { analyzeWorkoutTask } from '../../../trigger/analyze-workout'
 import type { AiSettings } from '../ai-user-settings'
 import { hasProtectedIntervalsTags, mergeWorkoutTags } from '../workout-tags'
 import { getPendingSyncStatus } from '../structured-workout-persistence'
+import { calculateWorkoutStress } from '../calculate-workout-stress'
+import { metabolicService } from '../services/metabolicService'
+import { isNutritionTrackingEnabled } from '../nutrition/feature'
 
 export const workoutTools = (userId: string, timezone: string, aiSettings: AiSettings) => ({
   get_recent_workouts: tool({
@@ -281,16 +284,20 @@ export const workoutTools = (userId: string, timezone: string, aiSettings: AiSet
       if (!workout) return { error: 'Workout not found' }
 
       try {
-        await analyzeWorkoutTask.trigger(
+        const handle = await analyzeWorkoutTask.trigger(
           { workoutId: workout_id },
           {
             tags: [`user:${userId}`, `workout:${workout_id}`],
             concurrencyKey: userId
           }
         )
+        await workoutRepository.updateStatus(workout_id, 'PENDING')
         return {
           success: true,
-          message: 'Workout re-analysis has been queued for processing.'
+          message: 'Workout re-analysis has been queued for processing.',
+          job_type: 'workout_analysis',
+          job_id: workout_id,
+          run_id: handle.id
         }
       } catch (e: any) {
         return { error: `Failed to trigger analysis: ${e.message}` }
@@ -357,7 +364,9 @@ export const workoutTools = (userId: string, timezone: string, aiSettings: AiSet
       duration_seconds: z.number().optional().describe('Duration in seconds'),
       distance_meters: z.number().nullable().optional().describe('Distance in meters'),
       training_load: z.number().nullable().optional().describe('Training load value'),
-      tss: z.number().nullable().optional().describe('Training Stress Score')
+      tss: z.number().nullable().optional().describe('Training Stress Score'),
+      rpe: z.number().int().min(1).max(10).optional().describe('Rate of perceived exertion (1-10)'),
+      feel: z.number().int().min(1).max(10).optional().describe('How the workout felt (1-10)')
     }),
     needsApproval: async () => true,
     execute: async ({
@@ -369,7 +378,9 @@ export const workoutTools = (userId: string, timezone: string, aiSettings: AiSet
       duration_seconds,
       distance_meters,
       training_load,
-      tss
+      tss,
+      rpe,
+      feel
     }) => {
       const workout = await workoutRepository.getById(workout_id, userId)
       const plannedWorkout = workout
@@ -397,6 +408,14 @@ export const workoutTools = (userId: string, timezone: string, aiSettings: AiSet
         if (distance_meters !== undefined) updateData.distanceMeters = distance_meters
         if (training_load !== undefined) updateData.trainingLoad = training_load
         if (tss !== undefined) updateData.tss = tss
+        if (rpe !== undefined) {
+          updateData.rpe = rpe
+          const durationSec = duration_seconds ?? workout?.durationSec
+          if (typeof durationSec === 'number' && durationSec > 0) {
+            updateData.sessionRpe = Math.round(rpe * (durationSec / 60))
+          }
+        }
+        if (feel !== undefined) updateData.feel = feel
 
         if (date !== undefined) {
           const parsedDate = new Date(date)
@@ -460,7 +479,10 @@ export const workoutTools = (userId: string, timezone: string, aiSettings: AiSet
             type: updatedWorkout.type,
             date: formatUserDate(updatedWorkout.date, timezone),
             duration: updatedWorkout.durationSec,
-            tss: updatedWorkout.tss
+            tss: updatedWorkout.tss,
+            rpe: updatedWorkout.rpe,
+            feel: updatedWorkout.feel,
+            session_rpe: updatedWorkout.sessionRpe
           }
         }
       } catch (e: any) {
@@ -516,6 +538,101 @@ export const workoutTools = (userId: string, timezone: string, aiSettings: AiSet
           title: updatedWorkout.title,
           tags: updatedWorkout.tags
         }
+      }
+    }
+  }),
+
+  create_manual_workout: tool({
+    description: 'Log a completed workout manually when it was not imported from a device or app.',
+    inputSchema: z.object({
+      title: z.string().describe('Workout title'),
+      date: z.string().describe('Workout date/time (ISO string or YYYY-MM-DD)'),
+      duration_seconds: z.number().int().positive().describe('Duration in seconds'),
+      type: z.string().optional().describe('Sport type (Ride, Run, Swim, WeightTraining, etc.)'),
+      description: z.string().optional().describe('Optional workout description'),
+      distance_meters: z.number().optional().describe('Distance in meters'),
+      tss: z.number().optional().describe('Training Stress Score'),
+      rpe: z.number().int().min(1).max(10).optional().describe('Rate of perceived exertion (1-10)'),
+      planned_workout_id: z
+        .string()
+        .optional()
+        .describe('Optional planned workout ID to mark as completed')
+    }),
+    needsApproval: async () => true,
+    execute: async ({
+      title,
+      date,
+      duration_seconds,
+      type,
+      description,
+      distance_meters,
+      tss,
+      rpe,
+      planned_workout_id
+    }) => {
+      const parsedDate = new Date(date)
+      if (Number.isNaN(parsedDate.getTime())) {
+        return { error: 'Invalid date format. Use ISO date/time or YYYY-MM-DD.' }
+      }
+
+      try {
+        const workout = await workoutRepository.create({
+          userId,
+          externalId: `manual-${Date.now()}`,
+          source: 'manual',
+          title,
+          description: description || null,
+          type: type || 'Activity',
+          date: parsedDate,
+          durationSec: duration_seconds,
+          distanceMeters: distance_meters ?? null,
+          tss: tss ?? null,
+          rpe: rpe ?? null,
+          sessionRpe: rpe ? Math.round(rpe * (duration_seconds / 60)) : null,
+          plannedWorkoutId: planned_workout_id || null
+        })
+
+        try {
+          await calculateWorkoutStress(workout.id, userId)
+        } catch (error) {
+          console.error('Error calculating workout stress metrics:', error)
+        }
+
+        if (planned_workout_id) {
+          await prisma.plannedWorkout.update({
+            where: { id: planned_workout_id, userId },
+            data: {
+              completed: true,
+              completionStatus: 'COMPLETED'
+            }
+          })
+        }
+
+        try {
+          if (await isNutritionTrackingEnabled(userId)) {
+            await metabolicService.calculateFuelingPlanForDate(userId, workout.date, {
+              persist: true
+            })
+          }
+        } catch (err) {
+          console.error('[ManualWorkoutCreate] Failed to trigger regeneration:', err)
+        }
+
+        return {
+          success: true,
+          message: 'Manual workout logged successfully.',
+          workout: {
+            id: workout.id,
+            title: workout.title,
+            type: workout.type,
+            date: formatUserDate(workout.date, timezone),
+            duration_seconds: workout.durationSec,
+            tss: workout.tss,
+            rpe: workout.rpe
+          }
+        }
+      } catch (e: any) {
+        return { error: `Failed to create manual workout: ${e.message}` }
       }
     }
   }),

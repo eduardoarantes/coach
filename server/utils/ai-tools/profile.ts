@@ -72,7 +72,10 @@ export const profileTools = (userId: string, timezone: string, aiSettings: AiSet
         return {
           success: true,
           message:
-            'Athlete profile update has been started. Your zones and fitness metrics will be updated shortly.'
+            'Athlete profile update has been started. Your zones and fitness metrics will be updated shortly.',
+          job_type: 'report',
+          job_id: report.id,
+          report_id: report.id
         }
       } catch (e: any) {
         return { error: `Failed to trigger profile update: ${e.message}` }

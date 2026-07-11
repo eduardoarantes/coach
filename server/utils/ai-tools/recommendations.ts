@@ -3,6 +3,11 @@ import { z } from 'zod/v3'
 import { recommendationRepository } from '../repositories/recommendationRepository'
 import { activityRecommendationRepository } from '../repositories/activityRecommendationRepository'
 import { getUserLocalDate } from '../date'
+import {
+  acceptActivityRecommendation,
+  completeProfileRecommendation,
+  dismissRecommendation
+} from '../recommendation-actions'
 
 function formatActivityRecommendation(rec: {
   id: string
@@ -182,5 +187,37 @@ export const recommendationTools = (userId: string, timezone: string) => ({
 
       return { count: filteredRecs.length, recommendations: filteredRecs }
     }
+  }),
+
+  accept_recommendation: tool({
+    description:
+      'Accept a daily activity recommendation or complete a profile recommendation. Activity recommendations update or create the planned workout for that day.',
+    inputSchema: z.object({
+      recommendation_id: z.string().describe('Recommendation ID'),
+      source: z
+        .enum(['activity', 'profile'])
+        .optional()
+        .describe(
+          'Recommendation source. Defaults to activity when accepting a daily workout suggestion.'
+        )
+    }),
+    needsApproval: async () => true,
+    execute: async ({ recommendation_id, source = 'activity' }) => {
+      if (source === 'profile') {
+        return completeProfileRecommendation(userId, recommendation_id)
+      }
+      return acceptActivityRecommendation(userId, recommendation_id)
+    }
+  }),
+
+  dismiss_recommendation: tool({
+    description: 'Dismiss a pending activity or profile recommendation.',
+    inputSchema: z.object({
+      recommendation_id: z.string().describe('Recommendation ID'),
+      source: z.enum(['activity', 'profile']).default('profile').describe('Recommendation source')
+    }),
+    needsApproval: async () => true,
+    execute: async ({ recommendation_id, source }) =>
+      dismissRecommendation(userId, recommendation_id, source)
   })
 })

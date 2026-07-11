@@ -240,12 +240,24 @@ export default defineEventHandler(async (event) => {
     }
 
     const toolCallsUsed = buildPersistedToolCalls(result.toolCalls, result.toolResults)
-    const hasMeaningfulText = typeof result.text === 'string' && result.text.trim().length > 0
-    const responseText = hasMeaningfulText
-      ? result.text
-      : toolCallsUsed.length > 0
-        ? 'I processed that, but the reply text came back empty. Please retry or ask me to summarize the result.'
-        : 'I hit a response issue while processing that. Please retry your last message.'
+    let responseText = typeof result.text === 'string' ? result.text.trim() : ''
+
+    // Gemini can occasionally finish immediately after a tool step without producing
+    // user-facing text. Continue from the provider-generated tool exchange once, with
+    // tools disabled, so Telegram receives the actual answer instead of an internal
+    // fallback message.
+    if (!responseText && toolCallsUsed.length > 0) {
+      const continuation = await generateText({
+        model: google(modelName),
+        instructions: `${systemInstruction}\n\nAnswer the user's latest message using the completed tool results above. Return a concise, user-facing answer in the user's language. Do not call tools.`,
+        messages: [...(normalizedMessages as any[]), ...(result.response.messages as any[])]
+      })
+      responseText = continuation.text.trim()
+    }
+
+    if (!responseText) {
+      throw new Error('LLM response completed without user-facing text')
+    }
 
     // Save AI Message
     const aiMsg = await chatService.saveAiMessage({

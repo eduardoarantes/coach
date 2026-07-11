@@ -1,6 +1,6 @@
 # Sentry Issues Resolution Plan (April 8, 2026)
 
-> **Status:** Mostly completed. Live tracking moved to [SENTRY-ISSUES.md](../SENTRY-ISSUES.md) (synced 2026-07-09). Use this file for historical context only.
+> **Status:** Mostly completed (Phase 2 integration robustness finished 2026-07-11). Live tracking moved to [SENTRY-ISSUES.md](../SENTRY-ISSUES.md). Use this file for historical context only.
 
 ## Objective
 
@@ -50,8 +50,10 @@ Identify and resolve outstanding Sentry issues that were first seen before today
 
 ### Phase 2: Integration Robustness (COACH-WATTS-16B, 6Z, YD)
 
-- [ ] Refactor `refreshUltrahumanToken` in `server/utils/ultrahuman.ts` to handle 400 errors gracefully.
-- [ ] Apply similar logic to Withings and Whoop refresh functions if they exhibit the same pattern.
+- [x] Refactor `refreshUltrahumanToken` in `server/utils/ultrahuman.ts` to handle 400 errors gracefully.
+- [x] Apply similar logic to Withings and Whoop refresh functions if they exhibit the same pattern.
+- [x] Add `IntegrationAuthError` / `IntegrationProviderError` and suppress auth noise in `trigger/init.ts`.
+- [x] Return `{ success: false }` from ingest tasks on auth failure instead of retrying and spamming Sentry.
 
 ### Phase 3: Backend Stability (COACH-WATTS-118)
 

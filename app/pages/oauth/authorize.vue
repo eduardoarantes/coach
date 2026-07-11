@@ -76,6 +76,16 @@
 
         <USeparator />
 
+        <div
+          v-if="query.resource"
+          class="rounded-lg border border-gray-100 dark:border-gray-700 px-3 py-2"
+        >
+          <p class="text-[10px] font-bold uppercase tracking-widest text-gray-500">Resource</p>
+          <p class="text-xs font-medium text-gray-700 dark:text-gray-300 break-all">
+            {{ query.resource }}
+          </p>
+        </div>
+
         <div class="space-y-3">
           <p class="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-widest">
             This app will be able to:
@@ -142,6 +152,7 @@
 
 <script setup lang="ts">
   import { useAppLogout } from '#imports'
+  import { MCP_SCOPE_LABELS } from '../../../shared/oauth-scope-labels'
 
   definePageMeta({
     layout: 'simple',
@@ -164,7 +175,8 @@
 
     if (query.client_id) params.set('client_id', String(query.client_id))
     if (query.redirect_uri) params.set('redirect_uri', String(query.redirect_uri))
-    params.set('scope', String(query.scope || 'profile:read'))
+    if (query.scope) params.set('scope', String(query.scope))
+    if (query.resource) params.set('resource', String(query.resource))
     if (query.state) params.set('state', String(query.state))
     if (query.code_challenge) params.set('code_challenge', String(query.code_challenge))
     if (query.code_challenge_method) {
@@ -178,65 +190,12 @@
   )
   const denyActionUrl = computed(() => `/api/oauth/authorize?${authorizeQuery.value}&action=deny`)
 
-  const scopeMap: Record<string, any> = {
-    'profile:read': {
-      id: 'profile:read',
-      title: 'Read Profile',
-      description: 'Access your basic profile info, FTP, and settings.',
-      icon: 'i-heroicons-user'
-    },
-    'profile:write': {
-      id: 'profile:write',
-      title: 'Update Profile',
-      description: 'Modify your profile settings like weight and FTP.',
-      icon: 'i-heroicons-pencil-square'
-    },
-    'workout:read': {
-      id: 'workout:read',
-      title: 'Read Workouts',
-      description: 'View your workout history and performance metrics.',
-      icon: 'i-heroicons-activity'
-    },
-    'workout:write': {
-      id: 'workout:write',
-      title: 'Manage Workouts',
-      description: 'Upload new workouts or edit existing ones.',
-      icon: 'i-heroicons-cloud-arrow-up'
-    },
-    'health:read': {
-      id: 'health:read',
-      title: 'Read Health Data',
-      description: 'Access your HRV, sleep, and recovery metrics.',
-      icon: 'i-heroicons-heart'
-    },
-    'health:write': {
-      id: 'health:write',
-      title: 'Log Health Data',
-      description: 'Log new health metrics like HRV, sleep, and weight.',
-      icon: 'i-heroicons-plus-circle'
-    },
-    'nutrition:read': {
-      id: 'nutrition:read',
-      title: 'Read Nutrition',
-      description: 'View your daily nutrition logs and macro targets.',
-      icon: 'i-heroicons-shopping-cart'
-    },
-    'nutrition:write': {
-      id: 'nutrition:write',
-      title: 'Log Nutrition',
-      description: 'Log new meals, calories, and macros.',
-      icon: 'i-heroicons-plus-circle'
-    },
-    offline_access: {
-      id: 'offline_access',
-      title: 'Offline Access',
-      description: 'Allow this app to access your data when you are not using it.',
-      icon: 'i-heroicons-clock'
-    }
-  }
+  const scopeMap: Record<string, any> = MCP_SCOPE_LABELS
 
   const parsedScopes = computed(() => {
-    const scopes = (query.scope || 'profile:read').split(/[\s,]+/)
+    const scopes = String(query.scope || 'profile:read')
+      .split(/[\s,]+/)
+      .filter(Boolean)
     return scopes.map(
       (s: string) =>
         scopeMap[s] || {

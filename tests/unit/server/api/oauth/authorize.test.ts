@@ -18,6 +18,9 @@ vi.stubGlobal('createError', (err: any) => {
   error.statusCode = err.statusCode
   return error
 })
+vi.stubGlobal('useRuntimeConfig', () => ({
+  public: { siteUrl: 'https://app.coachwatts.com' }
+}))
 
 const findUnique = vi.fn()
 const createAuthCode = vi.fn()
