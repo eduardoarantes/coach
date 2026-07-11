@@ -7,7 +7,7 @@ The [Oura Ring](https://ouraring.com) is our most detailed source for recovery a
 
 ## Setup Guide
 
-1. Go to **Settings > Apps** on the Dashboard.
+1. Go to **Settings → Apps** on the Dashboard.
 2. Click **Link Oura Account** and log in with your Oura credentials.
 
 ## What Syncs?
@@ -23,3 +23,14 @@ The [Oura Ring](https://ouraring.com) is our most detailed source for recovery a
 ::alert{type="info"}
 Note: We extract raw biometrics (HRV, Resting Heart Rate) to ensure our internal calculations are consistent with your other devices.
 ::
+
+## Troubleshooting
+
+### Readiness not showing
+
+- Oura readiness publishes after your sleep is scored — usually within an hour of waking
+- Open the Oura app to confirm the data exists, then **Sync** in Coach Watts
+
+### Connecting multiple wellness devices
+
+If you also connect Garmin or WHOOP, Coach Watts prioritizes the most recent data. For consistent trends, one primary wellness source is recommended.

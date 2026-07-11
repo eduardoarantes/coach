@@ -105,8 +105,12 @@
     if (!data.value?.weeks) return { labels: [], datasets: [] }
 
     const labels = data.value.weeks.map((w) => {
-      const d = new Date(w.weekStart)
-      return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+      const d = new Date(`${w.weekStart}T00:00:00Z`)
+      return d.toLocaleDateString('en-US', {
+        month: 'short',
+        day: 'numeric',
+        timeZone: 'UTC'
+      })
     })
 
     const datasets = []

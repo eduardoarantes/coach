@@ -200,12 +200,15 @@
   const chartOptions = computed(() => {
     const isKcal = props.viewMode === 'kcal'
     const isCarbs = props.viewMode === 'carbs'
-    const isFixed = chartSettings.value.yScale === 'fixed'
+    const isFixedPercentScale = chartSettings.value.yScale === 'fixed' && !isKcal && !isCarbs
+    const nowIndex = props.points.findIndex((p) => p.isFuture)
 
-    let yMin = isFixed ? 0 : undefined
-    let yMax = isFixed ? 110 : undefined // Add padding above 100% for icons
+    let yMin = isFixedPercentScale ? 0 : undefined
+    let yMax = isFixedPercentScale ? 110 : undefined // Add padding above 100% for icons
 
-    if (!isFixed && (isKcal || isCarbs || props.points.length > 0)) {
+    // Fixed bounds only make sense for percentage. Balances must retain negative values
+    // and their full magnitude in kcal/carbs mode.
+    if (props.points.length > 0 && !isFixedPercentScale) {
       const values = props.points.map((p) => {
         if (isKcal) return p.kcalBalance
         if (isCarbs) return p.carbBalance
@@ -309,9 +312,9 @@
           annotations: {
             nowLine: {
               type: 'line' as const,
-              display: chartSettings.value.showNowLine,
-              xMin: props.points.findIndex((p) => p.isFuture),
-              xMax: props.points.findIndex((p) => p.isFuture),
+              display: chartSettings.value.showNowLine && nowIndex >= 0,
+              xMin: nowIndex >= 0 ? nowIndex : undefined,
+              xMax: nowIndex >= 0 ? nowIndex : undefined,
               borderColor: 'rgba(156, 163, 175, 0.8)',
               borderWidth: 1.5,
               label: {
@@ -364,7 +367,7 @@
             font: { size: 10 },
             callback: (val: any) => {
               if (isKcal || isCarbs) return `${val > 0 ? '+' : ''}${val}${isCarbs ? 'g' : ''}`
-              if (isFixed && val > 100) return '' // Hide labels above 100% to keep padding clean
+              if (isFixedPercentScale && val > 100) return '' // Hide percentage padding labels
               return `${val}%`
             }
           }

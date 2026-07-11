@@ -7,7 +7,7 @@ description: Sync your strength training and weightlifting sessions from Hevy.
 
 ## Setup Guide
 
-1. Go to **Settings > Apps** on the Dashboard.
+1. Go to **Settings → Apps** on the Dashboard.
 2. Locate **Hevy** and click **Connect**.
 3. Follow the instructions to link your Hevy account.
 
@@ -20,3 +20,15 @@ description: Sync your strength training and weightlifting sessions from Hevy.
 ::alert{type="info"}
 Note: Strength training volume is factored into your physical fatigue and recovery recommendations.
 ::
+
+## Troubleshooting
+
+### Workouts not appearing
+
+- Save the workout in Hevy and wait for it to sync to Hevy cloud
+- Click **Sync** on the Coach Watts Dashboard
+- Strength sessions appear in your activity history alongside endurance workouts
+
+### Missing exercise details
+
+Coach Watts imports sets, reps, and weights when Hevy provides them. Custom exercises without standard names may have limited detail.

@@ -146,11 +146,11 @@
               <BaseStreamChart
                 :label="metricInfo.label"
                 :data-points="displayStreamData"
-                :labels="sessionTimeData"
+                :labels="timeData"
                 :color="chartColor"
                 :y-axis-label="chartUnit"
                 height-class="h-full"
-                x-axis-label="Time (min)"
+                x-axis-label="Elapsed time"
               />
             </ClientOnly>
           </div>
@@ -364,10 +364,6 @@
     }
 
     return props.streams.time
-  })
-
-  const sessionTimeData = computed(() => {
-    return timeData.value.map((value: number) => Number(value) / 60)
   })
 
   const distanceUnits = computed(() => userStore.profile?.distanceUnits || 'Kilometers')

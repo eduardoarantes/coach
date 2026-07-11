@@ -7,7 +7,7 @@ description: Connect Intervals.icu for advanced power analysis, HR zones, and fi
 
 ## Setup Guide
 
-1. Go to **Settings > Apps** on the Dashboard.
+1. Go to **Settings → Apps** on the Dashboard.
 2. Click **Connect with Intervals.icu**.
 3. Authorize Coach Watts to access your training data.
 
@@ -20,3 +20,14 @@ Success: Once authorized, your training zones and fitness data will sync automat
 - **Accurate Power Zones**: We pull your cycling and running power zones directly.
 - **Fitness Trends**: Sync your Fitness (CTL), Fatigue (ATL), and Form (TSB) metrics.
 - **Wellness Insights**: Intervals.icu often aggregates wellness data from multiple sources.
+
+## Troubleshooting
+
+### Zones look wrong
+
+- Verify zones are set correctly in Intervals.icu first — Coach Watts pulls from your Intervals profile
+- Click **Sync** after updating zones in Intervals.icu
+
+### Strava disabled when Intervals is connected
+
+This is intentional on the Dashboard onboarding view. Intervals.icu receives activities from multiple sources, so a separate Strava connection is often unnecessary.

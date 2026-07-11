@@ -7,7 +7,7 @@ description: Sync your Fitbit activities, steps, and sleep data with Coach Watts
 
 ## Setup Guide
 
-1. Go to **Settings > Apps** on the Dashboard.
+1. Go to **Settings → Apps** on the Dashboard.
 2. Click **Connect with Fitbit**.
 3. Log in to your Fitbit account and authorize the requested permissions.
 
@@ -21,3 +21,15 @@ description: Sync your Fitbit activities, steps, and sleep data with Coach Watts
 ::alert{type="info"}
 Note: Fitbit data syncs periodically throughout the day as your device syncs with the Fitbit app.
 ::
+
+## Troubleshooting
+
+### Sleep data missing
+
+- Confirm your Fitbit model supports sleep tracking
+- Sync your device with the Fitbit app first, then click **Sync** in Coach Watts
+
+### Activities not appearing
+
+- Structured workouts must be recorded and saved in the Fitbit app
+- Daily step counts sync separately from formal activities

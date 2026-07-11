@@ -25,6 +25,9 @@ node_modules
 !.env.example
 !.env.e2e.example
 
+# MCP Registry domain verification (private key — public proof lives in public/.well-known/)
+.mcp-registry-key.pem
+
 # Playwright
 /playwright-report/
 /test-results/

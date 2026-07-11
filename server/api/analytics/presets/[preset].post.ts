@@ -880,17 +880,17 @@ async function buildPowerDurationChart(
     const type =
       mode === 'weekly-power-zones' ? 'power' : mode === 'weekly-hr-zones' ? 'hr' : 'pace'
 
-    const templateLabels =
+    // Use one explicit boundary set for the entire response. Mixing each athlete's
+    // profile while rendering one shared stack makes the same zone index mean
+    // different intensities across the selected roster.
+    const referenceProfile = userProfiles.get(userIds[0] || '')
+    const zoneTemplate =
       type === 'power'
-        ? calculatePowerZones(userProfiles.get(userIds[0] || '')?.ftp || 200).map((z) => z.name)
+        ? calculatePowerZones(referenceProfile?.ftp || 200)
         : type === 'hr'
-          ? calculateHrZones(
-              userProfiles.get(userIds[0] || '')?.lthr || null,
-              userProfiles.get(userIds[0] || '')?.maxHr || 190
-            ).map((z) => z.name)
-          : calculatePaceZones(userProfiles.get(userIds[0] || '')?.thresholdPace || 4.5).map(
-              (z) => z.name
-            )
+          ? calculateHrZones(referenceProfile?.lthr || null, referenceProfile?.maxHr || 190)
+          : calculatePaceZones(referenceProfile?.thresholdPace || 4.5)
+    const templateLabels = zoneTemplate.map((zone) => zone.name)
 
     const weeklyTotals = new Map<string, number[]>()
     for (const bucket of buckets) {
@@ -900,16 +900,6 @@ async function buildPowerDurationChart(
     for (const workout of workouts) {
       const bucket = weeklyTotals.get(toWeekKey(workout.date))
       if (!bucket) continue
-
-      const profile = userProfiles.get(workout.userId)
-      const zones =
-        type === 'power'
-          ? calculatePowerZones(workout.ftp || profile?.ftp || 200)
-          : type === 'hr'
-            ? calculateHrZones(profile?.lthr || null, profile?.maxHr || 190)
-            : calculatePaceZones(profile?.thresholdPace || 4.5)
-
-      if (zones.length === 0) continue
 
       const time = (workout.streams?.time as number[] | undefined) || []
       const values =
@@ -924,8 +914,8 @@ async function buildPowerDurationChart(
           const delta = Number(time[index] || 0) - Number(time[index - 1] || 0)
           const value = Number(values[index] || 0)
           if (delta <= 0 || delta > 10 || value <= 0) continue
-          const zone = identifyZone(value, zones)
-          const zoneIndex = zones.findIndex((entry) => entry.name === zone?.name)
+          const zone = identifyZone(value, zoneTemplate)
+          const zoneIndex = zoneTemplate.findIndex((entry) => entry.name === zone?.name)
           if (zoneIndex >= 0 && bucket[zoneIndex] !== undefined) {
             bucket[zoneIndex] += delta
           }
@@ -938,8 +928,8 @@ async function buildPowerDurationChart(
               ? Number(workout.averageHr || 0)
               : 0
         if (!fallbackValue || !workout.durationSec) continue
-        const zone = identifyZone(fallbackValue, zones)
-        const zoneIndex = zones.findIndex((entry) => entry.name === zone?.name)
+        const zone = identifyZone(fallbackValue, zoneTemplate)
+        const zoneIndex = zoneTemplate.findIndex((entry) => entry.name === zone?.name)
         if (zoneIndex >= 0 && bucket[zoneIndex] !== undefined) {
           bucket[zoneIndex] += workout.durationSec
         }

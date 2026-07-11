@@ -196,21 +196,23 @@
 
     // Add Workout Intensity Bars (Heatmap)
     if (chartSettings.value.showWorkoutBars && props.workouts?.length) {
-      console.log('[Heatmap] Processing workouts:', props.workouts.length)
-      console.log('[Heatmap] Points count:', props.points.length)
-      if (props.points.length > 0) {
-        console.log(
-          '[Heatmap] Points TS Range:',
-          props.points[0].timestamp,
-          'to',
-          props.points[props.points.length - 1].timestamp
-        )
-      }
-
-      props.workouts.forEach((w, i) => {
+      props.workouts.forEach((w) => {
         const startTs = new Date(w.startTime).getTime()
         const duration = Number(w.durationSec) || 3600
         const endTs = startTs + duration * 1000
+        const rangeStart = props.points[0]?.timestamp
+        const rangeEnd = props.points[props.points.length - 1]?.timestamp
+
+        // Do not turn an entirely out-of-range workout into a full-range overlay.
+        if (
+          !Number.isFinite(startTs) ||
+          rangeStart === undefined ||
+          rangeEnd === undefined ||
+          endTs < rangeStart ||
+          startTs > rangeEnd
+        ) {
+          return
+        }
 
         // Find closest point indices
         const startIdx = props.points.findIndex((p) => p.timestamp >= startTs)
@@ -218,15 +220,6 @@
 
         // If workout ends after our points, cap it
         if (endIdx === -1) endIdx = props.points.length - 1
-
-        console.log(`[Heatmap] Workout ${i}: ${w.title}`, {
-          startTs,
-          endTs,
-          startIdx,
-          endIdx,
-          intensity: w.intensity,
-          startTimeStr: w.startTime
-        })
 
         // If workout starts before our points but ends within, or is fully within
         if (endIdx >= 0) {
@@ -253,8 +246,6 @@
           }
         }
       })
-    } else if (chartSettings.value.showWorkoutBars) {
-      console.log('[Heatmap] No workouts to show in heatmap')
     }
 
     // Add Highlighted Day Box
@@ -352,8 +343,9 @@
           grid: { display: false },
           ticks: {
             maxTicksLimit: 12,
-            callback: function (value: any, index: number) {
-              const p = props.points[index]
+            callback: function (value: any) {
+              const p = props.points[Number(value)]
+              if (!p) return ''
               if (p.time === '00:00') return p.dateKey
               return p.time
             }

@@ -68,6 +68,26 @@ export default defineEventHandler(async (event) => {
   const allSportSettings = await sportSettingsRepository.getByUserId(userId)
   const defaultSettings = await sportSettingsRepository.getDefault(userId)
 
+  // A stacked weekly chart needs every bucket to use the same boundaries. Using each
+  // workout's profile while labeling with the default profile combines incomparable
+  // zones (for example, running and cycling Z3) into the same bar segment.
+  const displaySettings = sport
+    ? allSportSettings.find(
+        (setting: any) => !setting.isDefault && setting.types?.includes(sport)
+      ) || defaultSettings
+    : defaultSettings
+  const displayFtp = displaySettings?.ftp || user.ftp || 200
+  const displayLthr = displaySettings?.lthr || user.lthr || 160
+  const displayMaxHr = displaySettings?.maxHr || user.maxHr || 190
+  const powerZones =
+    (displaySettings?.powerZones as any[])?.length > 0
+      ? (displaySettings.powerZones as any[])
+      : calculatePowerZones(displayFtp)
+  const hrZones =
+    (displaySettings?.hrZones as any[])?.length > 0
+      ? (displaySettings.hrZones as any[])
+      : calculateHrZones(displayLthr, displayMaxHr)
+
   // 2. Get workouts with streams
   const workouts = await workoutRepository.getForUser(userId, {
     startDate,
@@ -109,8 +129,8 @@ export default defineEventHandler(async (event) => {
     if (key) {
       weeklyData.set(key, {
         weekStart: key,
-        powerZones: new Array(7).fill(0),
-        hrZones: new Array(7).fill(0),
+        powerZones: new Array(powerZones.length).fill(0),
+        hrZones: new Array(hrZones.length).fill(0),
         totalDuration: 0
       })
     }
@@ -127,35 +147,6 @@ export default defineEventHandler(async (event) => {
 
     const bucket = weeklyData.get(key)
     if (!bucket) continue
-
-    // Determine Sport Settings for this workout
-    let activitySettings = defaultSettings
-    if (workout.type) {
-      // Try to find specific match
-      const match = allSportSettings.find(
-        (s: any) => !s.isDefault && s.types && s.types.includes(workout.type)
-      )
-      if (match) activitySettings = match
-    }
-
-    // Get zones for this workout
-    const ftp = workout.ftp || activitySettings?.ftp || user.ftp || 200
-    // Use settings LTHR if available, otherwise User LTHR (historically fetched via repo, or just current?)
-    // Historic LTHR is better but heavy. Let's use current setting profile LTHR as proxy or fallback.
-    const lthr = activitySettings?.lthr || user.lthr || 160
-    const maxHr = activitySettings?.maxHr || user.maxHr || 190
-
-    // Use custom zones from profile if available, otherwise calculate
-    // Note: sportSettings might have empty powerZones array if not configured
-    let pZones = activitySettings?.powerZones as any[]
-    if (!pZones || pZones.length === 0) {
-      pZones = calculatePowerZones(ftp)
-    }
-
-    let hZones = activitySettings?.hrZones as any[]
-    if (!hZones || hZones.length === 0) {
-      hZones = calculateHrZones(lthr, maxHr)
-    }
 
     const streams = workout.streams
     const time = (streams.time as number[]) || []
@@ -174,7 +165,7 @@ export default defineEventHandler(async (event) => {
 
       const w = watts[i]
       if (w !== undefined && w !== null) {
-        const zIndex = pZones.findIndex((z: any) => w >= z.min && w <= z.max)
+        const zIndex = powerZones.findIndex((z: any) => w >= z.min && w <= z.max)
         if (zIndex !== -1 && bucket.powerZones[zIndex] !== undefined) {
           bucket.powerZones[zIndex] += delta
         }
@@ -182,7 +173,7 @@ export default defineEventHandler(async (event) => {
 
       const h = hr[i]
       if (h !== undefined && h !== null) {
-        const zIndex = hZones.findIndex((z: any) => h >= z.min && h <= z.max)
+        const zIndex = hrZones.findIndex((z: any) => h >= z.min && h <= z.max)
         if (zIndex !== -1 && bucket.hrZones[zIndex] !== undefined) {
           bucket.hrZones[zIndex] += delta
         }
@@ -200,22 +191,11 @@ export default defineEventHandler(async (event) => {
       totalDuration: Math.round((w.totalDuration / 3600) * 10) / 10
     }))
 
-  // Generate labels based on Default Profile
-  const defFtp = defaultSettings?.ftp || user.ftp || 200
-  const defLthr = defaultSettings?.lthr || user.lthr || 160
-  const defMaxHr = defaultSettings?.maxHr || user.maxHr || 190
-
-  let labelPZones = (defaultSettings?.powerZones as any[]) || []
-  if (labelPZones.length === 0) labelPZones = calculatePowerZones(defFtp)
-
-  let labelHZones = (defaultSettings?.hrZones as any[]) || []
-  if (labelHZones.length === 0) labelHZones = calculateHrZones(defLthr, defMaxHr)
-
   return {
     weeks: result,
     zoneLabels: {
-      power: labelPZones.map((z: any) => z.name),
-      hr: labelHZones.map((z: any) => z.name)
+      power: powerZones.map((z: any) => z.name),
+      hr: hrZones.map((z: any) => z.name)
     }
   }
 })

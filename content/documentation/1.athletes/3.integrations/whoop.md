@@ -7,7 +7,7 @@ description: Sync Whoop Strain, Recovery, and Sleep data to optimize your traini
 
 ## Setup Guide
 
-1. Go to **Settings > Apps** on the Dashboard.
+1. Go to **Settings → Apps** on the Dashboard.
 2. Click **Connect with Whoop** and authorize Coach Watts.
 
 ## What Syncs?
@@ -18,5 +18,17 @@ description: Sync Whoop Strain, Recovery, and Sleep data to optimize your traini
 - **HRV**: Heart Rate Variability and Resting Heart Rate.
 
 ::alert{type="info"}
-Tip: Whoop data is updated automatically throughout the day as it syncs with the Whoop cloud.
+Tip: WHOOP data updates automatically throughout the day as it syncs with the WHOOP cloud.
 ::
+
+## Troubleshooting
+
+### Recovery score not updating
+
+- Open the WHOOP app to force a sync to WHOOP cloud first
+- Click **Sync** on the Coach Watts Dashboard
+- WHOOP recovery is published after your sleep is processed — typically after waking
+
+### Connection lost
+
+WHOOP tokens can expire. Reconnect from **Settings → Apps** if data stops flowing for more than 24 hours.

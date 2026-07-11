@@ -146,6 +146,12 @@
       return selectedAthletes.value[0]?.athlete?.name || 'Athlete'
     return `${selectedAthletes.value[0]?.athlete?.name || 'Athletes'} +${selectedAthletes.value.length - 1}`
   })
+  const requiresAthleteSelection = computed(
+    () =>
+      selectedWidget.value?.recommendedScope &&
+      selectedWidget.value.recommendedScope !== 'self' &&
+      selectedAthleteIds.value.length === 0
+  )
   const selectedCategoryLabel = computed(
     () =>
       ANALYTICS_PRESET_CATEGORIES.find((entry) => entry.value === selectedWidget.value?.category)
@@ -264,6 +270,15 @@
   const saving = ref(false)
 
   async function pinToDashboard() {
+    if (requiresAthleteSelection.value) {
+      toast.add({
+        title: 'Select an athlete first',
+        description: 'This chart requires an athlete, group, or roster scope.',
+        color: 'warning'
+      })
+      return
+    }
+
     saving.value = true
     try {
       await refreshDashboards()
@@ -850,7 +865,22 @@
                 body: 'p-0 sm:p-4 h-full min-h-[350px] sm:min-h-[450px]'
               }"
             >
-              <AnalyticsBaseWidget :config="previewConfig" />
+              <div
+                v-if="requiresAthleteSelection"
+                class="flex h-full flex-col items-center justify-center gap-3 p-8 text-center"
+              >
+                <UIcon name="i-lucide-users" class="h-10 w-10 text-primary-500" />
+                <div class="max-w-md space-y-1">
+                  <p class="text-sm font-bold text-highlighted">
+                    Select an athlete to preview this chart
+                  </p>
+                  <p class="text-xs text-muted">
+                    Choose one or more athletes in the roster to avoid showing personal data as a
+                    team chart.
+                  </p>
+                </div>
+              </div>
+              <AnalyticsBaseWidget v-else :config="previewConfig" />
             </UCard>
 
             <div

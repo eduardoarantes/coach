@@ -1,0 +1,26 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "com.coachwatts/coach-watts",
+  "title": "Coach Watts",
+  "description": "Remote MCP server for training, nutrition, wellness, and performance data with OAuth 2.0.",
+  "version": "0.5.25",
+  "websiteUrl": "https://coachwatts.com/documentation/developers/mcp-server",
+  "repository": {
+    "url": "https://github.com/hdkiller/coach",
+    "source": "github",
+    "id": "1109527993"
+  },
+  "icons": [
+    {
+      "src": "https://coachwatts.com/apple-touch-icon.png",
+      "mimeType": "image/png",
+      "sizes": ["180x180"]
+    }
+  ],
+  "remotes": [
+    {
+      "type": "streamable-http",
+      "url": "https://coachwatts.com/mcp"
+    }
+  ]
+}

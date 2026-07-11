@@ -330,9 +330,10 @@
             }
           : {
               x: {
-                type: isScatter
-                  ? props.config.scales?.x?.type || ('linear' as const)
-                  : props.config.scales?.x?.type || ('category' as const),
+                // Horizontal bars use the x axis for values and y for categories.
+                type:
+                  props.config.scales?.x?.type ||
+                  (isScatter || isHorizontal ? ('linear' as const) : ('category' as const)),
                 stacked,
                 grid: {
                   display: !isHorizontal,
@@ -375,7 +376,10 @@
                 border: { display: false }
               },
               y: {
-                type: props.config.scales?.y?.type || ('linear' as const),
+                // With indexAxis: 'y', Chart.js needs a categorical index scale on y.
+                type:
+                  props.config.scales?.y?.type ||
+                  (isHorizontal ? ('category' as const) : ('linear' as const)),
                 position: 'right' as const,
                 stacked,
                 min: settings.yScale === 'fixed' ? settings.yMin || 0 : undefined,
@@ -387,8 +391,11 @@
                   color: '#94a3b8',
                   font: { size: 10, weight: '600' as const },
                   maxTicksLimit: 6,
+                  // Let the category scale resolve its labels for horizontal bars.
                   callback: (value: number | string) =>
-                    !isHorizontal ? formatAxisTick(value, props.axisUnits.y) : value
+                    isHorizontal
+                      ? (props.data?.labels?.[Number(value)] ?? value)
+                      : formatAxisTick(value, props.axisUnits.y)
                 },
                 title: {
                   display: Boolean(props.axisUnits.y) && !isHorizontal,

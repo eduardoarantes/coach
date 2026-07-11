@@ -10,7 +10,7 @@ The Coach Watts Telegram integration allows you to chat with your coach directly
 To link your Coach Watts account to Telegram:
 
 1. Log in to your **Dashboard**.
-2. Navigate to **Athlete Profile > Integrations**.
+2. Navigate to **Settings → Apps**.
 3. Locate the **Telegram** section and click **Link Account**.
 4. A unique, temporary link or token will be generated.
 5. Click the link to open Telegram, or send the `/start [your-token]` command directly to the **@CoachWattsBot**.
@@ -46,6 +46,6 @@ You can ask anything you would normally ask in the main Coach Watts Chat:
 
 ## 4. Troubleshooting
 
-- **Expired Token**: If your `/start` token expires, simply generate a new one from the **Dashboard**.
-- **Not Responding**: If the bot doesn't respond, try sending `/help` to verify the connection, or check your integration status on the Dashboard.
-- **Disconnecting**: To stop receiving messages on Telegram, you can delete the integration from your **Dashboard** or block the bot in Telegram.
+- **Expired Token**: If your `/start` token expires, generate a new one from **Settings → Apps**.
+- **Not Responding**: If the bot doesn't respond, try sending `/help` to verify the connection, or check your integration status under **Settings → Apps**.
+- **Disconnecting**: To stop receiving messages on Telegram, revoke the integration from **Settings → Apps** or block the bot in Telegram.
