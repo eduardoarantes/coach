@@ -1,3 +1,45 @@
+## Coach Watts v0.5.25: Performance Analytics, Strength Tools, and Smoother Coaching! 🚀
+
+We’ve been hard at work behind the scenes to make Coach Watts faster, more insightful, and more reliable. This release is packed with upgrades designed to help you crush your goals, whether you're building a training plan or analyzing your latest ride.
+
+Here’s what’s new in **v0.5.25**:
+
+### 📈 Next-Level Analytics
+
+We’ve completely overhauled how you view your data!
+
+- **Workout Explorer 2.0:** Dive deeper into your activities with new advanced analysis modes, multi-stream support, and synced zoom.
+- **Pro-Level Insights:** Added peak power tracking, segment analysis, and density heatmaps to help you understand exactly how you performed.
+- **Customizable Views:** Use our new chart pinning and widget search/filter tools to set up your dashboard exactly how you want it.
+
+### 💪 Strength & Nutrition Upgrades
+
+Training is about more than just cardio. We’ve added new tools to help you manage your full athlete profile:
+
+- **Strength Library:** You can now save and manage specific strength exercises and block-based workouts, complete with library defaults and easy editing.
+- **Nutrition Management:** We’ve improved hydration tracking with quick-add volumes and streamlined your weekly fueling plans.
+- **Better Synchronization:** Your calorie targets and macro settings are now perfectly aligned for better accuracy.
+
+### 🚲 Smarter Coaching & Planning
+
+We’re making the "coach" in Coach Watts smarter and more helpful:
+
+- **Seamless Integrations:** We’ve hardened our syncs with Garmin, Strava, and Rouvy, ensuring your data flows effortlessly and your planned workouts show up exactly when they should.
+- **AI-Powered Assistance:** Our AI now uses better context and "guardrails" to suggest workouts that match your calendar and personal goals, while preventing errors.
+- **Coaching Invitations:** New, easier tools for coaches to invite athletes and manage training requests directly through the app.
+
+### ✨ General Polish & Reliability
+
+- **Faster & Smoother:** We’ve optimized page performance (especially for mobile users) and improved navigation.
+- **"Set it and forget it":** Major stability improvements across the app ensure your settings, profile info, and workout structures stay saved and synced.
+- **Bug Squashing:** We’ve resolved dozens of small issues related to chat, calendar display, and data exports to ensure your experience is as seamless as possible.
+
+---
+
+**Ready to explore?** Head over to the new **Charts** menu item in your navigation sidebar to check out the updated analytics, or jump into your **Library** to build out your new strength sessions.
+
+Keep pushing the pedals and thanks for being part of the Coach Watts community! ⚡️
+
 Hey Coach Watts community! 👋
 
 We've been hard at work behind the scenes, and we're thrilled to unveil our latest update, v0.5.24! This release is packed with incredible new features and improvements designed to supercharge your training and coaching experience. Get ready for a smoother, more powerful, and more intuitive Coach Watts! ✨
