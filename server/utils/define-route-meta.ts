@@ -4,6 +4,7 @@ type OpenAPIParameter = {
   name: string
   in: string
   required?: boolean
+  description?: string
   schema?: Record<string, unknown>
 }
 
