@@ -39,6 +39,7 @@ COPY --from=builder /app/app/emails ./app/emails
 COPY --from=builder /app/app/utils ./app/utils
 COPY --from=builder /app/cli ./cli
 COPY --from=builder /app/server ./server
+COPY --from=builder /app/shared ./shared
 COPY --from=builder /app/trigger ./trigger
 COPY --from=builder /app/prisma ./prisma
 COPY --from=builder /app/prisma.config.ts ./prisma.config.ts
