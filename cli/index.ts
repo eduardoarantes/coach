@@ -17,6 +17,7 @@ import geminiCommand from './gemini'
 import llmCommand from './llm'
 import triggerCommand from './trigger'
 import monitorCommand from './monitor'
+import workerStatsCommand from './worker-stats'
 import telegramCommand from './telegram'
 import { ouraCommand } from './integrations/oura'
 import { polarCommand } from './integrations/polar'
@@ -46,6 +47,7 @@ program.addCommand(geminiCommand)
 program.addCommand(llmCommand)
 program.addCommand(triggerCommand)
 program.addCommand(monitorCommand)
+program.addCommand(workerStatsCommand)
 program.addCommand(telegramCommand)
 program.addCommand(ouraCommand)
 program.addCommand(polarCommand)

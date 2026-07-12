@@ -21,7 +21,7 @@ export async function enqueueIntervalsStreamSync(input: {
 
   if (existing) {
     const state = await existing.getState()
-    if (state === 'waiting' || state === 'delayed' || state === 'active' || state === 'paused') {
+    if (state !== 'completed' && state !== 'failed' && state !== 'unknown') {
       return
     }
   }
