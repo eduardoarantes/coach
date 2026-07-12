@@ -1,18 +1,8 @@
 import { runs } from '@trigger.dev/sdk/v3'
+import { assertMonitoringSecret } from '../../utils/monitoring-auth'
 
 export default defineEventHandler(async (event) => {
-  // Optional: Simple secret check
-  const monitoringSecret = process.env.MONITORING_SECRET
-  if (monitoringSecret) {
-    const headerSecret = getHeader(event, 'x-monitoring-secret')
-    const querySecret = getQuery(event).secret
-    if (headerSecret !== monitoringSecret && querySecret !== monitoringSecret) {
-      throw createError({
-        statusCode: 401,
-        statusMessage: 'Unauthorized'
-      })
-    }
-  }
+  assertMonitoringSecret(event)
 
   try {
     // Fetch last 50 runs

@@ -1147,7 +1147,18 @@ export async function executeChatTurn(turnId: string, expectedRunId?: string | n
         currentPhase = 'completed'
         const hasMeaningfulText =
           typeof assistantText === 'string' && assistantText.trim().length > 0
-        const shouldFallbackForEmptyResponse = !hasMeaningfulText
+        const executedToolCallIds = new Set([
+          ...(finalStepResults || []).map((result: any) => result.toolCallId),
+          ...allToolResults.map((result: any) => result.toolCallId)
+        ])
+        const pendingApprovals = (finalCalls || [])
+          .filter((call: any) => !executedToolCallIds.has(call.toolCallId))
+          .map((call: any) => ({
+            toolCallId: call.toolCallId,
+            toolName: call.toolName,
+            args: call.args || call.input
+          }))
+        const shouldFallbackForEmptyResponse = !hasMeaningfulText && pendingApprovals.length === 0
 
         if (shouldFallbackForEmptyResponse && attemptIndex === 0) {
           shouldRetryEmptyResponse = true
@@ -1212,18 +1223,6 @@ export async function executeChatTurn(turnId: string, expectedRunId?: string | n
         const executionDurationMs = Math.max(0, finishedAt.getTime() - startedAt.getTime())
 
         // Detect tool calls blocked by needsApproval: present in finalCalls but absent from results
-        const executedToolCallIds = new Set([
-          ...(finalStepResults || []).map((r: any) => r.toolCallId),
-          ...allToolResults.map((r: any) => r.toolCallId)
-        ])
-        const pendingApprovals = (finalCalls || [])
-          .filter((c: any) => !executedToolCallIds.has(c.toolCallId))
-          .map((c: any) => ({
-            toolCallId: c.toolCallId,
-            toolName: c.toolName,
-            args: c.args || c.input
-          }))
-
         await persistDraft(CHAT_TURN_STATUS.COMPLETED, true, {
           hideUntilContent: false,
           hiddenBecauseEmptyFailure: false,

@@ -58,13 +58,17 @@ function createConnection() {
   return nextConnection
 }
 
-function getConnection() {
+export function getRedisConnection() {
   if (!connection || shouldRecreateRedisConnection(connection.status)) {
     connection?.disconnect(false)
     connection = createConnection()
   }
 
   return connection
+}
+
+function getConnection() {
+  return getRedisConnection()
 }
 
 function getWebhookQueueInstance() {
