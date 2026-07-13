@@ -8,6 +8,7 @@ import {
 } from '../../../../../server/utils/intervals'
 import { workoutRepository } from '../../../../../server/utils/repositories/workoutRepository'
 import { deduplicateWorkoutsTask } from '../../../../../trigger/deduplicate-workouts'
+import { triggerWorkoutDeduplicationIfEnabled } from '../../../../../server/utils/trigger-workout-deduplication'
 import { IntervalsService } from '../../../../../server/utils/services/intervalsService'
 
 import { enqueueIntervalsStreamSync } from '../../../../../server/utils/intervals-stream-queue'
@@ -97,6 +98,10 @@ vi.mock('../../../../../server/utils/services/wellness-analysis', () => ({
   triggerReadinessCheckIfNeeded: vi.fn()
 }))
 
+vi.mock('../../../../../server/utils/trigger-workout-deduplication', () => ({
+  triggerWorkoutDeduplicationIfEnabled: vi.fn().mockResolvedValue(true)
+}))
+
 vi.mock('../../../../../trigger/deduplicate-workouts', () => ({
   deduplicateWorkoutsTask: {
     trigger: vi.fn().mockResolvedValue(undefined)
@@ -151,7 +156,9 @@ describe('IntervalsService ACTIVITY_UPDATED', () => {
     expect(workoutRepository.upsert).toHaveBeenCalledTimes(1)
     expect(syncSpy).not.toHaveBeenCalled()
     expect(streamSpy).not.toHaveBeenCalled()
-    expect(deduplicateWorkoutsTask.trigger).toHaveBeenCalledTimes(1)
+    expect(deduplicateWorkoutsTask.trigger).not.toHaveBeenCalled()
+    expect(triggerWorkoutDeduplicationIfEnabled).toHaveBeenCalledTimes(1)
+    expect(triggerWorkoutDeduplicationIfEnabled).toHaveBeenCalledWith(userId)
 
     syncSpy.mockRestore()
     streamSpy.mockRestore()
@@ -225,7 +232,9 @@ describe('IntervalsService ACTIVITY_UPDATED', () => {
       })
     )
     expect(syncSpy).not.toHaveBeenCalled()
-    expect(deduplicateWorkoutsTask.trigger).toHaveBeenCalledTimes(1)
+    expect(deduplicateWorkoutsTask.trigger).not.toHaveBeenCalled()
+    expect(triggerWorkoutDeduplicationIfEnabled).toHaveBeenCalledTimes(1)
+    expect(triggerWorkoutDeduplicationIfEnabled).toHaveBeenCalledWith(userId)
 
     syncSpy.mockRestore()
   })
@@ -247,7 +256,9 @@ describe('IntervalsService ACTIVITY_UPDATED', () => {
     expect(workoutRepository.upsert).not.toHaveBeenCalled()
     expect(workoutRepository.update).not.toHaveBeenCalled()
     expect(syncSpy).not.toHaveBeenCalled()
-    expect(deduplicateWorkoutsTask.trigger).toHaveBeenCalledTimes(1)
+    expect(deduplicateWorkoutsTask.trigger).not.toHaveBeenCalled()
+    expect(triggerWorkoutDeduplicationIfEnabled).toHaveBeenCalledTimes(1)
+    expect(triggerWorkoutDeduplicationIfEnabled).toHaveBeenCalledWith(userId)
 
     syncSpy.mockRestore()
   })
@@ -409,5 +420,49 @@ describe('IntervalsService CALENDAR_UPDATED', () => {
 
     expect(syncProfileSpy).not.toHaveBeenCalled()
     syncProfileSpy.mockRestore()
+  })
+})
+
+describe('IntervalsService syncActivities deduplication', () => {
+  const userId = 'user-1'
+
+  beforeEach(() => {
+    vi.clearAllMocks()
+    vi.mocked(fetchIntervalsWorkouts).mockResolvedValue([])
+    vi.mocked(prisma.integration.findUnique).mockImplementation(async (args: any) => {
+      if (args?.where?.userId_provider?.provider === 'intervals') {
+        return {
+          id: 'int-1',
+          ingestWorkouts: true
+        } as any
+      }
+      return null
+    })
+  })
+
+  it('triggers deduplication after activity sync even when no new workouts were ingested', async () => {
+    await IntervalsService.syncActivities(
+      userId,
+      new Date('2026-07-10T00:00:00Z'),
+      new Date('2026-07-10T23:59:59Z')
+    )
+
+    expect(triggerWorkoutDeduplicationIfEnabled).toHaveBeenCalledTimes(1)
+    expect(triggerWorkoutDeduplicationIfEnabled).toHaveBeenCalledWith(userId)
+  })
+
+  it('does not trigger deduplication when ingestWorkouts is disabled', async () => {
+    vi.mocked(prisma.integration.findUnique).mockResolvedValue({
+      id: 'int-1',
+      ingestWorkouts: false
+    } as any)
+
+    await IntervalsService.syncActivities(
+      userId,
+      new Date('2026-07-10T00:00:00Z'),
+      new Date('2026-07-10T23:59:59Z')
+    )
+
+    expect(triggerWorkoutDeduplicationIfEnabled).not.toHaveBeenCalled()
   })
 })

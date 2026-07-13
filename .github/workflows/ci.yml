@@ -48,11 +48,14 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Prepare Nuxt
+        run: pnpm exec nuxt prepare
+
       - name: Run ESLint
         run: pnpm lint
 
-  mcp-tests:
-    name: MCP tests
+  unit-tests:
+    name: Unit tests
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -70,5 +73,8 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Run MCP unit tests
-        run: pnpm test:mcp
+      - name: Prepare Nuxt
+        run: pnpm exec nuxt prepare
+
+      - name: Run unit tests
+        run: pnpm test:unit

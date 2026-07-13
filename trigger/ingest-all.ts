@@ -16,15 +16,13 @@ import { ingestWahooTask } from './ingest-wahoo'
 import { ingestUltrahumanTask } from './ingest-ultrahuman'
 import { generateAthleteProfileTask } from './generate-athlete-profile'
 import { processSyncQueueTask } from './process-sync-queue'
-import { deduplicateWorkoutsTask } from './deduplicate-workouts'
-import { isTaskRunning } from '../server/utils/trigger-check'
+import { triggerWorkoutDeduplicationIfEnabled } from '../server/utils/trigger-workout-deduplication'
 import { recommendTodayActivityTask } from './recommend-today-activity'
 import { analyzeNutritionTask } from './analyze-nutrition'
 import { getUserTimezone } from '../server/utils/date'
 import { getUserAiSettings } from '../server/utils/ai-user-settings'
 import { auditLogRepository } from '../server/utils/repositories/auditLogRepository'
 import { nutritionRepository } from '../server/utils/repositories/nutritionRepository'
-import { shouldAutoDeduplicateWorkoutsAfterIngestion } from '../server/utils/ingestion-settings'
 import type { IngestionResult } from './types'
 
 export const ingestAllTask = task({
@@ -315,25 +313,15 @@ export const ingestAllTask = task({
     logger.log('='.repeat(60))
 
     // CHAIN: Deduplicate Workouts (Autonomously)
-    if (newWorkoutsIngested && (await shouldAutoDeduplicateWorkoutsAfterIngestion(userId))) {
+    if (successCount > 0) {
       console.log('[DEBUG] Triggering Workout Deduplication chain...')
       logger.log('🔄 Chaining: Triggering Workout Deduplication...')
       try {
-        const dedupAlreadyRunning = await isTaskRunning('deduplicate-workouts', userId)
-        if (dedupAlreadyRunning) {
-          logger.log('⏭️ Skipping deduplicate-workouts trigger because a run is already active')
-        } else {
-          await deduplicateWorkoutsTask.trigger(
-            {
-              userId,
-              dryRun: false
-            },
-            {
-              concurrencyKey: userId,
-              tags: [`user:${userId}`]
-            }
-          )
+        const triggered = await triggerWorkoutDeduplicationIfEnabled(userId)
+        if (triggered) {
           logger.log('✅ Triggered deduplicate-workouts')
+        } else {
+          logger.log('⏭️ Skipped deduplicate-workouts (disabled, already running, or check failed)')
         }
       } catch (err) {
         logger.error('❌ Failed to chain deduplicate-workouts', { err })

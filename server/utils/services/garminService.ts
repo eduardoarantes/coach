@@ -9,9 +9,7 @@ import {
   requestGarminBackfill
 } from '../garmin'
 import { parseFitFile, extractFitStreams, extractFitExtrasMeta } from '../fit'
-import { deduplicateWorkoutsTask } from '../../../trigger/deduplicate-workouts'
-import { shouldAutoDeduplicateWorkoutsAfterIngestion } from '../ingestion-settings'
-import { isTaskRunning } from '../trigger-check'
+import { triggerWorkoutDeduplicationIfEnabled } from '../trigger-workout-deduplication'
 import { shouldIngestActivities, shouldIngestWellness } from '../integration-settings'
 import { normalizeGarminActivityType } from '../activity-mapping'
 import { bodyMeasurementService } from './bodyMeasurementService'
@@ -602,17 +600,8 @@ export const GarminService = {
       }
     }
 
-    if (data.length > 0 && (await shouldAutoDeduplicateWorkoutsAfterIngestion(userId))) {
-      const dedupAlreadyRunning = await isTaskRunning('deduplicate-workouts', userId)
-      if (!dedupAlreadyRunning) {
-        await deduplicateWorkoutsTask.trigger(
-          { userId, dryRun: false },
-          {
-            concurrencyKey: userId,
-            tags: [`user:${userId}`]
-          }
-        )
-      }
+    if (data.length > 0) {
+      await triggerWorkoutDeduplicationIfEnabled(userId)
     }
   },
 

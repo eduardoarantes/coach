@@ -138,6 +138,7 @@
   "scripts": {
     "backfill-scores": "tsx scripts/backfill-scores.ts",
     "test": "vitest",
+    "test:unit": "vitest run",
     "test:mcp": "vitest run --config vitest.mcp.config.ts",
     "test:coverage": "vitest run --coverage",
     "test:e2e": "playwright test",

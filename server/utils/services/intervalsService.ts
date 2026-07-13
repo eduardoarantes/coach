@@ -39,9 +39,7 @@ import {
 import { getZoneIndex, DEFAULT_HR_ZONES, DEFAULT_POWER_ZONES } from '../training-metrics'
 import { triggerReadinessCheckIfNeeded } from './wellness-analysis'
 import { deduplicationService } from './deduplicationService'
-import { deduplicateWorkoutsTask } from '../../../trigger/deduplicate-workouts'
-import { shouldAutoDeduplicateWorkoutsAfterIngestion } from '../ingestion-settings'
-import { isTaskRunning } from '../trigger-check'
+import { triggerWorkoutDeduplicationIfEnabled } from '../trigger-workout-deduplication'
 import { shouldIngestWellness } from '../integration-settings'
 import { persistIntervalsPlannedWorkoutImport } from '../canonical-planned-workout-write'
 import { enqueueIntervalsStreamSync } from '../intervals-stream-queue'
@@ -495,6 +493,8 @@ export const IntervalsService = {
       // Break if we processed the very first day
       if (effectiveStart <= startDate) break
     }
+
+    await triggerWorkoutDeduplicationIfEnabled(userId)
 
     return totalUpsertedCount
   },
@@ -1745,19 +1745,7 @@ export const IntervalsService = {
           }
         }
 
-        // Trigger deduplication and analysis
-        if (await shouldAutoDeduplicateWorkoutsAfterIngestion(userId)) {
-          const dedupAlreadyRunning = await isTaskRunning('deduplicate-workouts', userId)
-          if (!dedupAlreadyRunning) {
-            await deduplicateWorkoutsTask.trigger(
-              { userId, dryRun: false },
-              {
-                concurrencyKey: userId,
-                tags: [`user:${userId}`]
-              }
-            )
-          }
-        }
+        await triggerWorkoutDeduplicationIfEnabled(userId)
         break
       }
 
