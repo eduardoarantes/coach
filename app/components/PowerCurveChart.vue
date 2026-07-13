@@ -27,11 +27,13 @@
     <div v-else class="h-[300px] relative">
       <ClientOnly>
         <Line
+          v-if="isChartActive"
           :key="`power-curve-${chartSettings.smooth}-${chartSettings.yScale}`"
           :data="chartData"
           :options="chartOptions"
           :plugins="[freshnessBandsPlugin, ChartDataLabels]"
           :height="300"
+          :destroy-delay="0"
         />
       </ClientOnly>
     </div>
@@ -41,6 +43,7 @@
 <script setup lang="ts">
   import { Line } from 'vue-chartjs'
   import ChartDataLabels from 'chartjs-plugin-datalabels'
+  import { ensureChartJsAnnotationDefaults } from '~/utils/chartjs-annotation'
   import {
     Chart as ChartJS,
     CategoryScale,
@@ -65,6 +68,10 @@
     Legend,
     Filler
   )
+
+  ensureChartJsAnnotationDefaults()
+
+  const isChartActive = ref(true)
 
   const props = defineProps<{
     // If provided, fetches data for a specific workout
@@ -162,12 +169,17 @@
       }
 
       const data = await $fetch(endpoint, { query })
+      if (!isChartActive.value) return
       powerData.value = data
     } catch (e: any) {
       console.error('Error fetching power curve:', e)
-      powerData.value = null
+      if (isChartActive.value) {
+        powerData.value = null
+      }
     } finally {
-      loading.value = false
+      if (isChartActive.value) {
+        loading.value = false
+      }
     }
   }
 
@@ -430,6 +442,10 @@
   // Load data on mount
   onMounted(() => {
     fetchPowerCurve()
+  })
+
+  onBeforeUnmount(() => {
+    isChartActive.value = false
   })
 </script>
 

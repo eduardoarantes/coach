@@ -22,7 +22,9 @@ export function useActivityRealtime(onRefresh: () => void | Promise<void>) {
 
     refreshTimer = setTimeout(() => {
       refreshTimer = null
-      void onRefresh()
+      void Promise.resolve(onRefresh()).catch((error) => {
+        console.error('[useActivityRealtime] refresh failed', error)
+      })
     }, 400)
   })
 

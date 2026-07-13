@@ -1409,10 +1409,16 @@
     })
   })
 
+  async function safeRefresh() {
+    try {
+      await refresh()
+    } catch (error) {
+      console.error('[activities] refresh failed', error)
+    }
+  }
+
   REFRESH_TASKS.forEach((task) => {
-    onTaskCompleted(task, () => {
-      refresh()
-    })
+    onTaskCompleted(task, () => safeRefresh())
   })
 
   // Metabolic Wave Fetch (Consolidated to fix N+1)
@@ -1432,9 +1438,13 @@
   )
 
   useActivityRealtime(async () => {
-    await refresh()
+    await safeRefresh()
     if (nutritionEnabled.value && calendarSettings.value.showMetabolicWave) {
-      await refreshMetabolicWave()
+      try {
+        await refreshMetabolicWave()
+      } catch (error) {
+        console.error('[activities] metabolic wave refresh failed', error)
+      }
     }
   })
 

@@ -4726,28 +4726,30 @@
   // Personal Bests State
   const achievements = computed(() => {
     if (!workout.value || !workout.value.personalBests) return []
-    return workout.value.personalBests.map((pb: any) => {
-      const isPace = pb.unit === 's'
-      let displayValue = pb.value.toString()
-      if (isPace) {
-        const mins = Math.floor(pb.value / 60)
-        const secs = Math.floor(pb.value % 60)
-        displayValue = `${mins}:${secs.toString().padStart(2, '0')}`
-      }
+    return workout.value.personalBests
+      .filter((pb: any) => pb && typeof pb.type === 'string' && pb.type.length > 0)
+      .map((pb: any) => {
+        const isPace = pb.unit === 's'
+        let displayValue = pb.value.toString()
+        if (isPace) {
+          const mins = Math.floor(pb.value / 60)
+          const secs = Math.floor(pb.value % 60)
+          displayValue = `${mins}:${secs.toString().padStart(2, '0')}`
+        }
 
-      // Localize common PB types
-      let label = pb.type.replace(/_/g, ' ').replace('RUN ', '').replace('POWER ', 'Peak ')
-      const typeKey = `achievement_${pb.type.toLowerCase()}`
-      if (typeof t.value === 'function' && t.value(typeKey) !== typeKey) {
-        label = t.value(typeKey)
-      }
+        // Localize common PB types
+        let label = pb.type.replace(/_/g, ' ').replace('RUN ', '').replace('POWER ', 'Peak ')
+        const typeKey = `achievement_${pb.type.toLowerCase()}`
+        if (typeof t.value === 'function' && t.value(typeKey) !== typeKey) {
+          label = t.value(typeKey)
+        }
 
-      return {
-        ...pb,
-        displayValue,
-        label
-      }
-    })
+        return {
+          ...pb,
+          displayValue,
+          label
+        }
+      })
   })
 
   function openThresholdUpdate(detection: any) {

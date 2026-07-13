@@ -77,9 +77,11 @@
               class="mt-6 h-24 bg-white/50 dark:bg-black/20 rounded-lg p-2"
             >
               <Line
+                v-if="isChartActive"
                 :data="getEfChartData()"
                 :options="getSparklineOptions('Efficiency Factor', 2)"
                 :height="80"
+                :destroy-delay="0"
               />
             </div>
           </div>
@@ -155,9 +157,11 @@
               class="mt-6 h-24 bg-white/50 dark:bg-black/20 rounded-lg p-2"
             >
               <Line
+                v-if="isChartActive"
                 :data="getWPrimeChartData()"
                 :options="getSparklineOptions('W\' Balance (J)', 0)"
                 :height="80"
+                :destroy-delay="0"
               />
             </div>
           </div>
@@ -588,9 +592,11 @@
             class="h-40 bg-white/50 dark:bg-black/20 rounded-xl p-3 border border-gray-100 dark:border-gray-800 shadow-inner"
           >
             <Line
+              v-if="isChartActive"
               :data="getRecoveryTrendChartData()"
               :options="getRecoveryChartOptions()"
               :height="140"
+              :destroy-delay="0"
             />
           </div>
         </div>
@@ -708,6 +714,7 @@
     Legend,
     Filler
   } from 'chart.js'
+  import { ensureChartJsAnnotationDefaults } from '~/utils/chartjs-annotation'
 
   ChartJS.register(
     CategoryScale,
@@ -720,6 +727,8 @@
     Filler
   )
 
+  ensureChartJsAnnotationDefaults()
+
   const props = defineProps<{
     workoutId: string
     publicToken?: string
@@ -730,6 +739,7 @@
   const loading = ref(true)
   const data = ref<any>(null)
   const showMatches = ref(false)
+  const isChartActive = ref(true)
   let metricsActive = true
 
   async function fetchData() {
@@ -921,5 +931,6 @@
 
   onBeforeUnmount(() => {
     metricsActive = false
+    isChartActive.value = false
   })
 </script>
