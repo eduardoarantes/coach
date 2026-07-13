@@ -77,7 +77,8 @@ export default defineEventHandler(async (event) => {
     const queued = await enqueuePlannedWorkoutStructureGeneration({
       userId,
       plannedWorkoutId: id,
-      source: 'api'
+      source: 'api',
+      quotaCheckedAtEnqueue: true
     })
     if (queued.status !== 'queued') throw new Error(queued.error)
 

@@ -426,7 +426,7 @@ export function estimateStepDurationSeconds(
       return Math.round(explicitDistance * 2)
     }
 
-    return Math.round(explicitDistance * 3)
+    return Math.round(explicitDistance * 0.36)
   }
 
   if (step?.type !== 'Rest') return 60
@@ -479,7 +479,6 @@ export function normalizeStructuredWorkoutForPersistence(
     if (primaryTarget) step.primaryTarget = primaryTarget
 
     if (isRun) {
-      console.log('[Persistence] Calling applyRunTargetPolicyToStep for run step:', step.name)
       applyRunTargetPolicyToStep(step, context.targetPolicy)
     }
 
@@ -561,7 +560,9 @@ export function estimateStrengthExerciseDurationSec(exercise: any) {
     return Math.round(total)
   }
 
-  if (String(exercise?.prescriptionType || '').trim() === 'duration') {
+  if (
+    String(exercise?.prescriptionType || exercise?.prescriptionMode || '').trim() === 'duration'
+  ) {
     const sets = toPositiveInt(exercise?.sets) || 1
     const duration = toPositiveInt(exercise?.value) || toPositiveInt(exercise?.duration) || 0
     if (duration > 0) return duration * sets

@@ -9,6 +9,7 @@ type PlannedWorkoutStructureState = {
   modifiedLocally?: boolean | null
   lastStructureEditedAt?: Date | null
   lastStructurePublishedAt?: Date | null
+  lastStructureEditSource?: string | null
   structureHash?: string | null
 }
 
@@ -141,7 +142,9 @@ export function shouldAcceptRemoteStructure(
   const plannedDurationSec = Number(local.durationSec || 0)
   const localDurationSec = getStructuredWorkoutStepDurationSec(local.structuredWorkout)
   const remoteDurationSec = getStructuredWorkoutStepDurationSec(remoteStructuredWorkout)
+  const isUserManualEdit = local.modifiedLocally && local.lastStructureEditSource === 'USER'
   if (
+    !isUserManualEdit &&
     plannedDurationSec > 0 &&
     !durationMatches(plannedDurationSec, localDurationSec) &&
     durationMatches(plannedDurationSec, remoteDurationSec)

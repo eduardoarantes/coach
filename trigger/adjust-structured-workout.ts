@@ -4,9 +4,10 @@ import { logger, task } from '@trigger.dev/sdk/v3'
 import { generateStructuredAnalysis, buildConciseWorkoutSummary } from '../server/utils/gemini'
 import { prisma } from '../server/utils/db'
 import { userReportsQueue } from './queues'
-import { calculateAge, getUserTimezone } from '../server/utils/date'
+import { calculateAge, getUserLocalDate, getUserTimezone } from '../server/utils/date'
 import { sportSettingsRepository } from '../server/utils/repositories/sportSettingsRepository'
 import { workoutRepository } from '../server/utils/repositories/workoutRepository'
+import { checkQuota } from '../server/utils/quotas/engine'
 import { serializeCanonicalForIntervals } from '../server/utils/canonical-workout-serializer'
 import { syncPlannedWorkoutToIntervals } from '../server/utils/intervals-sync'
 import { enforceCyclingCadenceVariation, resolveCyclingCadence } from './utils/cadence'
@@ -696,7 +697,10 @@ export const adjustStructuredWorkoutTask = task({
                 name: true,
                 dob: true,
                 sex: true,
-                maxHr: true
+                maxHr: true,
+                subscriptionTier: true,
+                isAdmin: true,
+                featureFlags: true
               }
             },
             trainingWeek: {
@@ -727,7 +731,10 @@ export const adjustStructuredWorkoutTask = task({
                 name: true,
                 dob: true,
                 sex: true,
-                maxHr: true
+                maxHr: true,
+                subscriptionTier: true,
+                isAdmin: true,
+                featureFlags: true
               }
             }
           }
@@ -742,7 +749,8 @@ export const adjustStructuredWorkoutTask = task({
         durationSec: workout.durationSec
       })
 
-      const generatorMode = resolveStructureGeneratorModeForWorkout(workout.type || '')
+      const requestedGeneratorMode = resolveStructureGeneratorModeForWorkout(workout.type || '')
+      const generatorMode = payload.generatorOverride ?? requestedGeneratorMode
       console.log('[AdjustStructuredWorkout] Generator mode resolved', {
         entityId,
         entityType,
@@ -756,6 +764,44 @@ export const adjustStructuredWorkoutTask = task({
         generatorMode,
         implementation: generatorMode === 'draft_json_v1' ? 'compact_draft_v1' : 'legacy_json'
       })
+
+      if (!payload.quotaCheckedAtEnqueue) {
+        try {
+          await checkQuota(workout.userId, 'generate_structured_workout')
+        } catch (quotaError: any) {
+          if (quotaError.statusCode === 429) {
+            logger.warn('Structured workout adjustment quota exceeded', {
+              userId: workout.userId,
+              entityId
+            })
+            return finalizeAndReturn({ success: false, reason: 'QUOTA_EXCEEDED' })
+          }
+          throw quotaError
+        }
+      }
+      logStage('quota-check-passed')
+
+      if (entityType === 'PlannedWorkout' && workout.user.subscriptionTier === 'FREE') {
+        const timezone = await getUserTimezone(workout.userId)
+        const today = getUserLocalDate(timezone)
+        const fourWeeksFromNow = new Date(today)
+        fourWeeksFromNow.setUTCDate(today.getUTCDate() + 28)
+
+        if (workout.date > fourWeeksFromNow) {
+          logger.log('Skipping structured workout adjustment: Free tier limit (4 weeks)', {
+            entityId,
+            workoutDate: workout.date,
+            limitDate: fourWeeksFromNow
+          })
+          return finalizeAndReturn({
+            success: false,
+            reason: 'FREE_TIER_LIMIT',
+            message:
+              'Structured workout adjustment is limited to 4 weeks in advance for free users.'
+          })
+        }
+      }
+      logStage('subscription-check-passed', { subscriptionTier: workout.user.subscriptionTier })
 
       // Fetch Sport Specific Settings
       const sportSettings = await sportSettingsRepository.getForActivityType(
@@ -773,34 +819,8 @@ export const adjustStructuredWorkoutTask = task({
         targetPolicyPrimary: targetPolicy.primaryMetric
       })
 
-      // Update workout metadata if provided
+      // Apply adjustment metadata in-memory for the AI prompt; persist with the structure write.
       if (adjustments.durationMinutes || adjustments.intensity) {
-        if (entityType === 'PlannedWorkout') {
-          await prisma.plannedWorkout.update({
-            where: { id: plannedWorkoutId! },
-            data: {
-              durationSec: adjustments.durationMinutes
-                ? adjustments.durationMinutes * 60
-                : undefined,
-              workIntensity: adjustments.intensity
-                ? getIntensityScore(adjustments.intensity)
-                : undefined
-            }
-          })
-        } else {
-          await (prisma as any).workoutTemplate.update({
-            where: { id: workoutTemplateId! },
-            data: {
-              durationSec: adjustments.durationMinutes
-                ? adjustments.durationMinutes * 60
-                : undefined,
-              workIntensity: adjustments.intensity
-                ? getIntensityScore(adjustments.intensity)
-                : undefined
-            }
-          })
-        }
-        // Refresh local var
         workout.durationSec = adjustments.durationMinutes
           ? adjustments.durationMinutes * 60
           : workout.durationSec
@@ -1106,7 +1126,8 @@ OUTPUT JSON matching the schema.`
           plannedDurationSec: Number(workout.durationSec || 0),
           actualDurationSec: validationDurationSec,
           steps: structure.steps || [],
-          workout
+          workout,
+          preserveStructure: Boolean(workout.structuredWorkout)
         })
         console.log('[AdjustStructuredWorkout] Coverage validation result', {
           entityId,
@@ -1433,7 +1454,11 @@ OUTPUT JSON matching the schema.`
           fallbackOrder: targetPolicy.fallbackOrder as Array<
             'power' | 'heartRate' | 'pace' | 'rpe'
           >,
+          preservePlannedDuration: workout.durationSec,
           extra: {
+            ...(adjustments.intensity
+              ? { workIntensity: getIntensityScore(adjustments.intensity) }
+              : {}),
             lastGenerationSettingsSnapshot: settingsSnapshot,
             lastGenerationContext: generationContext,
             ...(!(workout as any).createdFromSettingsSnapshot
@@ -1494,8 +1519,8 @@ OUTPUT JSON matching the schema.`
             workout.userId
           )
           if (syncResult.synced) {
-            const syncedWorkout = await prisma.plannedWorkout.update({
-              where: { id: plannedWorkoutId! },
+            const syncedWrite = await prisma.plannedWorkout.updateMany({
+              where: { id: plannedWorkoutId!, structureRevision: payload.generationRevision },
               data: {
                 ...buildStructurePublishFields(canonicalStructure),
                 syncStatus: 'SYNCED',
@@ -1503,24 +1528,46 @@ OUTPUT JSON matching the schema.`
                 syncError: null
               }
             })
-            await publishActivityEvent(syncedWorkout.userId, {
-              scope: 'calendar',
-              entityType: 'planned_workout',
-              entityId: syncedWorkout.id,
-              reason: 'updated'
+            if (syncedWrite.count > 0) {
+              const syncedWorkout = await prisma.plannedWorkout.findUnique({
+                where: { id: plannedWorkoutId! }
+              })
+              if (syncedWorkout) {
+                await publishActivityEvent(syncedWorkout.userId, {
+                  scope: 'calendar',
+                  entityType: 'planned_workout',
+                  entityId: syncedWorkout.id,
+                  reason: 'updated'
+                })
+              }
+            }
+          } else {
+            await prisma.plannedWorkout.updateMany({
+              where: { id: plannedWorkoutId!, structureRevision: payload.generationRevision },
+              data: {
+                syncError: syncResult.error || 'Failed to sync structured intervals'
+              }
             })
           }
-          logStage('intervals-sync-finished')
+          logStage('intervals-sync-finished', {
+            synced: syncResult.synced,
+            syncError: syncResult.error || null
+          })
         }
       } else {
         const updatedTemplate = await (prisma as any).workoutTemplate.update({
           where: { id: workoutTemplateId! },
           data: {
             structuredWorkout: canonicalStructure as any,
-            durationSec: totalDuration > 0 ? totalDuration : null,
+            durationSec: adjustments.durationMinutes
+              ? adjustments.durationMinutes * 60
+              : totalDuration > 0
+                ? totalDuration
+                : null,
             tss: totalTSS > 0 ? Math.round(totalTSS) : null,
-            workIntensity:
-              totalTSS > 0 && totalDuration > 0
+            workIntensity: adjustments.intensity
+              ? getIntensityScore(adjustments.intensity)
+              : totalTSS > 0 && totalDuration > 0
                 ? parseFloat(Math.sqrt((36 * totalTSS) / totalDuration).toFixed(2))
                 : null
           }

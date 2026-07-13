@@ -110,21 +110,6 @@ export default defineEventHandler(async (event) => {
     }
   }
 
-  console.log('[StructurePatch] Received structure payload:', {
-    steps: steps.length,
-    exercises: Array.isArray(normalizedStrengthStructure?.exercises)
-      ? normalizedStrengthStructure.exercises.length
-      : 0
-  })
-  if (steps.length > 0) {
-    console.log('[StructurePatch] Sample step metrics:', {
-      power: steps[0].power,
-      heartRate: steps[0].heartRate,
-      pace: steps[0].pace,
-      primaryTarget: steps[0].primaryTarget
-    })
-  }
-
   const structuredWorkout = {
     ...((workout.structuredWorkout as any) || {}),
     ...(Array.isArray(providedSteps) || typeof text === 'string' ? { steps } : {}),
@@ -133,7 +118,7 @@ export default defineEventHandler(async (event) => {
   const sportSettings = await sportSettingsRepository.getForActivityType(userId, workout.type || '')
   const { targetPolicy, targetFormatPolicy } = resolveWorkoutTargeting(sportSettings)
   const refs = {
-    ftp: Number((workout.user as any)?.ftp || sportSettings?.ftp || 250),
+    ftp: Number(sportSettings?.ftp || (workout.user as any)?.ftp || 250),
     lthr: Number(sportSettings?.lthr || 0),
     maxHr: Number(sportSettings?.maxHr || 0),
     thresholdPace: Number(sportSettings?.thresholdPace || 0),
@@ -149,9 +134,8 @@ export default defineEventHandler(async (event) => {
   })
   const canonical = adaptStructuredWorkout(normalized, {
     source: 'MANUAL_EDIT',
-    zoneProfileSnapshot:
-      (workout.structuredWorkout as any)?.zoneProfileSnapshot ||
-      createZoneProfileSnapshot(sportSettings)
+    forceReadapt: true,
+    zoneProfileSnapshot: createZoneProfileSnapshot(sportSettings)
   })
   if (!canonical || canonical.diagnostics?.length) {
     throw createError({
@@ -166,15 +150,6 @@ export default defineEventHandler(async (event) => {
       statusCode: 400,
       message: normalizedLimitIssues[0]!.message,
       data: { issues: normalizedLimitIssues }
-    })
-  }
-
-  if ((normalized.steps?.length ?? 0) > 0) {
-    console.log('[StructurePatch] Normalized sample step metrics:', {
-      power: normalized.steps[0].power,
-      heartRate: normalized.steps[0].heartRate,
-      pace: normalized.steps[0].pace,
-      primaryTarget: normalized.steps[0].primaryTarget
     })
   }
 

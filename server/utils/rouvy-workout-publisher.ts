@@ -2,7 +2,6 @@ import { prisma } from './db'
 import { buildZonedDateTimeFromUtcDate } from './date'
 import { pushRouvyWorkout } from './rouvy'
 import { plannedWorkoutPublishRepository } from './repositories/plannedWorkoutPublishRepository'
-import { buildStructurePublishFields } from './planned-workout-structure-sync'
 import { serializeCanonicalDownload } from './canonical-workout-serializer'
 import {
   appendPublishStalenessWarning,
@@ -86,15 +85,6 @@ export async function publishPlannedWorkoutToRouvy(workoutId: string, userId: st
         ? String(result.workoutId)
         : null
 
-    await prisma.plannedWorkout.update({
-      where: { id: workout.id },
-      data: {
-        syncStatus: 'SYNCED',
-        syncError: null,
-        lastSyncedAt: syncedAt,
-        ...buildStructurePublishFields(workout.structuredWorkout, syncedAt)
-      }
-    })
     await plannedWorkoutPublishRepository.upsert(workout.id, 'rouvy', {
       externalId,
       status: 'SYNCED',
@@ -112,13 +102,6 @@ export async function publishPlannedWorkoutToRouvy(workoutId: string, userId: st
       ...(warnings ? { warnings } : {})
     }
   } catch (error: any) {
-    await prisma.plannedWorkout.update({
-      where: { id: workout.id },
-      data: {
-        syncStatus: 'FAILED',
-        syncError: error.message || 'Failed to publish workout to ROUVY'
-      }
-    })
     await plannedWorkoutPublishRepository.upsert(workout.id, 'rouvy', {
       status: 'FAILED',
       error: error.message || 'Failed to publish workout to ROUVY'

@@ -46,11 +46,11 @@ function mapEditSource(source: WriteSource) {
   return 'USER' as const
 }
 
-function resolveSportTargetingRefs(sportSettings?: any) {
+function resolveSportTargetingRefs(sportSettings?: any, userFtp?: number | null) {
   const { targetPolicy } = resolveWorkoutTargeting(sportSettings || {})
   return {
     refs: {
-      ftp: Number(sportSettings?.ftp || 250),
+      ftp: Number(sportSettings?.ftp || userFtp || 250),
       lthr: Number(sportSettings?.lthr || 0),
       maxHr: Number(sportSettings?.maxHr || 0),
       thresholdPace: Number(sportSettings?.thresholdPace || 0)
@@ -89,7 +89,7 @@ export function buildCanonicalPlannedWorkoutWriteData(options: CanonicalWriteOpt
     ...(options.incrementRevision !== false ? { structureRevision: { increment: 1 } } : {}),
     durationSec: options.preservePlannedDuration || metrics.durationSec || undefined,
     distanceMeters: metrics.distanceMeters || undefined,
-    tss: metrics.tss || undefined,
+    tss: metrics.tss > 0 ? metrics.tss : null,
     workIntensity: metrics.workIntensity || undefined,
     syncStatus:
       options.source === 'INTERVALS_IMPORT' ? 'SYNCED' : getPendingSyncStatus(options.syncStatus),

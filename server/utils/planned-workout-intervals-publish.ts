@@ -86,15 +86,27 @@ async function markIntervalsPublishSuccess(
   userId: string,
   provider: string,
   externalId: string,
-  structuredWorkout: unknown
+  structuredWorkout: unknown,
+  structureRevision?: number | null
 ) {
   const syncedAt = new Date()
-  await plannedWorkoutRepository.update(workoutId, userId, {
+  const publishFields = buildStructurePublishFields(structuredWorkout, syncedAt)
+  const data = {
     externalId,
     syncStatus: 'SYNCED',
     lastSyncedAt: syncedAt,
-    ...buildStructurePublishFields(structuredWorkout, syncedAt)
-  })
+    ...publishFields
+  }
+
+  if (typeof structureRevision === 'number') {
+    await prisma.plannedWorkout.updateMany({
+      where: { id: workoutId, userId, structureRevision },
+      data
+    })
+  } else {
+    await plannedWorkoutRepository.update(workoutId, userId, data)
+  }
+
   await plannedWorkoutPublishRepository.upsert(workoutId, provider, {
     externalId,
     status: 'SYNCED',
@@ -177,7 +189,8 @@ export async function publishPlannedWorkoutToIntervals(
         userId,
         provider,
         String(intervalsWorkout.id),
-        workout.structuredWorkout
+        workout.structuredWorkout,
+        workout.structureRevision
       )
     } else {
       try {
@@ -189,7 +202,8 @@ export async function publishPlannedWorkoutToIntervals(
           userId,
           provider,
           existingExternalId!,
-          workout.structuredWorkout
+          workout.structuredWorkout,
+          workout.structureRevision
         )
       } catch (updateError: any) {
         if (!isIntervalsNotFoundError(updateError)) throw updateError
@@ -202,7 +216,8 @@ export async function publishPlannedWorkoutToIntervals(
           userId,
           provider,
           String(intervalsWorkout.id),
-          workout.structuredWorkout
+          workout.structuredWorkout,
+          workout.structureRevision
         )
       }
     }

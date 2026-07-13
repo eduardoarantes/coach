@@ -11,43 +11,10 @@ async function ensureValidToken(integration: Integration): Promise<Integration> 
   return integration
 }
 
-/**
- * Draft for pushing a structured workout to Garmin.
- * This should be integrated into the planning service.
- */
-export async function syncWorkoutToGarmin(integration: Integration, workout: any) {
-  const validIntegration = await ensureValidToken(integration)
-
-  // Map Coach Watts structured steps to Garmin Workout format
-  const garminWorkout = {
-    workoutName: workout.title,
-    sport: mapSportToGarmin(workout.type),
-    steps: workout.steps.map((step: any, index: number) => ({
-      stepOrder: index + 1,
-      intensity:
-        step.type === 'warmup' ? 'WARMUP' : step.type === 'cooldown' ? 'COOLDOWN' : 'INTERVAL',
-      durationType: 'TIME',
-      durationValue: step.durationSec,
-      targetType: step.targetType === 'power' ? 'POWER' : 'OPEN',
-      targetValueLow: step.targetLow,
-      targetValueHigh: step.targetHigh
-    }))
-  }
-
-  const response = await fetch('https://apis.garmin.com/training-api/workout', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${validIntegration.accessToken}`
-    },
-    body: JSON.stringify(garminWorkout)
-  })
-
-  if (!response.ok) {
-    throw new Error(`Failed to push workout to Garmin: ${response.statusText}`)
-  }
-
-  return await response.json()
+export type GarminTargetThresholds = {
+  ftp?: number
+  lthr?: number
+  maxHr?: number
 }
 
 function getGarminHeaders(accessToken: string) {
@@ -76,7 +43,65 @@ function getDurationValue(step: any): number {
   return Number(step?.durationSec || step?.durationSeconds || step?.duration) || 0
 }
 
-function getTarget(step: any): {
+function normalizeRelativeFraction(value: number): number {
+  if (!Number.isFinite(value) || value <= 0) return 0
+  if (value > 3) return value / 100
+  return value
+}
+
+function isRelativePowerUnits(units: unknown): boolean {
+  const normalized = String(units || '')
+    .trim()
+    .toLowerCase()
+  return (
+    normalized.includes('%') || normalized === '' || normalized === 'ftp' || normalized === '%ftp'
+  )
+}
+
+function isRelativeHeartRateUnits(units: unknown): boolean {
+  const normalized = String(units || '')
+    .trim()
+    .toLowerCase()
+  return (
+    normalized.includes('%') ||
+    normalized === '' ||
+    normalized === 'lthr' ||
+    normalized === '%lthr' ||
+    normalized === 'max_hr' ||
+    normalized === 'maxhr'
+  )
+}
+
+function toAbsolutePower(
+  value: number,
+  units: unknown,
+  thresholds: GarminTargetThresholds
+): number {
+  if (!isRelativePowerUnits(units)) return Math.round(value)
+  const ftp = Number(thresholds.ftp) || 250
+  return Math.round(normalizeRelativeFraction(value) * ftp)
+}
+
+function toAbsoluteHeartRate(
+  value: number,
+  units: unknown,
+  thresholds: GarminTargetThresholds
+): number {
+  if (!isRelativeHeartRateUnits(units)) return Math.round(value)
+  const normalized = String(units || '')
+    .trim()
+    .toLowerCase()
+  const basis =
+    normalized.includes('max') && thresholds.maxHr
+      ? Number(thresholds.maxHr)
+      : Number(thresholds.lthr) || 160
+  return Math.round(normalizeRelativeFraction(value) * basis)
+}
+
+function getTarget(
+  step: any,
+  thresholds: GarminTargetThresholds = {}
+): {
   targetType: string
   targetValue?: number
   targetValueLow?: number
@@ -90,23 +115,29 @@ function getTarget(step: any): {
   if (power?.range) {
     return {
       targetType: 'POWER',
-      targetValueLow: Number(power.range.start) || 0,
-      targetValueHigh: Number(power.range.end) || 0
+      targetValueLow: toAbsolutePower(Number(power.range.start) || 0, power.units, thresholds),
+      targetValueHigh: toAbsolutePower(Number(power.range.end) || 0, power.units, thresholds)
     }
   }
   if (typeof power?.value === 'number') {
-    return { targetType: 'POWER', targetValue: power.value }
+    return {
+      targetType: 'POWER',
+      targetValue: toAbsolutePower(power.value, power.units, thresholds)
+    }
   }
 
   if (hr?.range) {
     return {
       targetType: 'HEART_RATE',
-      targetValueLow: Number(hr.range.start) || 0,
-      targetValueHigh: Number(hr.range.end) || 0
+      targetValueLow: toAbsoluteHeartRate(Number(hr.range.start) || 0, hr.units, thresholds),
+      targetValueHigh: toAbsoluteHeartRate(Number(hr.range.end) || 0, hr.units, thresholds)
     }
   }
   if (typeof hr?.value === 'number') {
-    return { targetType: 'HEART_RATE', targetValue: hr.value }
+    return {
+      targetType: 'HEART_RATE',
+      targetValue: toAbsoluteHeartRate(hr.value, hr.units, thresholds)
+    }
   }
 
   if (pace?.range) {
@@ -149,7 +180,7 @@ function explodeSteps(steps: any[]): any[] {
   return out
 }
 
-export function buildGarminTrainingPayload(workout: any) {
+export function buildGarminTrainingPayload(workout: any, thresholds: GarminTargetThresholds = {}) {
   const steps = explodeSteps(workout?.steps || [])
 
   return {
@@ -162,7 +193,7 @@ export function buildGarminTrainingPayload(workout: any) {
     steps: steps.map((step: any, index: number) => {
       const durationType = getDurationType(step)
       const durationValue = getDurationValue(step)
-      const target = getTarget(step)
+      const target = getTarget(step, thresholds)
       return {
         stepOrder: index + 1,
         type: 'WorkoutStep',
@@ -229,6 +260,17 @@ export async function createGarminWorkoutSchedule(
   }
 
   return response.json()
+}
+
+export function extractGarminScheduleId(response: unknown): string {
+  if (response == null) return ''
+  if (typeof response === 'string' || typeof response === 'number') return String(response)
+  if (typeof response === 'object') {
+    const value = response as Record<string, unknown>
+    const id = value.scheduleId ?? value.id ?? value.schedule_id
+    if (id != null) return String(id)
+  }
+  return ''
 }
 
 export async function updateGarminWorkoutSchedule(
@@ -301,10 +343,28 @@ export async function createGarminCourse(integration: Integration, payload: any)
 }
 
 function mapSportToGarmin(type: string): string {
+  const normalized = String(type || '').trim()
   const map: Record<string, string> = {
     Run: 'RUNNING',
+    TrailRun: 'TRAIL_RUNNING',
     Ride: 'CYCLING',
-    Swim: 'LAP_SWIMMING'
+    VirtualRide: 'CYCLING',
+    GravelRide: 'CYCLING',
+    MountainBikeRide: 'CYCLING',
+    Swim: 'LAP_SWIMMING',
+    Walk: 'WALKING',
+    Hike: 'HIKING'
   }
-  return map[type] || 'GENERIC'
+  if (map[normalized]) return map[normalized]!
+
+  const lower = normalized.toLowerCase()
+  if (lower.includes('trail') && lower.includes('run')) return 'TRAIL_RUNNING'
+  if (lower.includes('run')) return 'RUNNING'
+  if (lower.includes('swim')) return 'LAP_SWIMMING'
+  if (lower.includes('virtual') || lower.includes('ride') || lower.includes('bike')) {
+    return 'CYCLING'
+  }
+  if (lower.includes('hike')) return 'HIKING'
+  if (lower.includes('walk')) return 'WALKING'
+  return 'GENERIC'
 }

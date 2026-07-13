@@ -77,6 +77,7 @@ describe('planned workout structure sync helpers', () => {
         ]
       },
       modifiedLocally: true,
+      lastStructureEditSource: 'AI',
       lastStructureEditedAt: new Date('2026-03-06T12:00:00Z'),
       lastStructurePublishedAt: null,
       structureHash: 'local-stale-hash'
@@ -95,6 +96,37 @@ describe('planned workout structure sync helpers', () => {
     expect(result.decision.reason).toBe('local_structure_duration_mismatch')
     expect(result.fields.structuredWorkout).toEqual(remote)
     expect(result.fields.syncConflict).toBe(false)
+  })
+
+  it('rejects remote overwrite when a user manual edit causes duration mismatch', () => {
+    const local = {
+      durationSec: 5400,
+      structuredWorkout: {
+        steps: [
+          { type: 'Warmup', durationSeconds: 600 },
+          { type: 'Active', durationSeconds: 3000 },
+          { type: 'Cooldown', durationSeconds: 600 }
+        ]
+      },
+      modifiedLocally: true,
+      lastStructureEditSource: 'USER',
+      lastStructureEditedAt: new Date('2026-03-06T12:00:00Z'),
+      lastStructurePublishedAt: null,
+      structureHash: 'local-user-edit-hash'
+    }
+    const remote = {
+      steps: [
+        { type: 'Warmup', durationSeconds: 900 },
+        { type: 'Active', durationSeconds: 7500 },
+        { type: 'Cooldown', durationSeconds: 600 }
+      ]
+    }
+
+    const result = buildRemoteStructureMergeFields(local, remote, new Date('2026-03-06T12:30:00Z'))
+
+    expect(result.decision.accept).toBe(false)
+    expect(result.decision.reason).toBe('local_modified')
+    expect(result.fields).not.toHaveProperty('structuredWorkout')
   })
 
   it('accepts remote structure for a clean local record', () => {

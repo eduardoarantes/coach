@@ -6,7 +6,8 @@ import {
   createGarminWorkout,
   createGarminWorkoutSchedule,
   updateGarminWorkout,
-  updateGarminWorkoutSchedule
+  updateGarminWorkoutSchedule,
+  extractGarminScheduleId
 } from '../../../../utils/garmin-push'
 import {
   fetchGarminUserPermissions,
@@ -184,8 +185,8 @@ export default defineEventHandler(async (event) => {
         }
       }
       if (!scheduleId) {
-        const createdScheduleId = await createGarminWorkoutSchedule(integration, schedulePayload)
-        scheduleId = String(createdScheduleId)
+        const createdSchedule = await createGarminWorkoutSchedule(integration, schedulePayload)
+        scheduleId = extractGarminScheduleId(createdSchedule)
       }
 
       const now = new Date()

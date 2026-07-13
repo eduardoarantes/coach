@@ -152,14 +152,21 @@ export function serializeCanonicalForProvider(
         type: options.type || undefined
       })
     case 'garmin':
-      return buildGarminTrainingPayload({
-        title: options.title,
-        description: options.description,
-        type: options.type,
-        durationSec: options.durationSec,
-        distanceMeters: options.distanceMeters,
-        steps: workout.steps
-      })
+      return buildGarminTrainingPayload(
+        {
+          title: options.title,
+          description: options.description,
+          type: options.type,
+          durationSec: options.durationSec,
+          distanceMeters: options.distanceMeters,
+          steps: workout.steps
+        },
+        {
+          ftp: exportContext.ftp,
+          lthr: Number(exportContext.sportSettings?.lthr) || undefined,
+          maxHr: Number(exportContext.sportSettings?.maxHr) || undefined
+        }
+      )
     case 'rouvy':
     case 'zwo':
       return WorkoutConverter.toZWO(workout)

@@ -282,11 +282,15 @@ function normalizeStepPaceTargets(
  */
 export function adaptStructuredWorkout(
   structure: unknown,
-  options: { source?: StructureSource; zoneProfileSnapshot?: ZoneProfileSnapshot } = {}
+  options: {
+    source?: StructureSource
+    zoneProfileSnapshot?: ZoneProfileSnapshot
+    forceReadapt?: boolean
+  } = {}
 ): CanonicalStructuredWorkout | null {
   if (!structure || typeof structure !== 'object') return null
   const input: any = structure
-  if (isCanonicalStructuredWorkout(input)) return input
+  if (isCanonicalStructuredWorkout(input) && !options.forceReadapt) return input
 
   const snapshot = options.zoneProfileSnapshot || createZoneProfileSnapshot({})
   const normalized = Array.isArray(input.steps)

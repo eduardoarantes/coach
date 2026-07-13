@@ -827,7 +827,8 @@ export const generateStructuredWorkoutTask = task({
                 subscriptionTier: true,
                 isAdmin: true,
                 aiContext: true,
-                language: true
+                language: true,
+                featureFlags: true
               }
             },
             trainingWeek: {
@@ -859,7 +860,8 @@ export const generateStructuredWorkoutTask = task({
                 subscriptionTier: true,
                 isAdmin: true,
                 aiContext: true,
-                language: true
+                language: true,
+                featureFlags: true
               }
             }
           }
@@ -879,7 +881,7 @@ export const generateStructuredWorkoutTask = task({
       })
 
       const requestedGeneratorMode = resolveStructureGeneratorModeForWorkout(workout.type || '')
-      const generatorMode = requestedGeneratorMode
+      const generatorMode = payload.generatorOverride ?? requestedGeneratorMode
       console.log('[GenerateStructuredWorkout] Generator mode resolved', {
         entityId,
         entityType,
@@ -1003,8 +1005,8 @@ export const generateStructuredWorkoutTask = task({
       }
       logStage('subscription-check-passed', { subscriptionTier: workout.user.subscriptionTier })
 
-      const warmupTime = sportSettings?.warmupTime || 10
-      const cooldownTime = sportSettings?.cooldownTime || 5
+      const warmupTime = sportSettings?.warmupTime ?? 10
+      const cooldownTime = sportSettings?.cooldownTime ?? 10
       const existingStructureSummary = preserveExistingStructure
         ? summarizeStructuredWorkoutForPrompt(workout.structuredWorkout)
         : ''
@@ -1726,8 +1728,8 @@ OUTPUT JSON matching the schema.`
             })
 
             if (syncResult.synced) {
-              const syncedWorkout = await (prisma as any).plannedWorkout.update({
-                where: { id: entityId },
+              const syncedWrite = await (prisma as any).plannedWorkout.updateMany({
+                where: { id: entityId, structureRevision: payload.generationRevision },
                 data: {
                   ...(syncResult.result?.id && { externalId: String(syncResult.result.id) }),
                   ...buildStructurePublishFields(canonicalStructure),
@@ -1736,26 +1738,47 @@ OUTPUT JSON matching the schema.`
                   syncError: null
                 }
               })
-              await publishActivityEvent(syncedWorkout.userId, {
-                scope: 'calendar',
-                entityType: 'planned_workout',
-                entityId: syncedWorkout.id,
-                reason: 'updated'
-              })
+              if (syncedWrite.count === 0) {
+                logger.warn(
+                  'Skipped post-sync publish write; structure revision changed during Intervals round-trip',
+                  {
+                    plannedWorkoutId: entityId
+                  }
+                )
+              } else {
+                const syncedWorkout = await (prisma as any).plannedWorkout.findUnique({
+                  where: { id: entityId }
+                })
+                if (syncedWorkout) {
+                  await publishActivityEvent(syncedWorkout.userId, {
+                    scope: 'calendar',
+                    entityType: 'planned_workout',
+                    entityId: syncedWorkout.id,
+                    reason: 'updated'
+                  })
+                }
+              }
             } else {
-              const failedWorkout = await (prisma as any).plannedWorkout.update({
-                where: { id: entityId },
+              const failedWrite = await (prisma as any).plannedWorkout.updateMany({
+                where: { id: entityId, structureRevision: payload.generationRevision },
                 data: {
                   syncStatus: 'PENDING',
                   syncError: syncResult.error || 'Failed to publish structured workout'
                 }
               })
-              await publishActivityEvent(failedWorkout.userId, {
-                scope: 'calendar',
-                entityType: 'planned_workout',
-                entityId: failedWorkout.id,
-                reason: 'updated'
-              })
+              if (failedWrite.count > 0) {
+                const failedWorkout = await (prisma as any).plannedWorkout.findUnique({
+                  where: { id: entityId }
+                })
+                if (failedWorkout) {
+                  await publishActivityEvent(failedWorkout.userId, {
+                    scope: 'calendar',
+                    entityType: 'planned_workout',
+                    entityId: failedWorkout.id,
+                    reason: 'updated'
+                  })
+                }
+              }
             }
           }
         } else {
@@ -1792,8 +1815,8 @@ OUTPUT JSON matching the schema.`
           })
 
           if (syncResult.synced) {
-            const syncedWorkout = await (prisma as any).plannedWorkout.update({
-              where: { id: entityId },
+            const syncedWrite = await (prisma as any).plannedWorkout.updateMany({
+              where: { id: entityId, structureRevision: payload.generationRevision },
               data: {
                 ...buildStructurePublishFields(canonicalStructure),
                 syncStatus: 'SYNCED',
@@ -1801,23 +1824,37 @@ OUTPUT JSON matching the schema.`
                 syncError: null
               }
             })
-            await publishActivityEvent(syncedWorkout.userId, {
-              scope: 'calendar',
-              entityType: 'planned_workout',
-              entityId: syncedWorkout.id,
-              reason: 'updated'
-            })
+            if (syncedWrite.count > 0) {
+              const syncedWorkout = await (prisma as any).plannedWorkout.findUnique({
+                where: { id: entityId }
+              })
+              if (syncedWorkout) {
+                await publishActivityEvent(syncedWorkout.userId, {
+                  scope: 'calendar',
+                  entityType: 'planned_workout',
+                  entityId: syncedWorkout.id,
+                  reason: 'updated'
+                })
+              }
+            }
           } else {
-            const failedWorkout = await (prisma as any).plannedWorkout.update({
-              where: { id: entityId },
+            const failedWrite = await (prisma as any).plannedWorkout.updateMany({
+              where: { id: entityId, structureRevision: payload.generationRevision },
               data: { syncError: syncResult.error || 'Failed to sync structured intervals' }
             })
-            await publishActivityEvent(failedWorkout.userId, {
-              scope: 'calendar',
-              entityType: 'planned_workout',
-              entityId: failedWorkout.id,
-              reason: 'updated'
-            })
+            if (failedWrite.count > 0) {
+              const failedWorkout = await (prisma as any).plannedWorkout.findUnique({
+                where: { id: entityId }
+              })
+              if (failedWorkout) {
+                await publishActivityEvent(failedWorkout.userId, {
+                  scope: 'calendar',
+                  entityType: 'planned_workout',
+                  entityId: failedWorkout.id,
+                  reason: 'updated'
+                })
+              }
+            }
           }
         }
       } else {

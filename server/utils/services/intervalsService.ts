@@ -1330,7 +1330,7 @@ export const IntervalsService = {
         userId,
         existingRecord,
         normalizedPlanned,
-        sportSettings: plannedSettings,
+        sportSettings: refreshedSettings || plannedSettings,
         seenAt: new Date()
       })
       plannedUpserted++

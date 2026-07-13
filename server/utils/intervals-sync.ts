@@ -76,7 +76,15 @@ export async function syncPlannedWorkoutToIntervals(
 
     switch (operation) {
       case 'CREATE':
-        result = await createIntervalsPlannedWorkout(integration, workoutData)
+        if (isIntervalsEventId(workoutData.externalId)) {
+          result = await updateIntervalsPlannedWorkout(
+            integration,
+            workoutData.externalId,
+            workoutData
+          )
+        } else {
+          result = await createIntervalsPlannedWorkout(integration, workoutData)
+        }
         break
       case 'UPDATE':
         // If externalId is local (non-numeric), we can't update it on Intervals.
@@ -350,6 +358,7 @@ export async function queueSyncOperation(data: {
     console.log(`Queued ${data.operation} operation for ${data.entityType} ${data.entityId}`)
   } catch (error) {
     console.error('Failed to queue sync operation:', error)
+    throw error
   }
 }
 
@@ -401,9 +410,20 @@ export async function processSyncQueueItem(queueItem: any): Promise<boolean> {
 
     if (queueItem.entityType === 'planned_workout') {
       switch (queueItem.operation) {
-        case 'CREATE':
-          await createIntervalsPlannedWorkout(integration, payload)
+        case 'CREATE': {
+          const created = await createIntervalsPlannedWorkout(integration, payload)
+          if (created?.id) {
+            payload.externalId = String(created.id)
+            await prisma.plannedWorkout.update({
+              where: { id: queueItem.entityId },
+              data: {
+                externalId: String(created.id),
+                syncError: null
+              }
+            })
+          }
           break
+        }
         case 'UPDATE':
           if (isIntervalsEventId(payload.externalId)) {
             try {
@@ -464,6 +484,15 @@ export async function processSyncQueueItem(queueItem: any): Promise<boolean> {
 
     // Update entity sync status
     if (queueItem.entityType === 'planned_workout') {
+      const publishStructure =
+        payload?.structuredWorkout ||
+        (
+          await prisma.plannedWorkout.findUnique({
+            where: { id: queueItem.entityId },
+            select: { structuredWorkout: true }
+          })
+        )?.structuredWorkout
+
       await prisma.plannedWorkout.updateMany({
         where:
           queuedStructureRevision === null
@@ -473,8 +502,8 @@ export async function processSyncQueueItem(queueItem: any): Promise<boolean> {
           syncStatus: 'SYNCED',
           lastSyncedAt: new Date(),
           syncError: null,
-          ...((payload?.structuredWorkout || payload?.workout_doc) && payload?.structuredWorkout
-            ? buildStructurePublishFields(payload.structuredWorkout)
+          ...(publishStructure && (payload?.structuredWorkout || payload?.workout_doc)
+            ? buildStructurePublishFields(publishStructure)
             : {})
         }
       })
@@ -510,7 +539,7 @@ export async function processSyncQueueItem(queueItem: any): Promise<boolean> {
     // Update entity with error if permanently failed
     if (newAttempts >= maxAttempts) {
       if (queueItem.entityType === 'planned_workout') {
-        await prisma.plannedWorkout.update({
+        await prisma.plannedWorkout.updateMany({
           where: { id: queueItem.entityId },
           data: {
             syncStatus: 'FAILED',
