@@ -6,7 +6,9 @@
       shouldBeWide
         ? 'w-[calc(100%-2rem)] sm:w-full duration-700 delay-0'
         : 'w-40 duration-700 delay-300',
-      isMobile && (isExpanded || isFocused) ? 'bottom-0 w-full max-w-full px-0' : 'bottom-6'
+      isMobile && (isExpanded || isFocused)
+        ? 'bottom-0 w-full max-w-full px-0'
+        : 'bottom-[max(1.5rem,env(safe-area-inset-bottom,0px))]'
     ]"
     @mouseenter="onMouseEnter"
     @mouseleave="onMouseLeave"

@@ -129,6 +129,8 @@
                     :color="selectedType === 'all' ? 'primary' : 'neutral'"
                     :variant="selectedType === 'all' ? 'solid' : 'ghost'"
                     icon="i-heroicons-squares-2x2"
+                    aria-label="All workout types"
+                    class="size-11 min-h-11 min-w-11 md:size-auto md:min-h-0 md:min-w-0"
                     @click="
                       () => {
                         selectedType = 'all'
@@ -142,6 +144,8 @@
                     :color="selectedType === type.value ? 'primary' : 'neutral'"
                     :variant="selectedType === type.value ? 'solid' : 'ghost'"
                     :icon="type.icon"
+                    :aria-label="type.label"
+                    class="size-11 min-h-11 min-w-11 md:size-auto md:min-h-0 md:min-w-0"
                     @click="
                       () => {
                         selectedType = type.value
@@ -747,6 +751,10 @@
   import WorkoutTemplateEditor from '~/components/workouts/WorkoutTemplateEditor.vue'
   import WorkoutTemplatePreviewModal from '~/components/workouts/WorkoutTemplatePreviewModal.vue'
   import { getWorkoutIcon } from '~/utils/activity-types'
+
+  useHead({
+    title: 'Workouts'
+  })
 
   const {
     source: librarySource,

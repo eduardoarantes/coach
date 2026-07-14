@@ -237,7 +237,13 @@
                 >
                   {{ t('help_ai_assistant_button_chat') }}
                 </UButton>
-                <UButton to="/issues" color="neutral" variant="outline" icon="i-heroicons-ticket">
+                <UButton
+                  to="/issues"
+                  color="neutral"
+                  variant="outline"
+                  icon="i-heroicons-ticket"
+                  :aria-label="t('help_ai_assistant_button_tickets')"
+                >
                   {{ t('help_ai_assistant_button_tickets') }}
                 </UButton>
               </div>

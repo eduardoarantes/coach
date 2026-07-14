@@ -135,7 +135,7 @@
 
         <!-- Reports Table -->
         <div class="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden">
-          <div v-if="reportStore.status === 'pending'" class="overflow-x-auto">
+          <div v-if="reportStore.status === 'pending'" class="hidden md:block overflow-x-auto">
             <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
               <thead class="bg-gray-50 dark:bg-gray-900">
                 <tr>
@@ -178,6 +178,18 @@
             </table>
           </div>
 
+          <div v-if="reportStore.status === 'pending'" class="space-y-3 p-4 md:hidden">
+            <UCard
+              v-for="i in 3"
+              :key="`report-mobile-skeleton-${i}`"
+              :ui="{ body: 'p-4 space-y-3' }"
+            >
+              <USkeleton class="h-5 w-2/3" />
+              <USkeleton class="h-4 w-1/2" />
+              <USkeleton class="h-10 w-full" />
+            </UCard>
+          </div>
+
           <div
             v-else-if="reportStore.status === 'error'"
             class="p-8 text-center text-red-600 dark:text-red-400"
@@ -216,87 +228,141 @@
             </div>
           </div>
 
-          <div v-else class="overflow-x-auto">
-            <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-              <thead class="bg-gray-50 dark:bg-gray-900">
-                <tr>
-                  <th
-                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider"
-                  >
-                    Report Type
-                  </th>
-                  <th
-                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider"
-                  >
-                    Date Range
-                  </th>
-                  <th
-                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider"
-                  >
-                    Status
-                  </th>
-                  <th
-                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider"
-                  >
-                    Created
-                  </th>
-                  <th
-                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider"
-                  >
-                    Actions
-                  </th>
-                </tr>
-              </thead>
-              <tbody
-                class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700"
-              >
-                <tr
-                  v-for="report in reportStore.reports"
-                  :key="report.id"
-                  class="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+          <div v-else>
+            <div class="hidden md:block overflow-x-auto">
+              <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                <thead class="bg-gray-50 dark:bg-gray-900">
+                  <tr>
+                    <th
+                      class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider"
+                    >
+                      Report Type
+                    </th>
+                    <th
+                      class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider"
+                    >
+                      Date Range
+                    </th>
+                    <th
+                      class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider"
+                    >
+                      Status
+                    </th>
+                    <th
+                      class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider"
+                    >
+                      Created
+                    </th>
+                    <th
+                      class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider"
+                    >
+                      Actions
+                    </th>
+                  </tr>
+                </thead>
+                <tbody
+                  class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700"
                 >
-                  <td class="px-6 py-4 text-sm text-gray-900 dark:text-white">
-                    <div class="flex items-center gap-2">
-                      <UIcon :name="getReportIcon(report)" class="w-5 h-5 text-primary" />
-                      <span class="font-medium">{{ getReportTitle(report) }}</span>
+                  <tr
+                    v-for="report in reportStore.reports"
+                    :key="report.id"
+                    class="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                  >
+                    <td class="px-6 py-4 text-sm text-gray-900 dark:text-white">
+                      <div class="flex items-center gap-2">
+                        <UIcon :name="getReportIcon(report)" class="w-5 h-5 text-primary" />
+                        <span class="font-medium">{{ getReportTitle(report) }}</span>
+                      </div>
+                    </td>
+                    <td
+                      class="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400"
+                    >
+                      {{ formatDateRange(report.dateRangeStart, report.dateRangeEnd) }}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm">
+                      <span :class="getStatusBadgeClass(report.status)">
+                        {{ report.status }}
+                      </span>
+                    </td>
+                    <td
+                      class="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400"
+                    >
+                      {{ formatDateTime(report.createdAt) }}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm">
+                      <div class="flex items-center gap-2">
+                        <UButton
+                          size="xs"
+                          color="primary"
+                          variant="outline"
+                          @click="
+                            () => {
+                              void navigateTo(`/report/${report.id}`)
+                            }
+                          "
+                        >
+                          View Report
+                        </UButton>
+                        <AiFeedback
+                          v-if="report.llmUsageId"
+                          :llm-usage-id="report.llmUsageId"
+                          :initial-feedback="report.feedback"
+                          :initial-feedback-text="report.feedbackText"
+                        />
+                      </div>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <div class="space-y-3 p-4 md:hidden">
+              <UCard
+                v-for="report in reportStore.reports"
+                :key="`report-mobile-${report.id}`"
+                :ui="{ body: 'p-4 space-y-3' }"
+              >
+                <div class="flex items-start gap-3">
+                  <UIcon
+                    :name="getReportIcon(report)"
+                    class="mt-0.5 w-5 h-5 shrink-0 text-primary"
+                  />
+                  <div class="min-w-0 flex-1">
+                    <h3 class="font-semibold text-gray-900 dark:text-white">
+                      {{ getReportTitle(report) }}
+                    </h3>
+                    <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">
+                      {{ formatDateRange(report.dateRangeStart, report.dateRangeEnd) }}
+                    </p>
+                    <div class="mt-2 flex flex-wrap items-center gap-2 text-xs">
+                      <span :class="getStatusBadgeClass(report.status)">{{ report.status }}</span>
+                      <span class="text-gray-500">{{ formatDateTime(report.createdAt) }}</span>
                     </div>
-                  </td>
-                  <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400">
-                    {{ formatDateRange(report.dateRangeStart, report.dateRangeEnd) }}
-                  </td>
-                  <td class="px-6 py-4 whitespace-nowrap text-sm">
-                    <span :class="getStatusBadgeClass(report.status)">
-                      {{ report.status }}
-                    </span>
-                  </td>
-                  <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400">
-                    {{ formatDateTime(report.createdAt) }}
-                  </td>
-                  <td class="px-6 py-4 whitespace-nowrap text-sm">
-                    <div class="flex items-center gap-2">
-                      <UButton
-                        size="xs"
-                        color="primary"
-                        variant="outline"
-                        @click="
-                          () => {
-                            void navigateTo(`/report/${report.id}`)
-                          }
-                        "
-                      >
-                        View Report
-                      </UButton>
-                      <AiFeedback
-                        v-if="report.llmUsageId"
-                        :llm-usage-id="report.llmUsageId"
-                        :initial-feedback="report.feedback"
-                        :initial-feedback-text="report.feedbackText"
-                      />
-                    </div>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
+                  </div>
+                </div>
+                <div class="flex flex-wrap items-center gap-2">
+                  <UButton
+                    size="sm"
+                    color="primary"
+                    variant="outline"
+                    class="min-h-11"
+                    @click="
+                      () => {
+                        void navigateTo(`/report/${report.id}`)
+                      }
+                    "
+                  >
+                    View Report
+                  </UButton>
+                  <AiFeedback
+                    v-if="report.llmUsageId"
+                    :llm-usage-id="report.llmUsageId"
+                    :initial-feedback="report.feedback"
+                    :initial-feedback-text="report.feedbackText"
+                  />
+                </div>
+              </UCard>
+            </div>
           </div>
         </div>
       </div>

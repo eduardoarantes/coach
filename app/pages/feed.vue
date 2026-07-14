@@ -17,7 +17,8 @@
               color="neutral"
               variant="outline"
               size="sm"
-              class="font-black uppercase tracking-widest text-[10px]"
+              class="size-11 min-h-11 min-w-11 font-black uppercase tracking-widest text-[10px]"
+              aria-label="Filters"
               @click="
                 () => {
                   showFilters = !showFilters
@@ -33,6 +34,7 @@
               variant="solid"
               size="sm"
               class="font-black uppercase tracking-widest text-[10px]"
+              aria-label="Chat"
             >
               Chat
             </UButton>
@@ -183,7 +185,7 @@
   })
 
   useHead({
-    title: 'Activity Feed | Coach Watts',
+    title: 'Activity Feed',
     meta: [
       {
         name: 'description',

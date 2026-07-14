@@ -783,7 +783,8 @@
                 variant="outline"
                 icon="i-lucide-calendar-range"
                 size="sm"
-                class="font-bold"
+                class="size-11 min-h-11 min-w-11 font-bold md:size-auto md:min-h-0 md:min-w-0"
+                :aria-label="dateRangeLabel"
               >
                 <span class="hidden md:inline">{{ dateRangeLabel }}</span>
               </UButton>

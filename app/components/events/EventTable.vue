@@ -24,187 +24,261 @@
       </UButton>
     </div>
 
-    <div v-else class="overflow-x-auto">
-      <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-        <thead class="bg-gray-50 dark:bg-gray-900">
-          <tr>
-            <th
-              class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider"
+    <div v-else>
+      <div class="hidden md:block overflow-x-auto">
+        <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+          <thead class="bg-gray-50 dark:bg-gray-900">
+            <tr>
+              <th
+                class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider"
+              >
+                Date
+              </th>
+              <th
+                class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider"
+              >
+                Event
+              </th>
+              <th
+                class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider"
+              >
+                Days
+              </th>
+              <th
+                class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider"
+              >
+                Type
+              </th>
+              <th
+                class="px-6 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider"
+              >
+                Priority
+              </th>
+              <th
+                class="hidden md:table-cell px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider"
+              >
+                Profile
+              </th>
+              <th
+                class="hidden lg:table-cell px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider"
+              >
+                Location
+              </th>
+              <th
+                class="hidden xl:table-cell px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider"
+              >
+                Goals
+              </th>
+              <th
+                class="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider"
+              >
+                Actions
+              </th>
+            </tr>
+          </thead>
+          <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+            <tr
+              v-for="event in events"
+              :key="event.id"
+              class="cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+              @click="
+                () => {
+                  void $emit('navigate', event.id)
+                }
+              "
             >
-              Date
-            </th>
-            <th
-              class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider"
-            >
-              Event
-            </th>
-            <th
-              class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider"
-            >
-              Days
-            </th>
-            <th
-              class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider"
-            >
-              Type
-            </th>
-            <th
-              class="px-6 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider"
-            >
-              Priority
-            </th>
-            <th
-              class="hidden md:table-cell px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider"
-            >
-              Profile
-            </th>
-            <th
-              class="hidden lg:table-cell px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider"
-            >
-              Location
-            </th>
-            <th
-              class="hidden xl:table-cell px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider"
-            >
-              Goals
-            </th>
-            <th
-              class="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider"
-            >
-              Actions
-            </th>
-          </tr>
-        </thead>
-        <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-          <tr
-            v-for="event in events"
-            :key="event.id"
-            class="cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
-            @click="
-              () => {
-                void $emit('navigate', event.id)
-              }
-            "
-          >
-            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400">
-              <div class="flex flex-col leading-tight">
-                <span class="text-[10px] uppercase font-bold text-gray-400">{{
-                  formatDayName(event.date)
-                }}</span>
-                <span class="text-sm font-bold text-gray-900 dark:text-white">{{
-                  formatMonthDay(event.date)
-                }}</span>
-                <span class="text-[10px] text-gray-500">{{ formatYear(event.date) }}</span>
-              </div>
-            </td>
-            <td class="px-6 py-4 whitespace-nowrap">
-              <div class="flex flex-col">
-                <span class="text-sm font-bold text-gray-900 dark:text-white">{{
-                  event.title
-                }}</span>
+              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400">
+                <div class="flex flex-col leading-tight">
+                  <span class="text-[10px] uppercase font-bold text-gray-400">{{
+                    formatDayName(event.date)
+                  }}</span>
+                  <span class="text-sm font-bold text-gray-900 dark:text-white">{{
+                    formatMonthDay(event.date)
+                  }}</span>
+                  <span class="text-[10px] text-gray-500">{{ formatYear(event.date) }}</span>
+                </div>
+              </td>
+              <td class="px-6 py-4 whitespace-nowrap">
+                <div class="flex flex-col">
+                  <span class="text-sm font-bold text-gray-900 dark:text-white">{{
+                    event.title
+                  }}</span>
+                  <span
+                    v-if="event.websiteUrl"
+                    class="text-xs text-blue-500 hover:underline"
+                    @click.stop
+                  >
+                    <a :href="event.websiteUrl" target="_blank">{{ event.websiteUrl }}</a>
+                  </span>
+                </div>
+              </td>
+              <td class="px-6 py-4 whitespace-nowrap text-sm">
                 <span
-                  v-if="event.websiteUrl"
-                  class="text-xs text-blue-500 hover:underline"
-                  @click.stop
+                  v-if="daysUntil(event.date) > 0"
+                  class="font-mono font-bold text-amber-600 dark:text-amber-400"
                 >
-                  <a :href="event.websiteUrl" target="_blank">{{ event.websiteUrl }}</a>
-                </span>
-              </div>
-            </td>
-            <td class="px-6 py-4 whitespace-nowrap text-sm">
-              <span
-                v-if="daysUntil(event.date) > 0"
-                class="font-mono font-bold text-amber-600 dark:text-amber-400"
-              >
-                {{ daysUntil(event.date) }}d
-              </span>
-              <span
-                v-else
-                class="text-green-600 dark:text-green-400 flex items-center gap-1 text-xs"
-              >
-                <UIcon name="i-heroicons-check-circle" class="w-4 h-4" />
-                Done
-              </span>
-            </td>
-            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400">
-              <div class="flex flex-col">
-                <span>{{ event.type }}</span>
-                <span v-if="event.subType" class="text-xs text-muted">{{ event.subType }}</span>
-              </div>
-              <span
-                v-if="event.isVirtual"
-                class="mt-1 inline-block text-[10px] bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200 px-1 rounded uppercase font-bold w-fit"
-                >Virtual</span
-              >
-            </td>
-            <td class="px-6 py-4 whitespace-nowrap text-center">
-              <span :class="getPriorityBadgeClass(event.priority)">
-                {{ event.priority }}
-              </span>
-            </td>
-            <td
-              class="hidden md:table-cell px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400"
-            >
-              <div class="flex flex-col gap-0.5">
-                <span v-if="event.distance" class="font-medium text-gray-900 dark:text-white"
-                  >{{ event.distance }} km</span
-                >
-                <span v-if="event.elevation" class="text-xs">{{ event.elevation }} m elev.</span>
-                <span v-if="event.expectedDuration" class="text-xs"
-                  >{{ event.expectedDuration }} h</span
-                >
-              </div>
-            </td>
-            <td
-              class="hidden lg:table-cell px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400"
-            >
-              {{ formatLocation(event) }}
-            </td>
-            <td class="hidden xl:table-cell px-6 py-4 whitespace-nowrap">
-              <div class="flex flex-wrap gap-1">
-                <span
-                  v-for="goal in event.goals"
-                  :key="goal.id"
-                  class="px-2 py-0.5 rounded-full text-[10px] bg-indigo-100 text-indigo-800 dark:bg-indigo-900/50 dark:text-indigo-200 font-medium"
-                >
-                  {{ goal.title }}
+                  {{ daysUntil(event.date) }}d
                 </span>
                 <span
-                  v-if="!event.goals || event.goals.length === 0"
-                  class="text-xs text-gray-400 italic"
-                  >No goals linked</span
+                  v-else
+                  class="text-green-600 dark:text-green-400 flex items-center gap-1 text-xs"
                 >
-              </div>
-            </td>
-            <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-              <div class="flex items-center justify-end gap-2" @click.stop>
-                <UButton
-                  icon="i-heroicons-pencil-square"
-                  color="neutral"
-                  variant="ghost"
-                  size="xs"
-                  @click="
-                    () => {
-                      void $emit('edit', event)
-                    }
-                  "
-                />
-                <UButton
-                  icon="i-heroicons-trash"
-                  color="error"
-                  variant="ghost"
-                  size="xs"
-                  @click="
-                    () => {
-                      void $emit('delete', event)
-                    }
-                  "
-                />
-              </div>
-            </td>
-          </tr>
-        </tbody>
-      </table>
+                  <UIcon name="i-heroicons-check-circle" class="w-4 h-4" />
+                  Done
+                </span>
+              </td>
+              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400">
+                <div class="flex flex-col">
+                  <span>{{ event.type }}</span>
+                  <span v-if="event.subType" class="text-xs text-muted">{{ event.subType }}</span>
+                </div>
+                <span
+                  v-if="event.isVirtual"
+                  class="mt-1 inline-block text-[10px] bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200 px-1 rounded uppercase font-bold w-fit"
+                  >Virtual</span
+                >
+              </td>
+              <td class="px-6 py-4 whitespace-nowrap text-center">
+                <span :class="getPriorityBadgeClass(event.priority)">
+                  {{ event.priority }}
+                </span>
+              </td>
+              <td
+                class="hidden md:table-cell px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400"
+              >
+                <div class="flex flex-col gap-0.5">
+                  <span v-if="event.distance" class="font-medium text-gray-900 dark:text-white"
+                    >{{ event.distance }} km</span
+                  >
+                  <span v-if="event.elevation" class="text-xs">{{ event.elevation }} m elev.</span>
+                  <span v-if="event.expectedDuration" class="text-xs"
+                    >{{ event.expectedDuration }} h</span
+                  >
+                </div>
+              </td>
+              <td
+                class="hidden lg:table-cell px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400"
+              >
+                {{ formatLocation(event) }}
+              </td>
+              <td class="hidden xl:table-cell px-6 py-4 whitespace-nowrap">
+                <div class="flex flex-wrap gap-1">
+                  <span
+                    v-for="goal in event.goals"
+                    :key="goal.id"
+                    class="px-2 py-0.5 rounded-full text-[10px] bg-indigo-100 text-indigo-800 dark:bg-indigo-900/50 dark:text-indigo-200 font-medium"
+                  >
+                    {{ goal.title }}
+                  </span>
+                  <span
+                    v-if="!event.goals || event.goals.length === 0"
+                    class="text-xs text-gray-400 italic"
+                    >No goals linked</span
+                  >
+                </div>
+              </td>
+              <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                <div class="flex items-center justify-end gap-2" @click.stop>
+                  <UButton
+                    icon="i-heroicons-pencil-square"
+                    color="neutral"
+                    variant="ghost"
+                    size="sm"
+                    class="size-11 min-h-11 min-w-11"
+                    aria-label="Edit event"
+                    @click="
+                      () => {
+                        void $emit('edit', event)
+                      }
+                    "
+                  />
+                  <UButton
+                    icon="i-heroicons-trash"
+                    color="error"
+                    variant="ghost"
+                    size="sm"
+                    class="size-11 min-h-11 min-w-11"
+                    aria-label="Delete event"
+                    @click="
+                      () => {
+                        void $emit('delete', event)
+                      }
+                    "
+                  />
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="space-y-3 p-4 md:hidden">
+        <UCard
+          v-for="event in events"
+          :key="`event-mobile-${event.id}`"
+          class="cursor-pointer"
+          :ui="{ body: 'p-4 space-y-3' }"
+          @click="
+            () => {
+              void $emit('navigate', event.id)
+            }
+          "
+        >
+          <div class="flex items-start justify-between gap-3">
+            <div class="min-w-0">
+              <p class="text-[10px] font-bold uppercase text-gray-400">
+                {{ formatDayName(event.date) }} · {{ formatMonthDay(event.date) }}
+                {{ formatYear(event.date) }}
+              </p>
+              <h3 class="mt-1 font-bold text-gray-900 dark:text-white">{{ event.title }}</h3>
+              <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">
+                {{ event.type }}<span v-if="event.subType"> · {{ event.subType }}</span>
+              </p>
+            </div>
+            <span :class="getPriorityBadgeClass(event.priority)">{{ event.priority }}</span>
+          </div>
+          <div class="flex flex-wrap items-center gap-2 text-xs text-gray-500">
+            <span v-if="daysUntil(event.date) > 0" class="font-mono font-bold text-amber-600">
+              {{ daysUntil(event.date) }}d
+            </span>
+            <span v-else class="text-green-600">Done</span>
+            <span v-if="event.distance">{{ event.distance }} km</span>
+            <span v-if="formatLocation(event)">{{ formatLocation(event) }}</span>
+          </div>
+          <div class="flex items-center justify-end gap-2" @click.stop>
+            <UButton
+              icon="i-heroicons-pencil-square"
+              color="neutral"
+              variant="outline"
+              size="sm"
+              class="min-h-11"
+              aria-label="Edit event"
+              @click="
+                () => {
+                  void $emit('edit', event)
+                }
+              "
+            >
+              Edit
+            </UButton>
+            <UButton
+              icon="i-heroicons-trash"
+              color="error"
+              variant="outline"
+              size="sm"
+              class="min-h-11"
+              aria-label="Delete event"
+              @click="
+                () => {
+                  void $emit('delete', event)
+                }
+              "
+            >
+              Delete
+            </UButton>
+          </div>
+        </UCard>
+      </div>
     </div>
 
     <!-- Pagination -->

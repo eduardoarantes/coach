@@ -8,73 +8,12 @@
       </UDashboardNavbar>
 
       <UDashboardToolbar>
-        <div class="flex gap-2 overflow-x-auto pb-1 w-full no-scrollbar">
-          <UButton
-            :variant="isActive('/settings/apps') ? 'solid' : 'ghost'"
-            :color="isActive('/settings/apps') ? 'primary' : 'neutral'"
-            class="whitespace-nowrap"
-            @click="
-              () => {
-                void navigateTo('/settings/apps')
-              }
-            "
-          >
-            <UIcon name="i-lucide-plug" class="w-4 h-4 mr-2" />
-            Connected Apps
-          </UButton>
-          <UButton
-            :variant="isActive('/settings/ai') ? 'solid' : 'ghost'"
-            :color="isActive('/settings/ai') ? 'primary' : 'neutral'"
-            class="whitespace-nowrap"
-            @click="
-              () => {
-                void navigateTo('/settings/ai')
-              }
-            "
-          >
-            <UIcon name="i-heroicons-sparkles" class="w-4 h-4 mr-2" />
-            AI Coach
-          </UButton>
-          <UButton
-            :variant="isActive('/settings/billing') ? 'solid' : 'ghost'"
-            :color="isActive('/settings/billing') ? 'primary' : 'neutral'"
-            class="whitespace-nowrap"
-            @click="
-              () => {
-                void navigateTo('/settings/billing')
-              }
-            "
-          >
-            <UIcon name="i-heroicons-credit-card" class="w-4 h-4 mr-2" />
-            Billing
-          </UButton>
-          <UButton
-            :variant="isActive('/settings/developer') ? 'solid' : 'ghost'"
-            :color="isActive('/settings/developer') ? 'primary' : 'neutral'"
-            class="whitespace-nowrap"
-            @click="
-              () => {
-                void navigateTo('/settings/developer')
-              }
-            "
-          >
-            <UIcon name="i-heroicons-code-bracket" class="w-4 h-4 mr-2" />
-            Developer
-          </UButton>
-          <UButton
-            :variant="isActive('/settings/danger') ? 'solid' : 'ghost'"
-            :color="isActive('/settings/danger') ? 'primary' : 'neutral'"
-            class="whitespace-nowrap"
-            @click="
-              () => {
-                void navigateTo('/settings/danger')
-              }
-            "
-          >
-            <UIcon name="i-lucide-alert-triangle" class="w-4 h-4 mr-2" />
-            Danger Zone
-          </UButton>
-        </div>
+        <LayoutMobileToolbarTabs
+          :items="settingsTabs"
+          :active-id="activeSettingsTab"
+          select-label="Settings sections"
+          @select="navigateToSettingsTab"
+        />
       </UDashboardToolbar>
     </template>
 
@@ -88,6 +27,23 @@
 
 <script setup lang="ts">
   const route = useRoute()
+
+  const settingsTabs = [
+    { id: '/settings/apps', label: 'Connected Apps', icon: 'i-lucide-plug' },
+    { id: '/settings/ai', label: 'AI Coach', icon: 'i-heroicons-sparkles' },
+    { id: '/settings/billing', label: 'Billing', icon: 'i-heroicons-credit-card' },
+    { id: '/settings/developer', label: 'Developer', icon: 'i-heroicons-code-bracket' },
+    { id: '/settings/danger', label: 'Danger Zone', icon: 'i-lucide-alert-triangle' }
+  ]
+
+  const activeSettingsTab = computed(() => {
+    const match = settingsTabs.find((tab) => isActive(tab.id))
+    return match?.id || '/settings/apps'
+  })
+
+  function navigateToSettingsTab(path: string) {
+    void navigateTo(path)
+  }
 
   definePageMeta({
     middleware: 'auth'

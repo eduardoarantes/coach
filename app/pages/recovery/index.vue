@@ -146,16 +146,16 @@
     layout: 'default'
   })
 
-  useHead({
-    title: () => tr('recovery_page_title', 'Recovery History')
-  })
-
   const { t } = useTranslate('fitness')
   const tr = (key: string, fallback: string) => {
     if (typeof t.value !== 'function') return fallback
     const translated = t.value(key)
     return translated === key ? fallback : translated
   }
+
+  useHead({
+    title: computed(() => tr('recovery_page_title', 'Recovery History'))
+  })
 
   const selectedPeriod = ref<string | number>(30)
   const sourceFilter = ref('all')

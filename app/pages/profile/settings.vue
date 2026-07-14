@@ -8,23 +8,12 @@
       </UDashboardNavbar>
 
       <UDashboardToolbar>
-        <div class="flex gap-2 overflow-x-auto pb-1 w-full no-scrollbar">
-          <UButton
-            v-for="tab in tabs"
-            :key="tab.id"
-            :variant="activeTab === tab.id ? 'solid' : 'ghost'"
-            :color="activeTab === tab.id ? 'primary' : 'neutral'"
-            class="whitespace-nowrap"
-            @click="
-              () => {
-                void setActiveTab(tab.id)
-              }
-            "
-          >
-            <UIcon :name="tab.icon" class="w-4 h-4 mr-2" />
-            {{ tab.label }}
-          </UButton>
-        </div>
+        <LayoutMobileToolbarTabs
+          :items="tabs"
+          :active-id="activeTab"
+          select-label="Profile settings sections"
+          @select="setActiveTab"
+        />
       </UDashboardToolbar>
     </template>
 

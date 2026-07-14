@@ -531,6 +531,10 @@
   import TrainingPlanFolderSelector from '~/components/plans/library/TrainingPlanFolderSelector.vue'
   import PlanShareModal from '~/components/plans/library/PlanShareModal.vue'
 
+  useHead({
+    title: 'Training Plans'
+  })
+
   const toast = useToast()
   const isCoachingMode = computed(() => useCoachingStore().isCoachingMode)
   const { source: librarySource, options: librarySourceOptions } = useLibrarySource(

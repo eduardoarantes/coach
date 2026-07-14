@@ -19,7 +19,7 @@
               }
             "
           >
-            {{ t('apps_ingestion_settings') }}
+            {{ tr('apps_ingestion_settings', 'Ingestion Settings') }}
           </UButton>
         </div>
       </template>
@@ -80,9 +80,16 @@
 
     <div>
       <div>
-        <h2 class="text-2xl font-bold">{{ t('apps_available_header') }}</h2>
+        <h2 class="text-2xl font-bold">
+          {{ tr('apps_available_header', 'Applications that can connect to Coach Watts') }}
+        </h2>
         <p class="text-neutral-500">
-          {{ t('apps_available_description') }}
+          {{
+            tr(
+              'apps_available_description',
+              'Discover third-party applications that can access your Coach Watts account.'
+            )
+          }}
         </p>
       </div>
 
@@ -99,7 +106,7 @@
           class="w-12 h-12 text-gray-300 dark:text-gray-700 mx-auto mb-3"
         />
         <p class="text-sm text-gray-500 dark:text-gray-400 font-medium">
-          {{ t('apps_empty') }}
+          {{ tr('apps_empty', 'No applications are available yet.') }}
         </p>
       </div>
 
@@ -121,13 +128,17 @@
                 {{ app.name }}
               </h3>
               <p class="text-sm text-muted mt-1 break-words whitespace-normal leading-relaxed">
-                {{ app.description || t('apps_no_description') }}
+                {{ app.description || tr('apps_no_description', 'No description provided.') }}
               </p>
               <p
                 v-if="app.isConnected && app.consent"
                 class="text-xs text-gray-500 dark:text-gray-400 mt-1 font-medium"
               >
-                {{ t('apps_authorized_on', { date: formatDate(app.consent.createdAt) }) }}
+                {{
+                  tr('apps_authorized_on', 'Authorized on {date}', {
+                    date: formatDate(app.consent.createdAt)
+                  })
+                }}
               </p>
             </div>
           </div>
@@ -136,7 +147,7 @@
             <p
               class="text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-widest mb-2"
             >
-              {{ t('apps_permissions') }}
+              {{ tr('apps_permissions', 'Permissions:') }}
             </p>
             <div class="flex flex-wrap gap-1.5">
               <UBadge
@@ -158,7 +169,7 @@
             <template v-if="app.isConnected && app.consent">
               <UButton
                 v-if="app.homepageUrl"
-                :label="t('apps_website')"
+                :label="tr('apps_website', 'Website')"
                 color="success"
                 variant="solid"
                 size="sm"
@@ -168,7 +179,7 @@
                 target="_blank"
               />
               <UButton
-                :label="t('apps_disconnect')"
+                :label="tr('apps_disconnect', 'Disconnect')"
                 color="error"
                 variant="outline"
                 icon="i-heroicons-trash"
@@ -183,7 +194,7 @@
             </template>
             <UButton
               v-else-if="app.homepageUrl"
-              :label="t('apps_visit_website')"
+              :label="tr('apps_visit_website', 'Visit Website')"
               color="neutral"
               variant="outline"
               icon="i-heroicons-arrow-top-right-on-square"
@@ -198,12 +209,21 @@
     <!-- Revoke Confirmation Modal -->
     <UModal
       v-model:open="isRevokeModalOpen"
-      :title="t('apps_revoke_title')"
-      :description="t('apps_revoke_description')"
+      :title="tr('apps_revoke_title', 'Revoke Access')"
+      :description="
+        tr(
+          'apps_revoke_description',
+          'Revoke the authorization for this application to access your Coach Watts data.'
+        )
+      "
     >
       <template #body>
         <p class="text-sm text-gray-600 dark:text-gray-400 font-medium">
-          {{ t('apps_revoke_confirmation', { name: selectedConsent?.app.name }) }}
+          {{
+            tr('apps_revoke_confirmation', 'Are you sure you want to revoke access for {name}?', {
+              name: selectedConsent?.app.name || ''
+            })
+          }}
         </p>
       </template>
       <template #footer>
@@ -234,8 +254,13 @@
 
     <UModal
       v-model:open="isIngestionSettingsModalOpen"
-      :title="t('apps_ingestion_settings')"
-      :description="t('apps_ingestion_description')"
+      :title="tr('apps_ingestion_settings', 'Ingestion Settings')"
+      :description="
+        tr(
+          'apps_ingestion_description',
+          'Control what happens automatically after future activity imports.'
+        )
+      "
     >
       <template #body>
         <div class="space-y-4 sm:min-w-[440px]">
@@ -289,9 +314,9 @@
 <script setup lang="ts">
   import { isAutoDeduplicateWorkoutsEnabled } from '~/utils/ingestion-settings'
   import { isIntegrationConnected } from '~/utils/integrations'
-  import { useTranslate } from '@tolgee/vue'
+  import { useResolvedTranslate } from '~/composables/useResolvedTranslate'
 
-  const { t } = useTranslate('settings')
+  const { t, tr } = useResolvedTranslate('settings')
   const toast = useToast()
   const router = useRouter()
   const route = useRoute()

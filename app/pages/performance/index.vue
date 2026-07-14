@@ -84,17 +84,19 @@
 
         <!-- 1. Activity Highlights (Big Numbers) -->
         <div v-if="sectionSettings.highlights?.visible !== false" class="space-y-4">
-          <div class="flex items-center justify-between px-4 sm:px-0">
+          <div
+            class="flex flex-col gap-3 px-4 sm:flex-row sm:items-center sm:justify-between sm:px-0"
+          >
             <h2 class="text-base font-black uppercase tracking-widest text-gray-400">
               {{ t('highlights_header') }}
             </h2>
-            <div class="flex gap-2">
+            <div class="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
               <USelectMenu
                 v-model="highlightsScope"
                 :items="workoutScopeOptions"
                 value-key="value"
                 label-key="label"
-                class="w-40 sm:w-52"
+                class="w-full sm:w-52"
                 size="xs"
                 color="neutral"
                 variant="outline"
@@ -103,7 +105,7 @@
                 v-model="highlightsPeriod"
                 :items="periodOptions"
                 size="xs"
-                class="w-32 sm:w-36"
+                class="w-full sm:w-36"
                 color="neutral"
                 variant="outline"
               />
@@ -336,17 +338,19 @@
 
         <!-- 9. Workout Scores -->
         <div v-if="sectionSettings.workoutScores?.visible !== false" class="space-y-4">
-          <div class="flex items-center justify-between px-1">
+          <div
+            class="flex flex-col gap-3 px-4 sm:flex-row sm:items-center sm:justify-between sm:px-0"
+          >
             <h2 class="text-xl font-bold text-gray-900 dark:text-white uppercase tracking-tight">
               {{ t('workout_header') }}
             </h2>
-            <div class="flex gap-2">
+            <div class="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
               <USelectMenu
                 v-model="workoutScope"
                 :items="workoutScopeOptions"
                 value-key="value"
                 label-key="label"
-                class="w-40 sm:w-52"
+                class="w-full sm:w-52"
                 size="xs"
                 color="neutral"
                 variant="outline"
@@ -354,7 +358,7 @@
               <USelect
                 v-model="selectedPeriod"
                 :items="periodOptions"
-                class="w-32 sm:w-36"
+                class="w-full sm:w-36"
                 size="xs"
                 color="neutral"
                 variant="outline"

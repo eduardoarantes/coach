@@ -43,7 +43,28 @@ function sanitizeRenderedMedia(html: string) {
   })
 }
 
+function sanitizeRenderedLinks(html: string) {
+  return html.replace(/<a\b[^>]*>([\s\S]*?)<\/a>/gi, (tag, content: string) => {
+    const href = sanitizePublicUrl(extractAttribute(tag, 'href'))
+    if (!href) return content
+
+    const title = extractAttribute(tag, 'title')
+    const titleAttribute = title ? ` title="${escapeHtml(title)}"` : ''
+
+    return `<a href="${escapeHtml(href)}"${titleAttribute} rel="noopener noreferrer">${content}</a>`
+  })
+}
+
+function sanitizeRenderedMarkdown(html: string) {
+  return sanitizeRenderedLinks(sanitizeRenderedMedia(html))
+}
+
 export function renderSafeMarkdown(value?: string | null) {
   if (!value) return ''
-  return sanitizeRenderedMedia(marked.parse(escapeHtml(value)) as string)
+  return sanitizeRenderedMarkdown(marked.parse(escapeHtml(value)) as string)
+}
+
+export function renderSafeInlineMarkdown(value?: string | null) {
+  if (!value) return ''
+  return sanitizeRenderedMarkdown(marked.parseInline(escapeHtml(value)) as string)
 }

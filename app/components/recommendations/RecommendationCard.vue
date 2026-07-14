@@ -1,4 +1,5 @@
 <template>
+  <!-- eslint-disable vue/no-v-html -->
   <UCard
     class="flex flex-col h-full transition-all duration-200 cursor-pointer hover:ring-2 hover:ring-primary-500/50"
     :class="[recommendation.isPinned ? 'ring-2 ring-primary-500 bg-primary-50/10' : '']"
@@ -56,9 +57,11 @@
     <div class="h-full flex flex-col justify-between">
       <div>
         <h3 class="font-semibold text-lg mb-2 line-clamp-2">{{ recommendation.title }}</h3>
-        <p class="text-gray-600 dark:text-gray-300 text-sm whitespace-pre-wrap line-clamp-4">
-          {{ recommendation.description }}
-        </p>
+        <p
+          class="text-gray-600 dark:text-gray-300 text-sm whitespace-pre-wrap line-clamp-4"
+          @click="onDescriptionClick"
+          v-html="descriptionHtml"
+        />
       </div>
     </div>
 
@@ -128,6 +131,8 @@
 </template>
 
 <script setup lang="ts">
+  import { renderSafeInlineMarkdown } from '~/utils/publicRichText'
+
   const props = defineProps<{
     recommendation: any
   }>()
@@ -135,6 +140,13 @@
   const emit = defineEmits(['toggle-pin', 'update-status'])
 
   const { formatDate } = useFormat()
+  const descriptionHtml = computed(() => renderSafeInlineMarkdown(props.recommendation.description))
+
+  function onDescriptionClick(event: MouseEvent) {
+    if ((event.target as HTMLElement).closest('a')) {
+      event.stopPropagation()
+    }
+  }
 
   const priorityColor = computed(() => {
     switch (props.recommendation.priority) {

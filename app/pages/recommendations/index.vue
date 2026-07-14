@@ -52,7 +52,9 @@
       <div class="p-0 sm:p-6 space-y-8">
         <!-- Dashboard Branding -->
         <div class="px-4 sm:px-0">
-          <h1 class="text-4xl font-black text-gray-900 dark:text-white uppercase tracking-tight">
+          <h1
+            class="text-3xl font-black text-gray-900 dark:text-white uppercase tracking-tight sm:text-4xl"
+          >
             Recommendations
           </h1>
           <p
