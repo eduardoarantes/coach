@@ -1,6 +1,6 @@
 # Workout Details Generation — Issue Tracker
 
-> **Broader app review (039–218):** see [app-review-issues.md](./app-review-issues.md) and [REVIEW-PROGRESS.md](./REVIEW-PROGRESS.md) (~90% complete).
+> **Broader app review (039–300):** see [app-review-issues.md](./app-review-issues.md) and [REVIEW-PROGRESS.md](./REVIEW-PROGRESS.md) (~96% complete).
 
 Last reviewed: 2026-07-09 (structure-generation batch merged — PRs [#214](https://github.com/hdkiller/coach/pull/214)–[#222](https://github.com/hdkiller/coach/pull/222) on 2026-07-08)
 

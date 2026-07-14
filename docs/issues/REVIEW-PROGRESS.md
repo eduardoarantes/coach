@@ -1,7 +1,8 @@
 # Systematic App Review — Progress Tracker
 
 **Started:** 2026-07-08  
-**Last updated:** 2026-07-14 (coaching pages review — issues 263–275 filed)  
+**Last updated:** 2026-07-14 (mobile creation and transactional UI — issues 295–300 filed)
+
 **Goal:** Comprehensive bug/UI/security audit across the full Coach Watts codebase. Documentation only — no refactors.
 
 ## Summary
@@ -9,12 +10,12 @@
 | Metric                                             | Value                                                                   |
 | -------------------------------------------------- | ----------------------------------------------------------------------- |
 | Structure-generation issues                        | 001–038 ([issues.md](./issues.md)) — **37 / 38 fixed** (only 012 open)  |
-| App-review issues filed                            | 039–218                                                                 |
+| App-review issues filed                            | 039–300                                                                 |
 | **Postponed** (auth / third-party / OAuth / Yazio) | **21** — see [Postponed cluster](#postponed-auth--third-party-deferred) |
-| **Active (Open)**                                  | **39** (159 fixed total; 21 postponed)                                  |
-| **Total documented issues**                        | **236**                                                                 |
+| **Active (Open)**                                  | **105** app-review issues                                               |
+| **Total documented issues**                        | **300**                                                                 |
 | Review phases complete                             | 5 / 5 (core)                                                            |
-| **Overall review progress**                        | **~95%**                                                                |
+| **Overall review progress**                        | **~96%**                                                                |
 
 ## Methodology
 
@@ -22,7 +23,7 @@
 2. Pattern scan — `onTaskFailed` gaps, silent catch, unscoped localStorage, missing auth, webhooks
 3. Verify in code — every issue cites real file paths and behavior
 4. Flat files — `docs/issues/NNN-slug.md` + index in [app-review-issues.md](./app-review-issues.md)
-5. Dedup against 001–218 before filing new issues
+5. Dedup against existing issue files before filing new issues
 
 ## Area checklist
 
@@ -53,6 +54,11 @@
 | 23  | Library                         | ✅ Done    | 078, 086–087, 119–121                             | 2       |
 | 24  | Accessibility                   | ✅ Done    | 045, 208–215                                      | 1–3     |
 | 25  | Sentry cross-ref                | ✅ Done    | 187, 196, 197                                     | 3       |
+| 26  | Mobile responsive UI            | ✅ Done    | 276–281                                           | 15      |
+| 27  | Mobile responsive UI, batch 2   | ✅ Done    | 282–289                                           | 16      |
+| 28  | Mobile navigation follow-up     | ✅ Done    | 290–291                                           | 17      |
+| 29  | Mobile discovery batch          | ✅ Done    | 292–294                                           | 18      |
+| 30  | Mobile creation and overlays    | ✅ Done    | 295–300                                           | 19      |
 
 **Legend:** ✅ Done · 🔄 Partial · ⏳ Pending
 
@@ -106,6 +112,11 @@
 | 2026-07-09 | 11      | Fix low-risk batch 2 — help-center card a11y, data page i18n/a11y, daily check-in i18n, admin chart labels, issues index i18n                           | —          |
 | 2026-07-09 | 12      | Chat resilience review — send state, room-load races, WebSocket cleanup, stale-turn recovery, direct-send retry                                         | 219–223    |
 | 2026-07-13 | 13      | Nutrition system deep review — metabolic sim/chain, fueling plan, hydration, nutrition APIs, trigger tasks, meal-rec UI (fixed 238/239/240/242/243/244) | 238–258    |
+| 2026-07-14 | 15      | Live mobile UI audit at 390×844 and 360×800 across eight core authenticated pages                                                                       | 276–281    |
+| 2026-07-14 | 16      | Mobile audit continuation: recovery, recommendations, reports, settings/apps, events, feed, and workout details                                         | 282–289    |
+| 2026-07-14 | 17      | Mobile navigation follow-up: header pointer collision, sidebar hierarchy, active-route visibility, and fixed footer                                     | 290–291    |
+| 2026-07-14 | 18      | Mobile discovery batch: Library, Coaching, Help Center, sidebar search, Profile Settings, and all nested Settings routes                                | 292–294    |
+| 2026-07-14 | 19      | Mobile creation and transactional UI: onboarding consent, manual connections, Exercise editor, plan wizard, Plan Architect overlays and cancellation    | 295–300    |
 
 ## Postponed: auth & third-party (deferred 2026-07-08)
 
@@ -134,7 +145,7 @@ Skipped for now — auth/integration hardening may break ingest or requires prov
 | 070 | Yazio password plaintext storage     | Accepted for now; Yazio ingest works |
 | 158 | Developer GET leaks webhook secret   | OAuth developer portal batch         |
 
-## Next issue ID: 224
+## Next issue ID: 301
 
 ## Remaining optional work (~5%)
 
@@ -146,7 +157,7 @@ Skipped for now — auth/integration hardening may break ingest or requires prov
 
 ## Related docs
 
-- [app-review-issues.md](./app-review-issues.md) — Master index (039–218)
+- [app-review-issues.md](./app-review-issues.md) — Master index (039–300)
 - [issues.md](./issues.md) — Structure generation (001–038)
 - [issue-management.md](../04-guides/issue-management.md)
 - [SENTRY-ISSUES.md](../../SENTRY-ISSUES.md)

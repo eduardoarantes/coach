@@ -21,7 +21,7 @@
           </p>
           <ul class="space-y-1 text-sm text-gray-700 dark:text-gray-300">
             <li v-for="item in summary.usage" :key="item.operation">
-              {{ item.operation }} — {{ item.count }}
+              {{ translateOperation(item.operation) }} — {{ item.count }}
             </li>
           </ul>
         </div>
@@ -58,6 +58,25 @@
   const summary = ref<{
     usage: Array<{ operation: string; count: number }>
   } | null>(null)
+
+  function translateOperation(operation: string) {
+    switch (operation) {
+      case 'generate structured workout':
+        return t.value('trial_ended_usage_generate_structured_workout')
+      case 'chat skill router':
+        return t.value('trial_ended_usage_chat_skill_router')
+      case 'chat turn start':
+        return t.value('trial_ended_usage_chat_turn_start')
+      case 'chat':
+        return t.value('trial_ended_usage_chat')
+      case 'chat attempt':
+        return t.value('trial_ended_usage_chat_attempt')
+      case 'summarize-chat-memory':
+        return t.value('trial_ended_usage_summarize_chat_memory')
+      default:
+        return operation
+    }
+  }
 
   function dismissalKey() {
     const userId = userStore.user?.id

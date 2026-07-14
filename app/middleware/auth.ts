@@ -1,4 +1,10 @@
 export default defineNuxtRouteMiddleware(async (to, from) => {
+  const config = useRuntimeConfig()
+
+  if (config.public.authBypassEnabled) {
+    return
+  }
+
   const { status, data, getSession } = useAuth()
 
   if (typeof data.value === 'undefined') {

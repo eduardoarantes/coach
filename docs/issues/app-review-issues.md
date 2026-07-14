@@ -1,8 +1,8 @@
 # App Review — Issue Tracker
 
-Last reviewed: 2026-07-09 (app-review PRs #226–#237 merged; structure-gen PRs #214–#222 merged — see [issues.md](./issues.md))
+Last reviewed: 2026-07-14 (mobile onboarding, overlays, workout, and plan creation review — issues 295–300 filed)
 
-Documents **220 app-wide issues** (039–258) from systematic codebase review. Complements structure-generation tracker [issues.md](./issues.md) (001–038, **37 / 38 fixed**).
+Documents app-wide issues **039–300** from systematic codebase and live UI review. Complements structure-generation tracker [issues.md](./issues.md) (001–038, **37 / 38 fixed**).
 
 **Progress:** [REVIEW-PROGRESS.md](./REVIEW-PROGRESS.md) (~95% complete)
 
@@ -426,6 +426,102 @@ Systematic pass over `/coaching` pages, components, `coachingRepository`, `teamR
 6. **269 + 273 + 274** — auth consistency and input validation
 7. **270 + 271** — calendar/overview correctness
 8. **275** — polish when touching nearby files; **116** message-athlete context separately
+
+## Issues 276–281 (mobile UI review — 2026-07-14)
+
+Live responsive audit at 390×844 and 360×800 across `/dashboard`, `/activities`, `/workouts`, `/nutrition`, `/performance`, `/plan`, `/chat`, and `/profile/settings`.
+
+| ID                                                           | Title                                                     | Priority | Type               | Status |
+| ------------------------------------------------------------ | --------------------------------------------------------- | -------- | ------------------ | ------ |
+| [276](./276-mobile-navbar-actions-overlap-navigation.md)     | Mobile navbar actions overlap and hide primary navigation | High     | UI / UX            | Open   |
+| [277](./277-mobile-icon-actions-small-and-unnamed.md)        | Mobile icon actions are small and lack accessible names   | Medium   | Accessibility / UI | Open   |
+| [278](./278-profile-tabs-hide-destinations-on-mobile.md)     | Profile tabs hide most settings destinations on mobile    | Medium   | UI / UX            | Open   |
+| [279](./279-performance-highlight-filters-clipped-mobile.md) | Performance highlight filters are clipped on mobile       | Medium   | UI / UX            | Open   |
+| [280](./280-activities-mobile-cards-clip-actions.md)         | Activities mobile cards clip chart and reschedule actions | Medium   | UI / UX            | Open   |
+| [281](./281-quick-capture-obscures-mobile-content.md)        | Quick Capture obscures mobile page content                | Medium   | UI / UX            | Open   |
+
+### Suggested fix order (mobile)
+
+1. **276** — restore reliable access to the sidebar and all header actions
+2. **280 + 279** — remove clipped core page controls
+3. **281** — establish one shared mobile bottom inset for Quick Capture
+4. **277 + 278** — accessible targets and discoverable secondary navigation
+
+## Issues 282–289 (mobile UI continuation — 2026-07-14)
+
+Second live batch covering `/fitness`, `/recovery`, `/recommendations`, `/reports`, `/settings/apps`, `/events`, `/feed`, and representative completed/planned workout detail pages.
+
+| ID                                                      | Title                                                        | Priority | Type          | Status |
+| ------------------------------------------------------- | ------------------------------------------------------------ | -------- | ------------- | ------ |
+| [282](./282-recovery-head-unmount-breaks-navigation.md) | Leaving Recovery can break the next route in a loading state | High     | Bug           | Open   |
+| [283](./283-recommendation-cards-show-raw-markdown.md)  | Recommendation cards show raw Markdown syntax                | Medium   | UI / Content  | Open   |
+| [284](./284-recommendations-heading-clipped-mobile.md)  | Recommendations heading is clipped on mobile                 | Medium   | UI / UX       | Open   |
+| [285](./285-report-event-tables-hide-mobile-actions.md) | Reports and Events tables hide mobile actions                | High     | UI / UX       | Open   |
+| [286](./286-connected-apps-untranslated-keys.md)        | Connected Apps exposes untranslated localization keys        | Medium   | UI / i18n     | Open   |
+| [287](./287-settings-tabs-hide-destinations-mobile.md)  | Settings tabs hide destinations without an affordance        | Medium   | UI / UX       | Open   |
+| [288](./288-feed-document-title-duplicates-brand.md)    | Several pages duplicate the brand in document titles         | Low      | UI / Metadata | Open   |
+| [289](./289-sidebar-translation-hydration-mismatch.md)  | Sidebar translations regress to raw keys during hydration    | Medium   | Bug / i18n    | Open   |
+
+### Suggested fix order (mobile continuation)
+
+1. **282** — prevent Recovery navigation from breaking destination pages
+2. **285** — restore access to report/event status and actions
+3. **289 + 286** — resolve visible translation keys and hydration mismatches
+4. **283 + 284 + 287** — content rendering and responsive navigation polish
+5. **288** — metadata cleanup
+
+## Issues 290–291 (mobile navigation follow-up — 2026-07-14)
+
+Focused live audit of the dashboard header and open sidebar at 390×844, including pointer behavior, navigation scrolling, active-route visibility, and fixed footer space.
+
+| ID                                                           | Title                                                   | Priority | Type    | Status |
+| ------------------------------------------------------------ | ------------------------------------------------------- | -------- | ------- | ------ |
+| [290](./290-mobile-sidebar-hides-navigation-destinations.md) | Mobile sidebar hides navigation destinations below fold | High     | UI / UX | Open   |
+| [291](./291-mobile-sidebar-footer-crowds-navigation.md)      | Mobile sidebar footer crowds out core navigation        | Medium   | UI / UX | Open   |
+
+### Suggested fix order (mobile navigation)
+
+1. **276** — guarantee the hamburger hit area; move heart/gift and other secondary actions into mobile overflow
+2. **290** — group the long menu and reveal the active destination on open
+3. **291** — reduce the fixed footer to one compact account row
+4. **277 + 289** — improve touch targets and localized accessible sidebar text
+
+## Issues 292–294 (mobile discovery batch — 2026-07-14)
+
+Live 390×844 audit of Library Workouts/Exercises/Plans/Charts, Coaching overview/calendar/athletes/analytics/team, Help Center, sidebar search, Profile Settings, and every nested Settings route.
+
+| ID                                                      | Title                                                  | Priority | Type         | Status |
+| ------------------------------------------------------- | ------------------------------------------------------ | -------- | ------------ | ------ |
+| [292](./292-exercise-library-filters-hidden-mobile.md)  | Exercise Library hides movement filters on mobile      | Medium   | UI / UX      | Open   |
+| [293](./293-coaching-calendar-desktop-layout-mobile.md) | Coaching Calendar preserves a desktop layout on mobile | High     | UI / UX      | Open   |
+| [294](./294-help-center-duplicates-copy-prefixes.md)    | Help Center duplicates Try and Tip prefixes            | Low      | UI / Content | Open   |
+
+### Suggested fix order (mobile discovery batch)
+
+1. **293 + 276** — restore app navigation and a usable single-lane Coaching Calendar
+2. **292 + 287** — make hidden Library and Settings destinations visibly discoverable
+3. **277 + 289** — name undersized Library/Analytics actions and remove raw search keys
+4. **288 + 294** — metadata and Help Center copy cleanup
+
+## Issues 295–300 (mobile creation and transactional UI — 2026-07-14)
+
+Live 390×844 audit of first-time consent, manual integration setup, plan generation, Plan Architect, Exercise creation, and representative confirmation/editor overlays.
+
+| ID                                                                | Title                                                   | Priority | Type                  | Status |
+| ----------------------------------------------------------------- | ------------------------------------------------------- | -------- | --------------------- | ------ |
+| [295](./295-onboarding-consent-controls-unnamed-ambiguous.md)     | Onboarding consent controls are unnamed and ambiguous   | Medium   | Accessibility / UX    | Open   |
+| [296](./296-integration-credential-fields-unassociated-labels.md) | Integration credential fields have unassociated labels  | Medium   | Accessibility / UX    | Open   |
+| [297](./297-exercise-editor-dialog-unscrollable-mobile.md)        | Exercise editor dialog is unscrollable on mobile        | High     | UI / UX               | Open   |
+| [298](./298-plan-wizard-progress-opens-on-wrong-steps-mobile.md)  | Plan wizard progress opens on the wrong steps on mobile | Medium   | UI / UX               | Open   |
+| [299](./299-plan-goal-cards-not-keyboard-operable.md)             | Plan goal cards are not keyboard operable               | Medium   | Accessibility         | Open   |
+| [300](./300-plan-architect-new-workout-close-keeps-draft.md)      | Closing a new plan workout keeps an unintended draft    | Medium   | UX / Transactional UI | Open   |
+
+### Suggested fix order (mobile creation flows)
+
+1. **297** — make the Exercise editor scrollable and keep its actions reachable
+2. **300** — restore true cancel semantics for new Plan Architect workouts
+3. **298 + 299** — orient and make the plan wizard operable for every input method
+4. **295 + 296** — associate first-time and integration controls with clear labels
 
 ## Recommended fix order (app review)
 
