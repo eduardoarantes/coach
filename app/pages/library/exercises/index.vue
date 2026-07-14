@@ -57,8 +57,29 @@
           </div>
         </div>
 
+        <div class="flex flex-col gap-2 px-4 md:hidden sm:px-0">
+          <div class="flex items-center gap-2">
+            <UButton
+              icon="i-heroicons-adjustments-horizontal"
+              color="neutral"
+              variant="outline"
+              class="min-h-11"
+              :label="activeFilterCount ? `Filters (${activeFilterCount})` : 'Filters'"
+              aria-label="Open exercise filters"
+              @click="
+                () => {
+                  isMobileFilterOpen = true
+                }
+              "
+            />
+            <p v-if="mobileFilterSummary" class="min-w-0 flex-1 truncate text-xs text-muted">
+              {{ mobileFilterSummary }}
+            </p>
+          </div>
+        </div>
+
         <div
-          class="flex flex-col gap-3 rounded-none border-y border-default/70 bg-muted/10 px-4 py-4 md:flex-row md:flex-wrap md:items-center sm:rounded-2xl sm:border sm:p-4"
+          class="hidden flex-col gap-3 rounded-none border-y border-default/70 bg-muted/10 px-4 py-4 md:flex md:flex-row md:flex-wrap md:items-center sm:rounded-2xl sm:border sm:p-4"
         >
           <div class="flex items-center gap-1.5 overflow-x-auto no-scrollbar">
             <UButton
@@ -382,6 +403,126 @@
     </template>
   </UDashboardPanel>
 
+  <USlideover v-model:open="isMobileFilterOpen" side="bottom" class="md:hidden">
+    <template #content>
+      <div class="flex max-h-[85dvh] flex-col gap-6 overflow-y-auto p-4 pb-6">
+        <div class="flex items-center justify-between gap-3">
+          <h2 class="text-lg font-bold">Filter exercises</h2>
+          <UButton
+            color="neutral"
+            variant="ghost"
+            icon="i-heroicons-x-mark"
+            aria-label="Close filters"
+            @click="
+              () => {
+                isMobileFilterOpen = false
+              }
+            "
+          />
+        </div>
+
+        <div class="space-y-2">
+          <p class="text-[10px] font-black uppercase tracking-[0.16em] text-muted">
+            Movement pattern
+          </p>
+          <div class="flex flex-wrap gap-1.5">
+            <UButton
+              size="xs"
+              :color="selectedPattern === 'all' ? 'primary' : 'neutral'"
+              :variant="selectedPattern === 'all' ? 'solid' : 'ghost'"
+              icon="i-heroicons-squares-2x2"
+              @click="
+                () => {
+                  selectedPattern = 'all'
+                }
+              "
+            >
+              All Patterns
+            </UButton>
+            <UButton
+              v-for="option in movementPatternFilterOptions"
+              :key="option.value"
+              size="xs"
+              :color="selectedPattern === option.value ? 'primary' : 'neutral'"
+              :variant="selectedPattern === option.value ? 'solid' : 'ghost'"
+              @click="
+                () => {
+                  selectedPattern = option.value
+                }
+              "
+            >
+              {{ option.label }}
+            </UButton>
+          </div>
+        </div>
+
+        <div class="space-y-2">
+          <p class="text-[10px] font-black uppercase tracking-[0.16em] text-muted">Intent</p>
+          <div class="flex flex-wrap gap-1.5">
+            <UButton
+              v-for="option in intentFilterOptions"
+              :key="option.value"
+              size="xs"
+              :color="selectedIntent === option.value ? 'primary' : 'neutral'"
+              :variant="selectedIntent === option.value ? 'solid' : 'ghost'"
+              @click="
+                () => {
+                  selectedIntent = option.value
+                }
+              "
+            >
+              {{ option.label }}
+            </UButton>
+          </div>
+        </div>
+
+        <UFormField label="Muscle groups">
+          <USelectMenu
+            v-model="selectedMuscleGroups"
+            multiple
+            :items="muscleGroupOptions"
+            value-key="value"
+            placeholder="Filter muscle groups"
+            class="w-full"
+          />
+        </UFormField>
+
+        <UFormField label="Sort">
+          <USelect v-model="sortBy" :items="sortOptions" class="w-full" />
+        </UFormField>
+
+        <div class="flex gap-2 pt-2">
+          <UButton
+            color="neutral"
+            variant="outline"
+            class="min-h-11 flex-1"
+            @click="
+              () => {
+                selectedPattern = 'all'
+                selectedIntent = 'all'
+                selectedMuscleGroups = []
+                sortBy = 'updated'
+              }
+            "
+          >
+            Reset
+          </UButton>
+          <UButton
+            color="primary"
+            class="min-h-11 flex-1"
+            @click="
+              () => {
+                isMobileFilterOpen = false
+              }
+            "
+          >
+            Show results
+          </UButton>
+        </div>
+      </div>
+    </template>
+  </USlideover>
+
   <USlideover v-model:open="isPreviewOpen" side="right">
     <template #content>
       <div class="flex h-full flex-col">
@@ -559,10 +700,13 @@
     </template>
   </USlideover>
 
-  <UModal v-model:open="isEditorOpen" :ui="{ content: 'max-w-5xl' }">
+  <UModal
+    v-model:open="isEditorOpen"
+    :ui="{ content: 'w-[calc(100vw-1rem)] max-w-5xl max-h-[100dvh] overflow-hidden' }"
+  >
     <template #content>
-      <div class="flex flex-col">
-        <div class="border-b border-default/70 px-5 py-4">
+      <div class="flex max-h-[100dvh] min-h-0 flex-col overflow-hidden">
+        <div class="shrink-0 border-b border-default/70 px-5 py-4">
           <h2 class="text-lg font-semibold text-highlighted">
             {{ editorMode === 'create' ? 'Create Exercise' : 'Edit Exercise' }}
           </h2>
@@ -571,286 +715,310 @@
           </p>
         </div>
 
-        <div class="grid gap-5 px-5 py-5 lg:grid-cols-[minmax(0,1.6fr)_minmax(280px,0.95fr)]">
-          <div class="space-y-5">
-            <div class="grid gap-4 md:grid-cols-2">
-              <div class="md:col-span-2">
-                <label
-                  class="mb-2 block text-[10px] font-black uppercase tracking-[0.22em] text-muted"
-                >
-                  Exercise Title
-                </label>
-                <div class="flex items-center gap-2">
-                  <UInput v-model="form.title" placeholder="Back Squat" class="w-full" />
-                  <UButton
-                    color="neutral"
-                    variant="outline"
-                    size="sm"
-                    icon="i-tabler-brand-youtube"
-                    class="shrink-0 text-red-400 hover:text-red-500"
-                    :disabled="!form.title.trim()"
-                    @click="
-                      () => {
-                        void openYouTubeSearch(form.title)
-                      }
-                    "
-                  />
+        <div class="min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 py-5">
+          <div class="grid min-w-0 gap-5 lg:grid-cols-[minmax(0,1.6fr)_minmax(280px,0.95fr)]">
+            <div class="space-y-5">
+              <div class="grid gap-4 md:grid-cols-2">
+                <div class="md:col-span-2">
+                  <label
+                    class="mb-2 block text-[10px] font-black uppercase tracking-[0.22em] text-muted"
+                  >
+                    Exercise Title
+                  </label>
+                  <div class="flex items-center gap-2">
+                    <UInput v-model="form.title" placeholder="Back Squat" class="w-full" />
+                    <UButton
+                      color="neutral"
+                      variant="outline"
+                      size="sm"
+                      icon="i-tabler-brand-youtube"
+                      class="shrink-0 text-red-400 hover:text-red-500"
+                      :disabled="!form.title.trim()"
+                      @click="
+                        () => {
+                          void openYouTubeSearch(form.title)
+                        }
+                      "
+                    />
+                  </div>
                 </div>
-              </div>
 
-              <div class="md:col-span-2">
-                <label
-                  class="mb-2 block text-[10px] font-black uppercase tracking-[0.22em] text-muted"
-                >
-                  Aliases
-                </label>
-                <UInput
-                  v-model="form.aliasesText"
-                  placeholder="RDL, BB RDL, Romanian Dead Lift"
-                  class="w-full"
-                />
-                <p class="mt-2 text-xs text-muted">
-                  Optional alternate names used when matching generated exercises to your library.
-                </p>
-              </div>
+                <div class="md:col-span-2">
+                  <label
+                    class="mb-2 block text-[10px] font-black uppercase tracking-[0.22em] text-muted"
+                  >
+                    Aliases
+                  </label>
+                  <UInput
+                    v-model="form.aliasesText"
+                    placeholder="RDL, BB RDL, Romanian Dead Lift"
+                    class="w-full"
+                  />
+                  <p class="mt-2 text-xs text-muted">
+                    Optional alternate names used when matching generated exercises to your library.
+                  </p>
+                </div>
 
-              <div>
-                <label
-                  class="mb-2 block text-[10px] font-black uppercase tracking-[0.22em] text-muted"
-                >
-                  Movement Pattern
-                </label>
-                <USelect
-                  v-model="movementPatternSelectValue"
-                  :items="movementPatternOptions"
-                  class="w-full"
-                />
-              </div>
-
-              <div>
-                <label
-                  class="mb-2 block text-[10px] font-black uppercase tracking-[0.22em] text-muted"
-                >
-                  Intent
-                </label>
-                <USelect v-model="intentSelectValue" :items="intentOptions" class="w-full" />
-              </div>
-
-              <div class="md:col-span-2">
-                <label
-                  class="mb-2 block text-[10px] font-black uppercase tracking-[0.22em] text-muted"
-                >
-                  Target Muscle Groups
-                </label>
-                <USelectMenu
-                  v-model="form.targetMuscleGroups"
-                  multiple
-                  :items="muscleGroupOptions"
-                  value-key="value"
-                  placeholder="Select target muscle groups"
-                  class="w-full"
-                />
-              </div>
-            </div>
-
-            <div class="overflow-hidden rounded-2xl border border-default/70 bg-default shadow-sm">
-              <div
-                class="flex items-center justify-between gap-3 border-b border-default/70 px-4 py-3"
-              >
                 <div>
-                  <div class="text-sm font-semibold text-highlighted">Set Table</div>
-                  <div class="text-xs text-muted">
-                    Starter rows copied whenever this exercise is inserted.
-                  </div>
-                </div>
-                <div class="flex items-center gap-2">
-                  <UButton
-                    size="xs"
-                    color="neutral"
-                    variant="ghost"
-                    icon="i-heroicons-minus"
-                    :disabled="form.setRows.length <= 1"
-                    @click="
-                      () => {
-                        void removeSetRow()
-                      }
-                    "
+                  <label
+                    class="mb-2 block text-[10px] font-black uppercase tracking-[0.22em] text-muted"
+                  >
+                    Movement Pattern
+                  </label>
+                  <USelect
+                    v-model="movementPatternSelectValue"
+                    :items="movementPatternOptions"
+                    class="w-full"
                   />
-                  <div class="min-w-[56px] text-center text-sm font-semibold text-highlighted">
-                    {{ form.setRows.length }} set{{ form.setRows.length === 1 ? '' : 's' }}
-                  </div>
-                  <UButton
-                    size="xs"
-                    color="neutral"
-                    variant="ghost"
-                    icon="i-heroicons-plus"
-                    @click="
-                      () => {
-                        void addSetRow()
-                      }
-                    "
+                </div>
+
+                <div>
+                  <label
+                    class="mb-2 block text-[10px] font-black uppercase tracking-[0.22em] text-muted"
+                  >
+                    Intent
+                  </label>
+                  <USelect v-model="intentSelectValue" :items="intentOptions" class="w-full" />
+                </div>
+
+                <div class="md:col-span-2">
+                  <label
+                    class="mb-2 block text-[10px] font-black uppercase tracking-[0.22em] text-muted"
+                  >
+                    Target Muscle Groups
+                  </label>
+                  <USelectMenu
+                    v-model="form.targetMuscleGroups"
+                    multiple
+                    :items="muscleGroupOptions"
+                    value-key="value"
+                    placeholder="Select target muscle groups"
+                    class="w-full"
                   />
                 </div>
               </div>
 
-              <div class="overflow-x-auto">
+              <div
+                class="overflow-hidden rounded-2xl border border-default/70 bg-default shadow-sm"
+              >
                 <div
-                  class="grid min-w-[520px] text-[10px] font-black uppercase tracking-[0.24em] text-muted"
-                  :style="gridTemplateColumns(form)"
+                  class="flex items-center justify-between gap-3 border-b border-default/70 px-4 py-3"
                 >
-                  <div class="border-b border-default/70 px-3 py-3">Set</div>
-                  <div v-if="form.loadMode !== 'none'" class="border-b border-default/70 px-3 py-3">
-                    {{ loadModeLabel(form.loadMode) }}
+                  <div>
+                    <div class="text-sm font-semibold text-highlighted">Set Table</div>
+                    <div class="text-xs text-muted">
+                      Starter rows copied whenever this exercise is inserted.
+                    </div>
                   </div>
-                  <div class="border-b border-default/70 px-3 py-3">
-                    {{ prescriptionColumnLabel(form.prescriptionMode) }}
-                  </div>
-                  <div v-if="form.showRestColumn" class="border-b border-default/70 px-3 py-3">
-                    Rest
+                  <div class="flex items-center gap-2">
+                    <UButton
+                      size="xs"
+                      color="neutral"
+                      variant="ghost"
+                      icon="i-heroicons-minus"
+                      :disabled="form.setRows.length <= 1"
+                      @click="
+                        () => {
+                          void removeSetRow()
+                        }
+                      "
+                    />
+                    <div class="min-w-[56px] text-center text-sm font-semibold text-highlighted">
+                      {{ form.setRows.length }} set{{ form.setRows.length === 1 ? '' : 's' }}
+                    </div>
+                    <UButton
+                      size="xs"
+                      color="neutral"
+                      variant="ghost"
+                      icon="i-heroicons-plus"
+                      @click="
+                        () => {
+                          void addSetRow()
+                        }
+                      "
+                    />
                   </div>
                 </div>
 
-                <div
-                  v-for="row in form.setRows"
-                  :key="row.id"
-                  class="grid min-w-[520px]"
-                  :style="gridTemplateColumns(form)"
-                >
-                  <div class="border-b border-default/50 px-3 py-3 font-semibold text-highlighted">
-                    {{ row.index }}
+                <div class="overflow-x-auto">
+                  <div
+                    class="grid min-w-0 text-[10px] font-black uppercase tracking-[0.24em] text-muted sm:min-w-[520px]"
+                    :style="gridTemplateColumns(form)"
+                  >
+                    <div class="border-b border-default/70 px-3 py-3">Set</div>
+                    <div
+                      v-if="form.loadMode !== 'none'"
+                      class="border-b border-default/70 px-3 py-3"
+                    >
+                      {{ loadModeLabel(form.loadMode) }}
+                    </div>
+                    <div class="border-b border-default/70 px-3 py-3">
+                      {{ prescriptionColumnLabel(form.prescriptionMode) }}
+                    </div>
+                    <div v-if="form.showRestColumn" class="border-b border-default/70 px-3 py-3">
+                      Rest
+                    </div>
                   </div>
-                  <div v-if="form.loadMode !== 'none'" class="border-b border-default/50 px-3 py-2">
-                    <UInput
-                      v-model="row.loadValue"
-                      :placeholder="loadModePlaceholder(form.loadMode)"
-                      class="w-full"
-                    />
-                  </div>
-                  <div class="border-b border-default/50 px-3 py-2">
-                    <UInput
-                      v-model="row.value"
-                      :placeholder="prescriptionPlaceholder(form.prescriptionMode)"
-                      class="w-full"
-                    />
-                  </div>
-                  <div v-if="form.showRestColumn" class="border-b border-default/50 px-3 py-2">
-                    <UInput v-model="row.restOverride" placeholder="e.g. 60s" class="w-full" />
+
+                  <div
+                    v-for="row in form.setRows"
+                    :key="row.id"
+                    class="grid min-w-0 sm:min-w-[520px]"
+                    :style="gridTemplateColumns(form)"
+                  >
+                    <div
+                      class="border-b border-default/50 px-3 py-3 font-semibold text-highlighted"
+                    >
+                      {{ row.index }}
+                    </div>
+                    <div
+                      v-if="form.loadMode !== 'none'"
+                      class="border-b border-default/50 px-3 py-2"
+                    >
+                      <UInput
+                        v-model="row.loadValue"
+                        :placeholder="loadModePlaceholder(form.loadMode)"
+                        class="w-full"
+                      />
+                    </div>
+                    <div class="border-b border-default/50 px-3 py-2">
+                      <UInput
+                        v-model="row.value"
+                        :placeholder="prescriptionPlaceholder(form.prescriptionMode)"
+                        class="w-full"
+                      />
+                    </div>
+                    <div v-if="form.showRestColumn" class="border-b border-default/50 px-3 py-2">
+                      <UInput v-model="row.restOverride" placeholder="e.g. 60s" class="w-full" />
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
-          </div>
 
-          <div class="space-y-4">
-            <UCard :ui="{ body: 'space-y-4 p-4' }">
-              <div>
-                <div class="text-sm font-semibold text-highlighted">Set Table Options</div>
-                <div class="text-xs text-muted">
-                  Choose which metrics the saved exercise should track by default.
+            <div class="space-y-4">
+              <UCard :ui="{ body: 'space-y-4 p-4' }">
+                <div>
+                  <div class="text-sm font-semibold text-highlighted">Set Table Options</div>
+                  <div class="text-xs text-muted">
+                    Choose which metrics the saved exercise should track by default.
+                  </div>
                 </div>
-              </div>
 
-              <div v-if="isCoachingMode && editorMode === 'create'" class="space-y-2">
-                <label class="block text-[10px] font-black uppercase tracking-[0.22em] text-muted">
-                  Library Owner
-                </label>
-                <USelect v-model="form.ownerScope" :items="createScopeOptions" class="w-full" />
-              </div>
-
-              <div class="space-y-2">
-                <label class="block text-[10px] font-black uppercase tracking-[0.22em] text-muted">
-                  Primary Metric
-                </label>
-                <USelect
-                  :model-value="getParameterTokens(form)[0]"
-                  :items="primaryParameterOptions"
-                  class="w-full"
-                  @update:model-value="updateParameter(0, $event)"
-                />
-              </div>
-
-              <div
-                v-for="(token, index) in getParameterTokens(form).slice(1)"
-                :key="`${token}-${index}`"
-                class="space-y-2"
-              >
-                <div class="flex items-center justify-between gap-2">
+                <div v-if="isCoachingMode && editorMode === 'create'" class="space-y-2">
                   <label
                     class="block text-[10px] font-black uppercase tracking-[0.22em] text-muted"
                   >
-                    Additional Metric
+                    Library Owner
                   </label>
-                  <UButton
-                    color="neutral"
-                    variant="ghost"
-                    size="xs"
-                    icon="i-heroicons-x-mark"
-                    @click="
-                      () => {
-                        void removeParameter(index + 1)
-                      }
-                    "
+                  <USelect v-model="form.ownerScope" :items="createScopeOptions" class="w-full" />
+                </div>
+
+                <div class="space-y-2">
+                  <label
+                    class="block text-[10px] font-black uppercase tracking-[0.22em] text-muted"
+                  >
+                    Primary Metric
+                  </label>
+                  <USelect
+                    :model-value="getParameterTokens(form)[0]"
+                    :items="primaryParameterOptions"
+                    class="w-full"
+                    @update:model-value="updateParameter(0, $event)"
                   />
                 </div>
-                <USelect
-                  :model-value="token"
-                  :items="secondaryParameterOptions(form, index + 1)"
-                  class="w-full"
-                  @update:model-value="updateParameter(index + 1, $event)"
-                />
-              </div>
 
-              <UButton
-                size="sm"
-                color="neutral"
-                variant="soft"
-                icon="i-heroicons-plus"
-                :disabled="!canAddParameter(form)"
-                @click="
-                  () => {
-                    void addParameter()
-                  }
-                "
-              >
-                Add Metric
-              </UButton>
+                <div
+                  v-for="(token, index) in getParameterTokens(form).slice(1)"
+                  :key="`${token}-${index}`"
+                  class="space-y-2"
+                >
+                  <div class="flex items-center justify-between gap-2">
+                    <label
+                      class="block text-[10px] font-black uppercase tracking-[0.22em] text-muted"
+                    >
+                      Additional Metric
+                    </label>
+                    <UButton
+                      color="neutral"
+                      variant="ghost"
+                      size="xs"
+                      icon="i-heroicons-x-mark"
+                      @click="
+                        () => {
+                          void removeParameter(index + 1)
+                        }
+                      "
+                    />
+                  </div>
+                  <USelect
+                    :model-value="token"
+                    :items="secondaryParameterOptions(form, index + 1)"
+                    class="w-full"
+                    @update:model-value="updateParameter(index + 1, $event)"
+                  />
+                </div>
 
-              <div class="space-y-2">
-                <label class="block text-[10px] font-black uppercase tracking-[0.22em] text-muted">
-                  Default Rest
-                </label>
-                <UInput v-model="form.defaultRest" placeholder="e.g. 90s" class="w-full" />
-              </div>
-            </UCard>
+                <UButton
+                  size="sm"
+                  color="neutral"
+                  variant="soft"
+                  icon="i-heroicons-plus"
+                  :disabled="!canAddParameter(form)"
+                  @click="
+                    () => {
+                      void addParameter()
+                    }
+                  "
+                >
+                  Add Metric
+                </UButton>
 
-            <UCard :ui="{ body: 'space-y-4 p-4' }">
-              <div class="space-y-2">
-                <label class="block text-[10px] font-black uppercase tracking-[0.22em] text-muted">
-                  Video URL
-                </label>
-                <UInput
-                  v-model="form.videoUrl"
-                  placeholder="https://www.youtube.com/watch?v=..."
-                  class="w-full"
-                />
-              </div>
+                <div class="space-y-2">
+                  <label
+                    class="block text-[10px] font-black uppercase tracking-[0.22em] text-muted"
+                  >
+                    Default Rest
+                  </label>
+                  <UInput v-model="form.defaultRest" placeholder="e.g. 90s" class="w-full" />
+                </div>
+              </UCard>
 
-              <div class="space-y-2">
-                <label class="block text-[10px] font-black uppercase tracking-[0.22em] text-muted">
-                  Notes
-                </label>
-                <UTextarea
-                  v-model="form.notes"
-                  :rows="6"
-                  placeholder="Coaching notes, setup cues, regressions, or special reminders."
-                  class="w-full"
-                />
-              </div>
-            </UCard>
+              <UCard :ui="{ body: 'space-y-4 p-4' }">
+                <div class="space-y-2">
+                  <label
+                    class="block text-[10px] font-black uppercase tracking-[0.22em] text-muted"
+                  >
+                    Video URL
+                  </label>
+                  <UInput
+                    v-model="form.videoUrl"
+                    placeholder="https://www.youtube.com/watch?v=..."
+                    class="w-full"
+                  />
+                </div>
+
+                <div class="space-y-2">
+                  <label
+                    class="block text-[10px] font-black uppercase tracking-[0.22em] text-muted"
+                  >
+                    Notes
+                  </label>
+                  <UTextarea
+                    v-model="form.notes"
+                    :rows="6"
+                    placeholder="Coaching notes, setup cues, regressions, or special reminders."
+                    class="w-full"
+                  />
+                </div>
+              </UCard>
+            </div>
           </div>
         </div>
 
-        <div class="flex items-center justify-end gap-2 border-t border-default/70 px-5 py-4">
+        <div
+          class="sticky bottom-0 flex shrink-0 items-center justify-end gap-2 border-t border-default/70 bg-default px-5 py-4"
+        >
           <UButton
             color="neutral"
             variant="ghost"
@@ -899,6 +1067,10 @@
     middleware: ['auth']
   })
 
+  useHead({
+    title: 'Exercises'
+  })
+
   type EditableLibraryExercise = {
     title: string
     aliasesText: string
@@ -934,6 +1106,7 @@
   const selectedIntent = ref('all')
   const selectedMuscleGroups = ref<string[]>([])
   const sortBy = ref('updated')
+  const isMobileFilterOpen = ref(false)
   const isPreviewOpen = ref(false)
   const isEditorOpen = ref(false)
   const saving = ref(false)
@@ -1015,6 +1188,34 @@
     { label: 'All Intents', value: 'all' },
     ...intentOptions.filter((option) => option.value !== EMPTY_SELECT_VALUE)
   ]
+
+  const activeFilterCount = computed(() => {
+    let count = 0
+    if (selectedPattern.value !== 'all') count++
+    if (selectedIntent.value !== 'all') count++
+    if (selectedMuscleGroups.value.length > 0) count++
+    return count
+  })
+
+  const mobileFilterSummary = computed(() => {
+    const parts: string[] = []
+    if (selectedPattern.value !== 'all') {
+      parts.push(
+        movementPatternFilterOptions.find((option) => option.value === selectedPattern.value)
+          ?.label || selectedPattern.value
+      )
+    }
+    if (selectedIntent.value !== 'all') {
+      parts.push(
+        intentFilterOptions.find((option) => option.value === selectedIntent.value)?.label ||
+          selectedIntent.value
+      )
+    }
+    if (selectedMuscleGroups.value.length > 0) {
+      parts.push(`${selectedMuscleGroups.value.length} muscle groups`)
+    }
+    return parts.join(' · ')
+  })
 
   const prescriptionModeOptions: Array<{ label: string; value: StrengthPrescriptionMode }> = [
     { label: 'Reps', value: 'reps' },
