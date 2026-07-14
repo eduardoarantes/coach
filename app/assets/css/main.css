@@ -28,6 +28,16 @@
   }
 }
 
+@utility quick-capture-inset {
+  padding-bottom: calc(5.5rem + env(safe-area-inset-bottom, 0px));
+}
+
+@media (min-width: 640px) {
+  .quick-capture-inset {
+    padding-bottom: 0;
+  }
+}
+
 body {
   /* @apply bg-gray-50 dark:bg-gray-900; */
 }
@@ -73,7 +83,7 @@ a[href],
 }
 
 /* First strong element in message (no top margin) */
-.vac-text-message-content> :first-child strong:first-child,
+.vac-text-message-content > :first-child strong:first-child,
 .vac-text-message-content p:first-child strong:first-child {
   margin-top: 0;
 }
@@ -121,7 +131,7 @@ a[href],
 }
 
 /* Sub-content in bullets (after strong tags) */
-.vac-text-message-content li strong+* {
+.vac-text-message-content li strong + * {
   margin-top: 0.25em;
 }
 
@@ -161,7 +171,7 @@ a[href],
 }
 
 /* Improve spacing between consecutive AI messages */
-.vac-message-box-me+.vac-message-box-me {
+.vac-message-box-me + .vac-message-box-me {
   margin-top: 8px !important;
 }
 
@@ -250,10 +260,14 @@ a[href],
   background: rgba(0, 220, 130, 0.12);
 }
 
-
 /* Athletic / Performance Typography Utility */
 .font-athletic {
-  font-family: 'Inter var', 'Inter', system-ui, -apple-system, sans-serif;
+  font-family:
+    'Inter var',
+    'Inter',
+    system-ui,
+    -apple-system,
+    sans-serif;
   font-stretch: condensed;
   letter-spacing: -0.05em;
   text-transform: uppercase;
@@ -265,7 +279,7 @@ a[href],
 }
 
 .grain-overlay::before {
-  content: "";
+  content: '';
   position: absolute;
   inset: 0;
   width: 100%;
@@ -291,15 +305,25 @@ a[href],
 }
 
 .floating-card-base::after {
-  content: "";
+  content: '';
   position: absolute;
   inset: 0;
   pointer-events: none;
   border-radius: inherit;
   border: 1px solid transparent;
-  background: linear-gradient(to bottom right, rgba(255, 255, 255, 0.15), transparent 40%, rgba(34, 197, 94, 0.12)) border-box;
-  -webkit-mask: linear-gradient(#fff 0 0) padding-box, linear-gradient(#fff 0 0);
-  mask: linear-gradient(#fff 0 0) padding-box, linear-gradient(#fff 0 0);
+  background: linear-gradient(
+      to bottom right,
+      rgba(255, 255, 255, 0.15),
+      transparent 40%,
+      rgba(34, 197, 94, 0.12)
+    )
+    border-box;
+  -webkit-mask:
+    linear-gradient(#fff 0 0) padding-box,
+    linear-gradient(#fff 0 0);
+  mask:
+    linear-gradient(#fff 0 0) padding-box,
+    linear-gradient(#fff 0 0);
   -webkit-mask-composite: destination-out;
   mask-composite: exclude;
   opacity: 0.8;
