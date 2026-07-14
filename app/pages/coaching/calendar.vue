@@ -9,12 +9,13 @@
           <CoachingNavbarLinks />
         </template>
         <template #right>
-          <div class="flex flex-wrap items-center justify-end gap-2">
+          <LayoutPageNavbarActions :overflow-items="calendarOverflowItems">
             <UButton
               icon="i-heroicons-rectangle-group"
               color="neutral"
               variant="outline"
               size="sm"
+              class="hidden lg:inline-flex"
               @click="
                 () => {
                   railCollapsed = !railCollapsed
@@ -32,6 +33,7 @@
               color="neutral"
               variant="outline"
               size="sm"
+              class="hidden lg:inline-flex"
               @click="
                 () => {
                   void toggleLibraryPanel()
@@ -49,6 +51,7 @@
               color="neutral"
               variant="outline"
               size="sm"
+              class="hidden lg:inline-flex"
               @click="
                 () => {
                   void toggleDrawer()
@@ -61,7 +64,23 @@
                   : tr('calendar_show_drawer', 'Show drawer')
               }}
             </UButton>
-          </div>
+
+            <template #mobile>
+              <UButton
+                icon="i-heroicons-users"
+                color="neutral"
+                variant="outline"
+                size="sm"
+                class="size-11 min-h-11 min-w-11"
+                :aria-label="tr('calendar_roster', 'Roster')"
+                @click="
+                  () => {
+                    openMobilePanel('roster')
+                  }
+                "
+              />
+            </template>
+          </LayoutPageNavbarActions>
         </template>
       </UDashboardNavbar>
     </template>
@@ -69,7 +88,7 @@
     <template #body>
       <div class="flex h-full min-h-0">
         <aside
-          class="overflow-hidden border-r border-default bg-default/80 transition-all duration-200"
+          class="hidden overflow-hidden border-r border-default bg-default/80 transition-all duration-200 lg:block"
           :class="railCollapsed ? 'w-0 border-r-0 opacity-0' : 'w-80 opacity-100'"
         >
           <div class="p-3 space-y-3 h-full flex flex-col overflow-hidden">
@@ -213,13 +232,15 @@
         </aside>
 
         <div class="flex min-h-0 flex-1 flex-col">
-          <div class="border-b border-default/70 px-4 py-3">
-            <div class="flex flex-wrap items-center justify-between gap-3">
-              <div class="flex items-center gap-2">
+          <div class="border-b border-default/70 px-3 py-3 sm:px-4">
+            <div class="flex flex-wrap items-center justify-between gap-2 sm:gap-3">
+              <div class="flex min-w-0 flex-1 items-center gap-1 sm:gap-2">
                 <UButton
                   icon="i-heroicons-chevron-left"
                   color="neutral"
                   variant="soft"
+                  class="size-11 min-h-11 min-w-11 shrink-0"
+                  :aria-label="tr('calendar_previous', 'Previous')"
                   @click="
                     () => {
                       void movePanel('primary', -1)
@@ -230,6 +251,8 @@
                   icon="i-heroicons-chevron-right"
                   color="neutral"
                   variant="soft"
+                  class="size-11 min-h-11 min-w-11 shrink-0"
+                  :aria-label="tr('calendar_next', 'Next')"
                   @click="
                     () => {
                       void movePanel('primary', 1)
@@ -239,6 +262,8 @@
                 <UButton
                   color="neutral"
                   variant="ghost"
+                  size="sm"
+                  class="shrink-0"
                   @click="
                     () => {
                       void goToToday()
@@ -246,12 +271,21 @@
                   "
                   >Today</UButton
                 >
-                <span class="text-sm font-bold text-highlighted">{{ toolbarLabel }}</span>
+                <span class="truncate text-sm font-bold text-highlighted">{{ toolbarLabel }}</span>
               </div>
 
-              <div class="flex flex-wrap items-center justify-end gap-2">
+              <div class="flex shrink-0 items-center gap-2">
+                <USelect
+                  v-model="viewMode"
+                  :items="calendarViewOptions"
+                  size="sm"
+                  class="w-36 lg:hidden"
+                  color="neutral"
+                  variant="outline"
+                />
+
                 <div
-                  class="inline-flex items-center rounded-xl border border-default bg-muted/30 p-1"
+                  class="hidden items-center rounded-xl border border-default bg-muted/30 p-1 lg:inline-flex"
                 >
                   <UButton
                     size="sm"
@@ -288,6 +322,7 @@
                   color="neutral"
                   variant="outline"
                   size="sm"
+                  class="hidden lg:inline-flex"
                   @click="
                     () => {
                       void toggleSplitView()
@@ -303,6 +338,7 @@
                   color="neutral"
                   variant="outline"
                   size="sm"
+                  class="hidden lg:inline-flex"
                   @click="
                     () => {
                       isNavigationSynced = !isNavigationSynced
@@ -318,6 +354,7 @@
                   color="neutral"
                   variant="ghost"
                   size="sm"
+                  class="hidden lg:inline-flex"
                   @click="
                     () => {
                       void swapAthletes()
@@ -354,7 +391,7 @@
               />
 
               <CoachCalendarPanel
-                v-if="isSplitView"
+                v-if="isSplitView && isDesktopCalendar"
                 :athlete="secondaryAthlete"
                 :athlete-options="comparisonAthletePickerOptions"
                 :selected-athlete-id="secondaryAthleteId"
@@ -516,12 +553,137 @@
       </UModal>
 
       <WorkoutsWorkoutComparisonDock />
+
+      <USlideover
+        v-model:open="mobilePanelOpen"
+        :title="mobilePanelTitle"
+        side="left"
+        :ui="{ content: 'max-w-[min(100vw,24rem)]' }"
+      >
+        <template #content>
+          <div class="flex h-full min-h-0 flex-col overflow-hidden p-3">
+            <div
+              class="mb-3 inline-flex w-full shrink-0 items-center rounded-2xl border border-default bg-muted/20 p-1"
+            >
+              <UButton
+                size="sm"
+                :color="leftRailTab === 'roster' ? 'primary' : 'neutral'"
+                :variant="leftRailTab === 'roster' ? 'soft' : 'ghost'"
+                class="flex-1 rounded-xl"
+                @click="
+                  () => {
+                    leftRailTab = 'roster'
+                  }
+                "
+              >
+                {{ tr('calendar_roster', 'Roster') }}
+              </UButton>
+              <UButton
+                size="sm"
+                :color="leftRailTab === 'library' ? 'primary' : 'neutral'"
+                :variant="leftRailTab === 'library' ? 'soft' : 'ghost'"
+                class="flex-1 rounded-xl"
+                @click="
+                  () => {
+                    leftRailTab = 'library'
+                  }
+                "
+              >
+                {{ tr('calendar_workouts', 'Workouts') }}
+              </UButton>
+              <UButton
+                size="sm"
+                :color="leftRailTab === 'plans' ? 'primary' : 'neutral'"
+                :variant="leftRailTab === 'plans' ? 'soft' : 'ghost'"
+                class="flex-1 rounded-xl"
+                @click="
+                  () => {
+                    leftRailTab = 'plans'
+                  }
+                "
+              >
+                {{ tr('calendar_plans', 'Plans') }}
+              </UButton>
+            </div>
+
+            <div
+              v-if="leftRailTab === 'roster'"
+              class="flex min-h-0 flex-1 flex-col gap-3 overflow-hidden"
+            >
+              <UInput
+                v-model="athleteSearch"
+                icon="i-heroicons-magnifying-glass"
+                placeholder="Search athletes"
+                size="sm"
+              />
+              <div class="min-h-0 flex-1 space-y-2 overflow-y-auto pr-1">
+                <button
+                  v-for="rel in filteredAthletes"
+                  :key="rel.athleteId"
+                  class="w-full rounded-2xl border p-3 text-left transition hover:border-primary/50"
+                  :class="
+                    (primaryAthleteId && primaryAthleteId === rel.athleteId) ||
+                    (secondaryAthleteId && secondaryAthleteId === rel.athleteId)
+                      ? 'border-primary/60 bg-primary/5'
+                      : 'border-default/70 bg-default'
+                  "
+                  @click="
+                    () => {
+                      void setPrimaryAthlete(rel.athleteId)
+                      mobilePanelOpen = false
+                    }
+                  "
+                >
+                  <div class="flex items-center gap-3">
+                    <UAvatar :src="rel.athlete.image" :alt="rel.athlete.name" size="md" />
+                    <div class="min-w-0 flex-1">
+                      <div class="truncate font-bold text-highlighted">{{ rel.athlete.name }}</div>
+                      <div class="text-xs text-muted">{{ rel.athlete.email }}</div>
+                    </div>
+                  </div>
+                </button>
+              </div>
+            </div>
+
+            <div v-else-if="leftRailTab === 'library'" class="min-h-0 flex-1 overflow-hidden">
+              <PlanArchitectWorkoutDrawer
+                surface="rail"
+                :open="true"
+                :templates="workoutTemplates || []"
+                :loading="workoutTemplateStatus === 'pending'"
+                :error="workoutTemplateStatus === 'error'"
+                :library-source="workoutLibraryScope"
+                :is-coaching-mode="true"
+                allow-calendar-target
+                :schedule-targets="workoutDrawerScheduleTargets"
+                @created="refreshWorkoutTemplates"
+                @update:library-source="workoutLibraryScope = $event"
+                @open-calendar-picker="openTemplateCalendarPicker"
+                @schedule-template="onQuickScheduleTemplate"
+              />
+            </div>
+
+            <div v-else class="min-h-0 flex-1 overflow-hidden">
+              <CoachingPlanSidebar
+                :templates="planTemplates || []"
+                :loading="planTemplateStatus === 'pending'"
+                :library-scope="planLibraryScope"
+                :schedule-targets="workoutDrawerScheduleTargets"
+                @schedule-template="onQuickScheduleTemplate"
+                @update:library-scope="planLibraryScope = $event"
+                @refresh="refreshPlanTemplates"
+              />
+            </div>
+          </div>
+        </template>
+      </USlideover>
     </template>
   </UDashboardPanel>
 </template>
 
 <script setup lang="ts">
   import { CalendarDate, getLocalTimeZone } from '@internationalized/date'
+  import { useMediaQuery } from '@vueuse/core'
   import PlanArchitectWorkoutDrawer from '~/components/plans/PlanArchitectWorkoutDrawer.vue'
   import CoachingPlanSidebar from '~/components/coaching/CoachingPlanSidebar.vue'
   import CoachCalendarPanel from '~/components/coaching/CoachCalendarPanel.vue'
@@ -534,12 +696,19 @@
   const { formatDateUTC } = useFormat()
   const toast = useToast()
   const { tr } = useCoachingI18n()
+
+  useHead({
+    title: computed(() => tr('calendar_page_title', 'Coaching Calendar'))
+  })
+
   const route = useRoute()
   const comparisonStore = useWorkoutComparisonStore()
   const athleteSearch = ref('')
-  const railCollapsed = ref(false)
+  const railCollapsed = ref(true)
   const leftRailTab = ref<'roster' | 'library' | 'plans'>('roster')
   const isLibraryDockedLeft = ref(true)
+  const mobilePanelOpen = ref(false)
+  const isDesktopCalendar = useMediaQuery('(min-width: 1024px)')
   const showTemplateCalendarPicker = ref(false)
   const calendarPickerTemplate = ref<any | null>(null)
   const calendarPickerAthleteId = ref<string | null>(null)
@@ -684,11 +853,59 @@
   )
   const calendarGridClass = computed(() => {
     if (viewMode.value === 'week-board') return 'grid-cols-1 content-start'
+    if (!isDesktopCalendar.value) return 'h-full grid-cols-1'
     return isSplitView.value ? 'h-full grid-cols-2' : 'h-full grid-cols-1'
   })
   const showAddLaneButton = computed(
-    () => viewMode.value === 'week-board' && !isSplitView.value && athletes.value.length > 1
+    () =>
+      isDesktopCalendar.value &&
+      viewMode.value === 'week-board' &&
+      !isSplitView.value &&
+      athletes.value.length > 1
   )
+
+  const calendarViewOptions = computed(() => [
+    { label: tr('calendar_view_week', 'Week board'), value: 'week-board' },
+    { label: tr('calendar_view_month', 'Month grid'), value: 'month-grid' }
+  ])
+
+  const mobilePanelTitle = computed(() => {
+    if (leftRailTab.value === 'library') return tr('calendar_workouts', 'Workouts')
+    if (leftRailTab.value === 'plans') return tr('calendar_plans', 'Plans')
+    return tr('calendar_roster', 'Roster')
+  })
+
+  const calendarOverflowItems = computed(() => [
+    [
+      {
+        label: tr('calendar_roster', 'Roster'),
+        icon: 'i-heroicons-users',
+        onSelect: () => openMobilePanel('roster')
+      },
+      {
+        label: tr('calendar_workouts', 'Workouts'),
+        icon: 'i-heroicons-rectangle-group',
+        onSelect: () => openMobilePanel('library')
+      },
+      {
+        label: tr('calendar_plans', 'Plans'),
+        icon: 'i-heroicons-scroll-text',
+        onSelect: () => openMobilePanel('plans')
+      },
+      {
+        label: isWorkoutDrawerVisible.value
+          ? tr('calendar_hide_drawer', 'Hide drawer')
+          : tr('calendar_show_drawer', 'Show drawer'),
+        icon: 'i-heroicons-rectangle-stack',
+        onSelect: () => toggleDrawer()
+      }
+    ]
+  ])
+
+  function openMobilePanel(tab: 'roster' | 'library' | 'plans') {
+    leftRailTab.value = tab
+    mobilePanelOpen.value = true
+  }
 
   const toolbarLabel = computed(() => {
     return viewMode.value === 'week-board'
@@ -1123,8 +1340,18 @@
     secondaryAthleteId.value = fallback
   })
 
+  watch(isDesktopCalendar, (desktop) => {
+    if (desktop) return
+    railCollapsed.value = true
+    isWorkoutDrawerVisible.value = false
+  })
+
   onMounted(() => {
     goToToday()
     void fetchAthletes()
+    if (!isDesktopCalendar.value) {
+      railCollapsed.value = true
+      isWorkoutDrawerVisible.value = false
+    }
   })
 </script>
