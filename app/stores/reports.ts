@@ -110,13 +110,12 @@ export const useReportStore = defineStore('report', () => {
       generating.value = false
 
       if (error.statusCode === 429 || error.status === 429) {
-        const upgradeModal = useUpgradeModal()
-        upgradeModal.show({
+        const { showQuotaPaywall } = useQuotaPaywall()
+        await showQuotaPaywall({
+          operation: 'custom_report_generation',
           title: 'Usage Quota Reached',
           featureTitle: 'Custom Report Generation',
-          featureDescription:
-            'You have reached the usage quota for generating AI reports on your current plan. Upgrade to Supporter or Pro for significantly higher quotas.',
-          recommendedTier: 'supporter'
+          reason: 'quota_exceeded'
         })
         throw error
       }

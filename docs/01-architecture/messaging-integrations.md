@@ -172,7 +172,7 @@ To leverage the social nature of these platforms:
 
 - **Command:** `/invite`
 - **Action:** Bot generates a unique referral link (e.g., `t.me/CoachWattzBot?start=ref_<userId>`).
-- **Response:** "Invite a friend to train smarter! Share this link: [Link]. When they join, they'll get a 7-day extended trial."
+- **Response:** "Invite a friend to train smarter! Share this link: [Link]. When they join, they'll get a 14-day extended trial."
 - **Flow:**
   1.  User A sends link to User B.
   2.  User B clicks link -> Bot sends "Welcome! User A invited you."

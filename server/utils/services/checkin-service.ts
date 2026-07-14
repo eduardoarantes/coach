@@ -25,7 +25,8 @@ export async function triggerDailyCheckinIfNeeded(userId: string) {
     await generateDailyCheckinTask.trigger(
       {
         userId,
-        date: today
+        date: today,
+        source: 'auto'
       },
       {
         concurrencyKey: userId,

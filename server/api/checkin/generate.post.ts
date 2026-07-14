@@ -43,7 +43,8 @@ export default defineEventHandler(async (event) => {
     {
       userId,
       date: today,
-      checkinId: checkin?.id // Pass ID if it exists, otherwise task handles it
+      checkinId: checkin?.id, // Pass ID if it exists, otherwise task handles it
+      source: 'user'
     },
     {
       concurrencyKey: userId,

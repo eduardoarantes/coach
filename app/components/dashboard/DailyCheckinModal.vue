@@ -317,42 +317,60 @@
     </template>
 
     <template #footer>
-      <div class="flex justify-between w-full">
-        <UButton
-          v-if="!loading && !isPending"
-          :label="tr('daily_checkin_regenerate', 'Regenerate')"
-          color="neutral"
-          variant="ghost"
-          icon="i-heroicons-arrow-path"
-          @click="
-            () => {
-              void generate(true)
-            }
-          "
-        />
-        <div class="flex gap-2 ml-auto">
-          <UButton
-            color="neutral"
-            variant="outline"
-            @click="
-              () => {
-                isOpen = false
-              }
-            "
-          >
-            {{ tr('daily_checkin_close', 'Close') }}
-          </UButton>
-          <UButton
-            v-if="localQuestions.length > 0"
-            :label="tr('daily_checkin_save', 'Save Answers')"
-            color="primary"
-            :loading="submitting"
-            @click="
-              () => {
-                void submit()
-              }
-            "
-          />
+      <div class="flex flex-col gap-3 w-full">
+        <QuotaMeter operation="daily_checkin" />
+        <div class="flex justify-between w-full items-center gap-2">
+          <div class="flex items-center gap-2">
+            <UButton
+              v-if="!loading && !isPending"
+              :label="tr('daily_checkin_regenerate', 'Regenerate')"
+              color="neutral"
+              variant="ghost"
+              :icon="isCheckinLocked ? 'i-heroicons-lock-closed' : 'i-heroicons-arrow-path'"
+              @click="
+                () => {
+                  void handleLockedAction({
+                    operation: 'daily_checkin',
+                    featureTitle: 'Daily Coach Check-In',
+                    onAllowed: () => generate(true)
+                  })
+                }
+              "
+            />
+            <UBadge
+              v-if="isCheckinLocked"
+              color="warning"
+              variant="subtle"
+              size="xs"
+              class="shrink-0 uppercase tracking-wide font-bold"
+            >
+              {{ lockedTierLabel }}
+            </UBadge>
+          </div>
+          <div class="flex gap-2 ml-auto">
+            <UButton
+              color="neutral"
+              variant="outline"
+              @click="
+                () => {
+                  isOpen = false
+                }
+              "
+            >
+              {{ tr('daily_checkin_close', 'Close') }}
+            </UButton>
+            <UButton
+              v-if="localQuestions.length > 0"
+              :label="tr('daily_checkin_save', 'Save Answers')"
+              color="primary"
+              :loading="submitting"
+              @click="
+                () => {
+                  void submit()
+                }
+              "
+            />
+          </div>
         </div>
       </div>
     </template>
@@ -393,7 +411,8 @@
   const recentCheckins = ref<any[]>([])
   const showRecentCheckins = ref(false)
   const deleting = ref(false)
-  const upgradeModal = useUpgradeModal()
+  const { showQuotaPaywall, handleLockedAction, useOperationLockState } = useQuotaPaywall()
+  const { locked: isCheckinLocked, lockedTierLabel } = useOperationLockState('daily_checkin')
   const toast = useToast()
   const { formatDateUTC } = useFormat()
   const { trackDailyCheckinStart, trackDailyCheckinComplete } = useAnalytics()
@@ -586,12 +605,11 @@
           'daily_checkin_quota_error',
           'You have reached your Daily Coach Check-In quota for your current plan. Try again after your quota resets, or upgrade for more check-ins.'
         )
-        upgradeModal.show({
+        await showQuotaPaywall({
+          operation: 'daily_checkin',
           title: 'Usage Quota Reached',
           featureTitle: 'Daily Coach Check-In',
-          featureDescription:
-            'You have reached the usage quota for Daily Coach Check-In on your current plan. Upgrade to Supporter or Pro for higher quotas.',
-          recommendedTier: 'supporter'
+          reason: 'quota_exceeded'
         })
       } else {
         error.value = e?.data?.message || e?.message || 'Failed to generate check-in'

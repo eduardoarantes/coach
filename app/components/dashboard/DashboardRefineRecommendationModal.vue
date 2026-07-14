@@ -7,6 +7,7 @@
   >
     <template #body>
       <div class="space-y-4">
+        <QuotaMeter operation="activity_recommendation" />
         <UFormField
           :label="t('training_recommendation_refine_modal_feedback_label')"
           name="feedback"

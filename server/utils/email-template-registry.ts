@@ -94,6 +94,15 @@ export const EMAIL_TEMPLATE_REGISTRY: Record<string, EmailTemplateDefinition> = 
     requiredProps: ['initiatedBy', 'requestedAt'],
     utmCampaign: 'account_deletion_scheduled',
     utmMedium: 'transactional'
+  },
+  TrialEndingSoon: {
+    templateKey: 'TrialEndingSoon',
+    defaultSubject: 'Your Coach Watts performance trial ends soon',
+    audience: 'ENGAGEMENT',
+    preferenceKey: 'retentionNudges',
+    requiredProps: ['trialEndsAt', 'pricingUrl'],
+    utmCampaign: 'trial_ending_soon',
+    utmMedium: 'lifecycle'
   }
 }
 

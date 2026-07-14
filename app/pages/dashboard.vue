@@ -106,7 +106,8 @@
           <div class="p-0 sm:p-6 !pt-0 space-y-4 sm:space-y-8">
             <div v-if="userStore.isTrialActive" class="px-4 sm:px-0">
               <div
-                class="relative overflow-hidden bg-primary-600 rounded-xl p-4 sm:p-6 shadow-lg group"
+                class="relative overflow-hidden rounded-xl p-4 sm:p-6 shadow-lg group"
+                :class="isTrialEndingSoon ? 'bg-amber-600' : 'bg-primary-600'"
               >
                 <!-- Decorative Icon -->
                 <div
@@ -137,7 +138,13 @@
                         </UBadge>
                       </div>
                       <p class="text-white/80 text-sm font-medium leading-relaxed max-w-xl">
-                        {{ t('trial_unlock_improvement') }}
+                        {{
+                          isTrialEndingSoon
+                            ? t('trial_ending_soon_desc', {
+                                date: trialEndsAtLabel
+                              })
+                            : t('trial_unlock_improvement')
+                        }}
                       </p>
                     </div>
                   </div>
@@ -403,6 +410,8 @@
 
   <!-- Share Coach Watts Modal -->
   <DashboardShareCoachWattsModal v-model:open="showShareCoachWattsModal" />
+
+  <TrialEndedModal />
 </template>
 
 <script setup lang="ts">
@@ -464,6 +473,14 @@
     return typeof t.value === 'function'
       ? t.value('trial_access_remaining', { count: daysRemaining })
       : String(daysRemaining)
+  })
+  const isTrialEndingSoon = computed(() => {
+    const daysRemaining = userStore.trialDaysRemaining || 0
+    return daysRemaining > 0 && daysRemaining <= 2
+  })
+  const trialEndsAtLabel = computed(() => {
+    if (!userStore.user?.trialEndsAt) return ''
+    return formatDate(userStore.user.trialEndsAt)
   })
   const nutritionEnabled = computed(
     () =>

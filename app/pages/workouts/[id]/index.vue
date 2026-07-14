@@ -2276,6 +2276,45 @@
                   </h3>
                 </div>
                 <div class="flex items-center gap-3">
+                  <div
+                    v-if="workout.aiAnalysisStatus === 'QUOTA_EXCEEDED' && !workout.aiAnalysis"
+                    class="rounded-xl border border-amber-300/60 bg-amber-50 dark:bg-amber-950/20 px-4 py-3 text-left max-w-md"
+                  >
+                    <p class="text-xs font-semibold text-amber-900 dark:text-amber-100">
+                      {{ t('analysis_quota_skipped_title') }}
+                    </p>
+                    <p class="text-[11px] text-amber-800/90 dark:text-amber-200 mt-1">
+                      {{ t('analysis_quota_skipped_desc') }}
+                    </p>
+                    <div class="flex flex-wrap gap-2 mt-3">
+                      <UButton
+                        size="xs"
+                        color="primary"
+                        variant="solid"
+                        @click="
+                          () => {
+                            void openWorkoutQuotaUpgrade()
+                          }
+                        "
+                      >
+                        {{ t('analysis_quota_skipped_upgrade') }}
+                      </UButton>
+                      <UButton
+                        v-if="canAnalyzeNowAfterQuotaReset"
+                        size="xs"
+                        color="neutral"
+                        variant="outline"
+                        :loading="analyzingWorkout"
+                        @click="
+                          () => {
+                            void analyzeWorkout()
+                          }
+                        "
+                      >
+                        {{ t('analysis_quota_skipped_retry') }}
+                      </UButton>
+                    </div>
+                  </div>
                   <UButton
                     v-if="!workout.aiAnalysis"
                     icon="i-heroicons-sparkles"
@@ -3739,7 +3778,8 @@
   const router = useRouter()
   const toast = useToast()
   const config = useRuntimeConfig()
-  const upgradeModal = useUpgradeModal()
+  const { showQuotaPaywall, getOperationQuota, isQuotaExhausted } = useQuotaPaywall()
+  const workoutAnalysisQuota = ref<any>(null)
   const comparisonStore = useWorkoutComparisonStore()
   const userStore = useUserStore()
   const nutritionEnabled = computed(
@@ -3756,6 +3796,35 @@
   const savingTags = ref(false)
   const showTagEditor = ref(false)
   const analysisFactsOpen = ref(false)
+  const canAnalyzeNowAfterQuotaReset = computed(() => {
+    if (workout.value?.aiAnalysisStatus !== 'QUOTA_EXCEEDED') return false
+    if (!workoutAnalysisQuota.value) return false
+    return !isQuotaExhausted(workoutAnalysisQuota.value)
+  })
+
+  async function refreshWorkoutAnalysisQuota() {
+    if (workout.value?.aiAnalysisStatus === 'QUOTA_EXCEEDED') {
+      workoutAnalysisQuota.value = await getOperationQuota('workout_analysis')
+    }
+  }
+
+  async function openWorkoutQuotaUpgrade() {
+    await showQuotaPaywall({
+      operation: 'workout_analysis',
+      title: 'Unlock Workout Analysis',
+      featureTitle: 'Workout Analysis',
+      reason: 'quota_skipped_workout',
+      quota: workoutAnalysisQuota.value
+    })
+  }
+
+  watch(
+    () => workout.value?.aiAnalysisStatus,
+    () => {
+      void refreshWorkoutAnalysisQuota()
+    },
+    { immediate: true }
+  )
   const analyzingWorkout = ref(false)
   const analyzingAdherence = ref(false)
   const unlinkingPlannedWorkout = ref(false)
@@ -5346,18 +5415,11 @@
       analyzingWorkout.value = false
 
       if (e.data?.statusCode === 429 || e.status === 429) {
-        upgradeModal.show({
+        await showQuotaPaywall({
+          operation: 'workout_analysis',
           title: 'Crush Your Training Momentum',
-          featureTitle: 'Strategic Analysis',
-          featureDescription:
-            'Unlock elite-level auditing for every session. Upgrade to Supporter or Pro for always-on automatic analysis and deeper performance insights.',
-          recommendedTier: 'supporter',
-          bullets: [
-            'Always-On Auto Analysis',
-            'Deep Execution Scoring',
-            'Technical Pacing Audit',
-            'Strategic Improvements'
-          ]
+          featureTitle: 'Workout Analysis',
+          reason: 'quota_exceeded'
         })
         return
       }
@@ -5393,12 +5455,11 @@
       analyzingAdherence.value = false
 
       if (e.data?.statusCode === 429 || e.status === 429) {
-        upgradeModal.show({
+        await showQuotaPaywall({
+          operation: 'workout_analysis',
           title: 'Usage Quota Reached',
           featureTitle: 'Plan Adherence Analysis',
-          featureDescription:
-            'You have reached the analysis quota for your current plan. Upgrade to Supporter or Pro for higher quotas.',
-          recommendedTier: 'supporter'
+          reason: 'quota_exceeded'
         })
         return
       }

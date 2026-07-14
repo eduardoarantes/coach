@@ -32,6 +32,7 @@ import enIntegrations from '../i18n/en/integrations.json'
 import enCoaching from '../i18n/en/coaching.json'
 import enReport from '../i18n/en/report.json'
 import enAdminStats from '../i18n/en/admin-stats.json'
+import enQuotas from '../i18n/en/quotas.json'
 
 import esCommon from '../i18n/es/common.json'
 import esDashboard from '../i18n/es/dashboard.json'
@@ -389,6 +390,7 @@ export default defineNuxtPlugin((nuxtApp) => {
       'en:coaching': enCoaching,
       'en:report': enReport,
       'en:admin-stats': enAdminStats,
+      'en:quotas': enQuotas,
 
       'es:common': esCommon,
       'es:dashboard': esDashboard,

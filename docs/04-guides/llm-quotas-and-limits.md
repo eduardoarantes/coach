@@ -4,7 +4,7 @@
 
 The LLM Quota system provides a centralized way to track and limit user access to expensive AI operations (Chat, Analysis, Reports) based on their subscription tier.
 
-The system currently operates in **Measurement-only** mode, meaning it tracks usage and displays it to admins/users but does not block any actions yet.
+The system currently operates in **Strict enforcement** mode for most operations, blocking requests when limits are exceeded and surfacing upgrade prompts in the UI.
 
 ## 2. Core Concepts
 
@@ -31,8 +31,15 @@ This is the single source of truth for all limits. It maps `SubscriptionTier` to
 ```typescript
 export const QUOTA_REGISTRY = {
   FREE: {
-    chat: { limit: 5, window: '4 hours', enforcement: 'MEASURE' },
-    workout_analysis: { limit: 10, window: '7 days', enforcement: 'MEASURE' }
+    chat: { limit: 5, window: '4 hours', enforcement: 'STRICT' },
+    workout_analysis: { limit: 6, window: '7 days', enforcement: 'STRICT' },
+    daily_checkin: { limit: 1, window: '1 day', enforcement: 'STRICT', resetType: 'CALENDAR' },
+    activity_recommendation: {
+      limit: 2,
+      window: '1 day',
+      enforcement: 'STRICT',
+      resetType: 'CALENDAR'
+    }
   }
   // ...
 }

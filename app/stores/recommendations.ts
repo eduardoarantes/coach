@@ -86,19 +86,12 @@ export const useRecommendationStore = defineStore('recommendation', () => {
       generating.value = false
 
       if (error.statusCode === 429 || error.status === 429) {
-        const upgradeModal = useUpgradeModal()
-        upgradeModal.show({
+        const { showQuotaPaywall } = useQuotaPaywall()
+        await showQuotaPaywall({
+          operation: 'activity_recommendation',
           title: 'Your Performance Milestone',
-          featureTitle: 'Premium Guidance',
-          featureDescription:
-            'You have utilized your daily readiness insights. Upgrade to Supporter or Pro to unlock unrestricted daily coaching and automated training adjustments.',
-          recommendedTier: 'supporter',
-          bullets: [
-            'Daily Readiness Checks',
-            'Automated Plan Scaling',
-            'Priority AI Processing',
-            'Advanced Goal Tracking'
-          ]
+          featureTitle: 'Activity Recommendation',
+          reason: 'quota_exceeded'
         })
         return
       }
@@ -139,13 +132,12 @@ export const useRecommendationStore = defineStore('recommendation', () => {
       generatingAdHoc.value = false
 
       if (error.statusCode === 429 || error.status === 429) {
-        const upgradeModal = useUpgradeModal()
-        upgradeModal.show({
+        const { showQuotaPaywall } = useQuotaPaywall()
+        await showQuotaPaywall({
+          operation: 'generate_structured_workout',
           title: 'Usage Quota Reached',
           featureTitle: 'Ad-hoc Workout Generation',
-          featureDescription:
-            'You have reached the usage quota for on-demand workout generation. Upgrade to Supporter or Pro for higher quotas.',
-          recommendedTier: 'supporter'
+          reason: 'quota_exceeded'
         })
         return
       }

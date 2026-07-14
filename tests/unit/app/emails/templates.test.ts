@@ -65,6 +65,21 @@ describe('email templates', () => {
     expect(result.html).toContain('manage your email preferences')
   })
 
+  it('TrialEndingSoon snapshot + unsubscribe footer', async () => {
+    const result = await render('TrialEndingSoon.vue', {
+      name: 'Alex Athlete',
+      trialEndsAt: 'Saturday, July 18',
+      usageHighlights: [{ operation: 'daily checkin', count: 3 }],
+      supporterHighlights: [{ label: 'Daily check-ins', value: '2/day' }],
+      pricingUrl: 'https://coachwatts.com/settings/billing',
+      unsubscribeUrl: 'https://coachwatts.com/unsubscribe?token=test'
+    })
+
+    expect(result.html).toContain('performance trial ends soon')
+    expect(result.html).toContain('Manage email preferences')
+    expect(result.html).toContain('https://coachwatts.com/settings/billing')
+  })
+
   it('WorkoutReceived snapshot + unsubscribe footer', async () => {
     const result = await render('WorkoutReceived.vue', {
       name: 'Alex Athlete',

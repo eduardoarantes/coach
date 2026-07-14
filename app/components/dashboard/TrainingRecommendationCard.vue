@@ -387,30 +387,43 @@
           </UButton>
         </div>
         <div class="space-y-2">
-          <UButton
-            class="font-bold w-full"
-            color="primary"
-            variant="solid"
-            size="sm"
-            :loading="recommendationStore.generating || isSyncingForAnalysis"
-            :disabled="
-              recommendationStore.generating ||
-              recommendationStore.generatingAdHoc ||
-              isSyncingForAnalysis
-            "
-            :icon="
-              !recommendationStore.todayRecommendation
-                ? 'i-heroicons-sparkles'
-                : 'i-heroicons-adjustments-horizontal'
-            "
-            @click="
-              () => {
-                void handleAnalyzeClick()
-              }
-            "
-          >
-            {{ getButtonLabel() }}
-          </UButton>
+          <div class="flex items-center gap-2">
+            <UButton
+              class="font-bold flex-1"
+              color="primary"
+              variant="solid"
+              size="sm"
+              :loading="recommendationStore.generating || isSyncingForAnalysis"
+              :disabled="
+                recommendationStore.generating ||
+                recommendationStore.generatingAdHoc ||
+                isSyncingForAnalysis
+              "
+              :icon="
+                isRecommendationLocked
+                  ? 'i-heroicons-lock-closed'
+                  : !recommendationStore.todayRecommendation
+                    ? 'i-heroicons-sparkles'
+                    : 'i-heroicons-adjustments-horizontal'
+              "
+              @click="
+                () => {
+                  void handleAnalyzeClick()
+                }
+              "
+            >
+              {{ getButtonLabel() }}
+            </UButton>
+            <UBadge
+              v-if="isRecommendationLocked"
+              color="warning"
+              variant="subtle"
+              size="xs"
+              class="shrink-0 uppercase tracking-wide font-bold"
+            >
+              {{ lockedTierLabel }}
+            </UBadge>
+          </div>
           <p
             v-if="!recommendationStore.todayRecommendation"
             class="text-[10px] text-gray-500 text-center leading-tight"
@@ -463,6 +476,9 @@
   const integrationStore = useIntegrationStore()
   const recommendationStore = useRecommendationStore()
   const userStore = useUserStore()
+  const { handleLockedAction, useOperationLockState } = useQuotaPaywall()
+  const { locked: isRecommendationLocked, lockedTierLabel } =
+    useOperationLockState('activity_recommendation')
   const checkinStore = useCheckinStore()
   const { checkProfileStale } = useDataStatus()
   const toast = useToast()
@@ -693,18 +709,28 @@
 
   async function handleAnalyzeClick() {
     if (recommendationStore.todayRecommendation) {
-      openRefineModal()
+      await handleLockedAction({
+        operation: 'activity_recommendation',
+        featureTitle: 'Activity Recommendation',
+        onAllowed: () => openRefineModal()
+      })
       return
     }
 
-    isSyncingForAnalysis.value = true
-    try {
-      await integrationStore.syncAllData()
-    } finally {
-      isSyncingForAnalysis.value = false
-    }
+    await handleLockedAction({
+      operation: 'activity_recommendation',
+      featureTitle: 'Activity Recommendation',
+      onAllowed: async () => {
+        isSyncingForAnalysis.value = true
+        try {
+          await integrationStore.syncAllData()
+        } finally {
+          isSyncingForAnalysis.value = false
+        }
 
-    await checkProfileAndGenerate()
+        await checkProfileAndGenerate()
+      }
+    })
   }
 
   function getButtonLabel() {

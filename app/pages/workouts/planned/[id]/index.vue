@@ -1763,16 +1763,30 @@
     })
   }
 
-  function handleQuotaError(error: any, featureTitle: string, featureDescription: string) {
-    if (
-      error.statusCode === 429 ||
-      error.statusCode === 403 ||
-      error.message?.toLowerCase().includes('quota exceeded') ||
-      error.message?.toLowerCase().includes('upgrade to pro')
-    ) {
+  function handleQuotaError(
+    error: any,
+    featureTitle: string,
+    featureDescription: string,
+    operation: 'generate_structured_workout' = 'generate_structured_workout'
+  ) {
+    if (error.statusCode === 429 || error.message?.toLowerCase().includes('quota exceeded')) {
+      void (async () => {
+        const { showQuotaPaywall } = useQuotaPaywall()
+        await showQuotaPaywall({
+          operation,
+          title: 'Usage Limit Reached',
+          featureTitle,
+          featureDescription: error.data?.message || featureDescription,
+          reason: 'quota_exceeded'
+        })
+      })()
+      return true
+    }
+
+    if (error.statusCode === 403 || error.message?.toLowerCase().includes('upgrade to pro')) {
       upgradeModal.show({
-        title: error.statusCode === 403 ? 'Pro Feature' : 'Usage Limit Reached',
-        featureTitle: featureTitle,
+        title: 'Pro Feature',
+        featureTitle,
         featureDescription: error.data?.message || featureDescription,
         recommendedTier: 'pro'
       })

@@ -23,6 +23,14 @@ interface User {
   isAdmin?: boolean
   language?: string
   uiLanguage?: string
+  entitlements?: UserEntitlements
+  activePromotionalGrant?: {
+    tier: SubscriptionTier
+    endsAt: string
+    campaignSlug: string
+    partnerName: string
+    campaignName: string
+  } | null
 }
 
 interface UserEntitlements {
@@ -100,9 +108,13 @@ export const useUserStore = defineStore('user', () => {
     }
   }
 
-  // Calculate user entitlements based on subscription
+  // Calculate user entitlements based on subscription, trial, and promotional grants
   const entitlements = computed<UserEntitlements | null>(() => {
     if (!user.value) return null
+
+    if (user.value.entitlements) {
+      return user.value.entitlements
+    }
 
     const config = useRuntimeConfig()
 
@@ -131,11 +143,28 @@ export const useUserStore = defineStore('user', () => {
       isContributor ||
       (user.value.subscriptionPeriodEnd && now < periodEnd)
 
-    const effectiveTier = isContributor
-      ? 'PRO'
-      : isEffectivePremium
-        ? user.value.subscriptionTier
-        : 'FREE'
+    let effectiveTier: SubscriptionTier = 'FREE'
+
+    if (isContributor) {
+      effectiveTier = 'PRO'
+    } else if (isEffectivePremium) {
+      effectiveTier = user.value.subscriptionTier
+    }
+
+    const isTrialActive = Boolean(
+      user.value.trialEndsAt &&
+      new Date(user.value.trialEndsAt) > now &&
+      user.value.subscriptionTier === 'FREE'
+    )
+    if (isTrialActive && !isEffectivePremium) {
+      effectiveTier = effectiveTier === 'PRO' ? 'PRO' : 'SUPPORTER'
+    }
+
+    const promotionalTier = user.value.activePromotionalGrant?.tier
+    if (promotionalTier) {
+      const rank = { FREE: 0, SUPPORTER: 1, PRO: 2 }
+      effectiveTier = rank[promotionalTier] > rank[effectiveTier] ? promotionalTier : effectiveTier
+    }
 
     return {
       tier: effectiveTier,
@@ -310,13 +339,12 @@ export const useUserStore = defineStore('user', () => {
       generating.value = false
 
       if (error.statusCode === 429 || error.status === 429) {
-        const upgradeModal = useUpgradeModal()
-        upgradeModal.show({
+        const { showQuotaPaywall } = useQuotaPaywall()
+        await showQuotaPaywall({
+          operation: 'athlete_profile_generation',
           title: 'Usage Quota Reached',
           featureTitle: 'Athlete Profile Generation',
-          featureDescription:
-            'You have reached the generation quota for athlete profile reports. Upgrade to Supporter or Pro for significantly more updates.',
-          recommendedTier: 'supporter'
+          reason: 'quota_exceeded'
         })
         return
       }
@@ -374,13 +402,12 @@ export const useUserStore = defineStore('user', () => {
     const output = run.output as any
     if (output?.success === false) {
       if (output.reason === 'QUOTA_EXCEEDED') {
-        const upgradeModal = useUpgradeModal()
-        upgradeModal.show({
+        const { showQuotaPaywall } = useQuotaPaywall()
+        await showQuotaPaywall({
+          operation: 'athlete_profile_generation',
           title: 'Usage Quota Reached',
           featureTitle: 'Athlete Profile Generation',
-          featureDescription:
-            'You have reached the generation quota for athlete profile reports. Upgrade to Supporter or Pro for significantly more updates.',
-          recommendedTier: 'supporter'
+          reason: 'quota_exceeded'
         })
       } else {
         toast.add({

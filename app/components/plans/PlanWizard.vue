@@ -1169,23 +1169,37 @@
   const goals = ref<any[]>([])
   const selectedGoal = ref<any>(null)
 
-  function handleQuotaError(error: any, featureTitle: string, featureDescription: string) {
-    if (
-      error.statusCode === 429 ||
-      error.statusCode === 403 ||
-      error.message?.toLowerCase().includes('quota exceeded') ||
-      error.message?.toLowerCase().includes('upgrade to pro')
-    ) {
+  function handleQuotaError(
+    error: any,
+    featureTitle: string,
+    featureDescription: string,
+    operation: 'weekly_plan_generation' = 'weekly_plan_generation'
+  ) {
+    if (error.statusCode === 429 || error.message?.toLowerCase().includes('quota exceeded')) {
+      void (async () => {
+        const { showQuotaPaywall } = useQuotaPaywall()
+        await showQuotaPaywall({
+          operation,
+          title: 'Training Strategy Limit',
+          featureTitle,
+          featureDescription: error.data?.message || featureDescription,
+          reason: 'quota_exceeded'
+        })
+      })()
+      return true
+    }
+
+    if (error.statusCode === 403 || error.message?.toLowerCase().includes('upgrade to pro')) {
       upgradeModal.show({
-        title: error.statusCode === 403 ? 'Pro Feature' : 'Training Strategy Limit',
-        featureTitle: featureTitle,
+        title: 'Pro Feature',
+        featureTitle,
         featureDescription: error.data?.message || featureDescription,
         recommendedTier: 'pro',
         bullets: [
-          'Unlimited AI Strategy & Design',
-          'Advanced Training Block Generation',
-          'Strategic Race Planning',
-          'Deep-Context Performance Analysis'
+          '2 AI weekly plans per week on Supporter',
+          'Advanced training block generation',
+          'Strategic race planning',
+          'Deep-context performance analysis'
         ]
       })
       return true
@@ -1505,7 +1519,7 @@
         handleQuotaError(
           error,
           'Plan Initialization',
-          'Upgrade to Pro for unlimited AI-powered training plan generation.'
+          'Upgrade to Pro for more AI-powered training plan generation.'
         )
       ) {
         return
@@ -1544,7 +1558,7 @@
         handleQuotaError(
           error,
           'Plan Activation',
-          'Upgrade to Pro for unlimited AI-powered training plan activation.'
+          'Upgrade to Pro for more AI-powered training plan activation.'
         )
       ) {
         return

@@ -24,12 +24,14 @@ Quotas are defined as a mapping between a **Subscription Tier** and a specific *
 
 ### 3.2 Tier Configuration
 
-| Operation          | Window   | Free | Supporter | Pro |
-| :----------------- | :------- | :--- | :-------- | :-- |
-| `CHAT_MESSAGE`     | 4 Hours  | 5    | 50        | 500 |
-| `WORKOUT_ANALYSIS` | 7 Days   | 10   | 30        | 150 |
-| `ATHLETE_PROFILE`  | 24 Hours | 1    | 5         | 20  |
-| `NUTRITION_LOG`    | 7 Days   | 5    | 20        | 100 |
+| Operation                 | Window       | Free | Supporter | Pro |
+| :------------------------ | :----------- | :--- | :-------- | :-- |
+| `CHAT_MESSAGE`            | 4 Hours      | 5    | 50        | 500 |
+| `WORKOUT_ANALYSIS`        | 7 Days       | 6    | 30        | 150 |
+| `DAILY_CHECKIN`           | Calendar Day | 1    | 2         | 5   |
+| `ACTIVITY_RECOMMENDATION` | Calendar Day | 2    | 5         | 20  |
+| `ATHLETE_PROFILE`         | 24 Hours     | 1    | 5         | 20  |
+| `NUTRITION_LOG`           | 7 Days       | 3    | 20        | 100 |
 
 ## 4. Technical Architecture
 
@@ -56,7 +58,14 @@ A configuration file defining the hard limits. This avoids database overhead for
 export const QUOTA_REGISTRY = {
   FREE: {
     CHAT_MESSAGE: { limit: 5, window: '4h', enforcement: 'STRICT' },
-    WORKOUT_ANALYSIS: { limit: 3, window: '7d', enforcement: 'STRICT' }
+    WORKOUT_ANALYSIS: { limit: 6, window: '7d', enforcement: 'STRICT' },
+    DAILY_CHECKIN: { limit: 1, window: '1d', enforcement: 'STRICT', resetType: 'CALENDAR' },
+    ACTIVITY_RECOMMENDATION: {
+      limit: 2,
+      window: '1d',
+      enforcement: 'STRICT',
+      resetType: 'CALENDAR'
+    }
   },
   SUPPORTER: {
     CHAT_MESSAGE: { limit: 50, window: '4h', enforcement: 'STRICT' },

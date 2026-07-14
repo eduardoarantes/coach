@@ -67,13 +67,23 @@ interface CheckinAnalysis {
   }>
 }
 
+export type DailyCheckinSource = 'auto' | 'user'
+
+export type GenerateDailyCheckinPayload = {
+  userId: string
+  date: Date
+  checkinId?: string
+  source?: DailyCheckinSource
+}
+
 export const generateDailyCheckinTask = task({
   id: 'generate-daily-checkin',
   maxDuration: 300,
   queue: userReportsQueue,
-  run: async (payload: { userId: string; date: Date; checkinId?: string }) => {
+  run: async (payload: GenerateDailyCheckinPayload) => {
     const { userId, date } = payload
     let { checkinId } = payload
+    const source: DailyCheckinSource = payload.source ?? 'user'
 
     try {
       const today = new Date(date)
@@ -103,20 +113,22 @@ export const generateDailyCheckinTask = task({
         await dailyCheckinRepository.update(checkinId, { status: 'PROCESSING' })
       }
 
-      // Check Quota
-      try {
-        await checkQuota(userId, 'daily_checkin')
-      } catch (quotaError: any) {
-        if (quotaError.statusCode === 429) {
-          logger.warn('Daily check-in quota exceeded', { userId, checkinId })
-          if (checkinId) {
-            await dailyCheckinRepository.update(checkinId, {
-              status: 'FAILED'
-            })
+      // Check Quota (skip for auto-generated check-ins — they don't count toward user quota)
+      if (source !== 'auto') {
+        try {
+          await checkQuota(userId, 'daily_checkin')
+        } catch (quotaError: any) {
+          if (quotaError.statusCode === 429) {
+            logger.warn('Daily check-in quota exceeded', { userId, checkinId, source })
+            if (checkinId) {
+              await dailyCheckinRepository.update(checkinId, {
+                status: 'FAILED'
+              })
+            }
+            return { success: false, reason: 'QUOTA_EXCEEDED' }
           }
-          return { success: false, reason: 'QUOTA_EXCEEDED' }
+          throw quotaError
         }
-        throw quotaError
       }
 
       const aiSettings = await getUserAiSettings(userId)
@@ -582,6 +594,7 @@ OUTPUT JSON FORMAT:
           operation: 'daily_checkin',
           entityType: 'DailyCheckin',
           entityId: checkinId,
+          counted: source !== 'auto',
           onUsageLogged: (usageId) => {
             currentLlmUsageId = usageId
           }

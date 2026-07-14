@@ -6,6 +6,7 @@ import { prisma } from '../../utils/db'
 import { tasks } from '@trigger.dev/sdk/v3'
 import { getRequestIP, getRequestHeader } from 'h3'
 import { logAction } from '../../utils/audit'
+import { DEFAULT_TRIAL_DAYS } from '../../../shared/trial-config'
 
 const adapter = PrismaAdapter(prisma)
 const originalLinkAccount = adapter.linkAccount
@@ -264,7 +265,7 @@ export default NuxtAuthHandler({
   events: {
     async createUser({ user }: any) {
       try {
-        const trialDays = 7
+        const trialDays = DEFAULT_TRIAL_DAYS
         const trialEndsAt = new Date()
         trialEndsAt.setDate(trialEndsAt.getDate() + trialDays)
 

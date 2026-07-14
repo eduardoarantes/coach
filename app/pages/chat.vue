@@ -51,6 +51,8 @@
   const loadingRooms = ref(true)
   const chatSidebarRef = ref<{ open: () => void; close: () => void } | null>(null)
   const input = ref('')
+  const pendingComposerDraft = ref('')
+  const quotaSystemNotices = ref<any[]>([])
   const chatInputRef = ref<any>(null)
   const toast = useToast()
   const editingMessage = ref<any | null>(null)
@@ -151,7 +153,41 @@
   const { data: session } = await useFetch('/api/auth/session')
 
   const { refresh: refreshRuns } = useUserRuns()
-  const upgradeModal = useUpgradeModal()
+  const { showQuotaPaywall, getOperationQuota } = useQuotaPaywall()
+  const { formatRelativeTime } = useFormat()
+
+  async function handleChatQuotaExceeded() {
+    const quota = await getOperationQuota('chat')
+    const resetLabel = quota?.resetsAt ? formatRelativeTime(quota.resetsAt) : 'soon'
+
+    if (pendingComposerDraft.value) {
+      input.value = pendingComposerDraft.value
+    }
+
+    const roomId = currentRoomId.value
+    if (roomId) {
+      quotaSystemNotices.value = quotaSystemNotices.value.filter(
+        (notice) => notice.roomId !== roomId
+      )
+      quotaSystemNotices.value.push({
+        id: `quota-notice-${roomId}`,
+        roomId,
+        role: 'assistant',
+        content: `Free chat limit reached. Resets ${resetLabel}.`,
+        metadata: { systemNotice: 'quota_exceeded' },
+        createdAt: new Date()
+      })
+    }
+
+    await showQuotaPaywall({
+      operation: 'chat',
+      title: 'Unlock More Coach Messages',
+      featureTitle: 'AI Coach Chat',
+      reason: 'quota_exceeded',
+      quota,
+      quotaResetLabel: quota?.resetsAt ? `Resets ${resetLabel}` : undefined
+    })
+  }
   const userStore = useUserStore()
   const coachingStore = useCoachingStore()
   const { trackChatSessionStart, trackChatError } = useAnalytics()
@@ -177,6 +213,7 @@
     }),
     onFinish: async () => {
       if (!chatPageActive) return
+      pendingComposerDraft.value = ''
       refreshRuns()
       if (currentRoomId.value) {
         await loadMessages(currentRoomId.value, { silent: true })
@@ -197,21 +234,7 @@
         error.message?.includes('429') ||
         error.message?.toLowerCase().includes('quota exceeded')
       ) {
-        upgradeModal.show({
-          title: 'Unlock More Insights Today',
-          featureTitle: 'Full AI Coach Access',
-          featureDescription:
-            'You have utilized your daily training analysis. To continue planning your peak performance without limits, upgrade to Pro for unrestricted access to your Digital Coach.',
-
-          recommendedTier: 'pro',
-          bullets: [
-            'Unlimited Strategic Chat',
-            'Faster AI Responses',
-            'Deep-Context Analysis',
-            'Proactive Readiness Alerts'
-          ]
-        })
-
+        void handleChatQuotaExceeded()
         return
       }
 
@@ -543,7 +566,11 @@
         localQueueState: message.failed ? 'FAILED' : 'QUEUED'
       }
     }))
-    const combinedMessages = [...sanitizedMessages, ...queuedMessages].sort(
+    const combinedMessages = [
+      ...sanitizedMessages,
+      ...queuedMessages,
+      ...quotaSystemNotices.value.filter((notice) => notice.roomId === currentRoomId.value)
+    ].sort(
       (left, right) =>
         new Date(left.createdAt || 0).getTime() - new Date(right.createdAt || 0).getTime()
     )
@@ -889,12 +916,15 @@
       createdAt: new Date()
     }
 
+    pendingComposerDraft.value = submittedText
+
     if (
       awaitingTurnStart.value ||
       hasActiveTurn(chat.messages as any[]) ||
       queuedMessageCount.value
     ) {
       enqueueOutgoingMessage(outgoingMessage)
+      input.value = ''
     } else {
       awaitingTurnStart.value = true
       try {
@@ -902,13 +932,13 @@
           text: submittedText,
           attachments
         })
+        input.value = ''
       } catch (error) {
         awaitingTurnStart.value = false
+        input.value = submittedText
         throw error
       }
     }
-
-    input.value = ''
   }
 
   const pendingApprovalSubmissions = new Set<string>()
@@ -1196,20 +1226,7 @@
           if (terminalTurnStatuses.includes(String(data.status || ''))) {
             awaitingTurnStart.value = false
             if (data.quotaExceeded) {
-              upgradeModal.show({
-                title: 'Unlock More Insights Today',
-                featureTitle: 'Full AI Coach Access',
-                featureDescription:
-                  data.failureReason ||
-                  'You have utilized your daily training analysis. To continue planning your peak performance without limits, upgrade to Pro for unrestricted access to your Digital Coach.',
-                recommendedTier: 'pro',
-                bullets: [
-                  'Unlimited Strategic Chat',
-                  'Faster AI Responses',
-                  'Deep-Context Analysis',
-                  'Proactive Readiness Alerts'
-                ]
-              })
+              void handleChatQuotaExceeded()
             }
             scheduleTerminalMessageSync(currentRoomId.value, 50)
           }

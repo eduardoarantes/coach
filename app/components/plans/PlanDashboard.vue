@@ -1128,23 +1128,37 @@
     emit('refresh')
   }
 
-  function handleQuotaError(error: any, featureTitle: string, featureDescription: string) {
-    if (
-      error.statusCode === 429 ||
-      error.statusCode === 403 ||
-      error.message?.toLowerCase().includes('quota exceeded') ||
-      error.message?.toLowerCase().includes('upgrade to pro')
-    ) {
+  function handleQuotaError(
+    error: any,
+    featureTitle: string,
+    featureDescription: string,
+    operation: 'weekly_plan_generation' | 'generate_structured_workout' = 'weekly_plan_generation'
+  ) {
+    if (error.statusCode === 429 || error.message?.toLowerCase().includes('quota exceeded')) {
+      void (async () => {
+        const { showQuotaPaywall } = useQuotaPaywall()
+        await showQuotaPaywall({
+          operation,
+          title: 'Structured Training Limit',
+          featureTitle,
+          featureDescription: error.data?.message || featureDescription,
+          reason: 'quota_exceeded'
+        })
+      })()
+      return true
+    }
+
+    if (error.statusCode === 403 || error.message?.toLowerCase().includes('upgrade to pro')) {
       upgradeModal.show({
-        title: error.statusCode === 403 ? 'Pro Feature' : 'Structured Training Limit',
-        featureTitle: featureTitle,
+        title: 'Pro Feature',
+        featureTitle,
         featureDescription: error.data?.message || featureDescription,
         recommendedTier: 'pro',
         bullets: [
-          'Unlimited AI Strategy & Design',
-          'Advanced Training Block Generation',
-          'Strategic Race Planning',
-          'Deep-Context Performance Analysis'
+          '2 AI weekly plans per week on Supporter',
+          'Advanced training block generation',
+          'Strategic race planning',
+          'Deep-context performance analysis'
         ]
       })
       return true
@@ -1690,7 +1704,7 @@
         handleQuotaError(
           error,
           'Phase Initialization',
-          'Upgrade to Pro for unlimited training phase structure designs.'
+          'Upgrade to Pro for higher weekly plan and phase structure limits.'
         )
       ) {
         return
@@ -1725,7 +1739,8 @@
         handleQuotaError(
           error,
           'AI-Powered Workout Design',
-          'Upgrade to Pro for unlimited AI-structured workouts and advanced strategic planning.'
+          'Upgrade to Pro for more AI-structured workouts and advanced strategic planning.',
+          'generate_structured_workout'
         )
       ) {
         generatingStructureForWorkoutId.value = null
@@ -1778,7 +1793,8 @@
             handleQuotaError(
               firstError.reason,
               'Batch AI Workout Design',
-              'You have reached your daily limit for generating AI-structured workouts.'
+              'You have reached your limit for generating AI-structured workouts.',
+              'generate_structured_workout'
             )
           ) {
             pendingBatchStructureWorkoutIds.value = new Set()
@@ -1844,7 +1860,7 @@
         handleQuotaError(
           error,
           'Dynamic Plan Adaptation',
-          'Upgrade to Pro for unlimited AI-powered plan adjustments.'
+          'Upgrade to Pro for more AI-powered plan adjustments.'
         )
       ) {
         adapting.value = null
@@ -1938,7 +1954,7 @@
         handleQuotaError(
           error,
           'Dynamic Week Planning',
-          'Upgrade to Pro for unlimited goal-driven week redesigns.'
+          'Upgrade to Pro for more goal-driven week redesigns.'
         )
       ) {
         generatingWorkouts.value = false

@@ -47,6 +47,7 @@ async function logLlmUsage(params: {
   responsePreview?: string
   promptFull?: string
   responseFull?: string
+  counted?: boolean
 }): Promise<string | undefined> {
   try {
     const usage = await prisma.llmUsage.create({
@@ -72,7 +73,8 @@ async function logLlmUsage(params: {
         promptPreview: params.promptPreview,
         responsePreview: params.responsePreview,
         promptFull: params.promptFull,
-        responseFull: params.responseFull
+        responseFull: params.responseFull,
+        counted: params.counted ?? true
       }
     })
     return usage.id
@@ -128,6 +130,7 @@ async function logUsage(params: {
   success: boolean
   error?: any
   durationMs?: number
+  counted?: boolean
 }) {
   const durationMs = params.durationMs || 0
   const usage = params.usage ?? {
@@ -165,7 +168,8 @@ async function logUsage(params: {
     promptPreview: getPreview(params.prompt),
     responsePreview: params.text ? getPreview(params.text) : undefined,
     promptFull: params.prompt,
-    responseFull: params.text
+    responseFull: params.text,
+    counted: params.counted
   })
 }
 
@@ -418,6 +422,7 @@ export interface LlmTrackingContext {
   entityType?: string
   entityId?: string
   onUsageLogged?: (usageId: string) => void | Promise<void>
+  counted?: boolean
   disableThinking?: boolean
   maxRetries?: number
   modelOverride?: string
@@ -575,7 +580,8 @@ export async function generateStructuredAnalysis<T>(
         text: JSON.stringify(object),
         usage: normalizeAiSdkUsage(usage),
         success: true,
-        durationMs: Date.now() - startTime
+        durationMs: Date.now() - startTime,
+        counted: trackingContext.counted
       })
     }
 
@@ -597,7 +603,8 @@ export async function generateStructuredAnalysis<T>(
         },
         success: false,
         error,
-        durationMs: Date.now() - startTime
+        durationMs: Date.now() - startTime,
+        counted: trackingContext.counted
       })
     }
     throw error

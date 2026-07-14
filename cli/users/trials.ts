@@ -11,7 +11,7 @@ trialsCommand
   .command('backfill')
   .description('Initialize trial periods for existing users')
   .option('--prod', 'Use production database')
-  .option('--days <number>', 'Number of trial days to grant from creation date', '7')
+  .option('--days <number>', 'Number of trial days to grant from creation date', '14')
   .action(async (options) => {
     const isProd = options.prod
     const trialDays = parseInt(options.days)

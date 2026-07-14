@@ -32,7 +32,7 @@ export const QUOTA_REGISTRY: Record<
 > = {
   FREE: {
     chat: { limit: 5, window: '4 hours', enforcement: 'STRICT' },
-    workout_analysis: { limit: 3, window: '7 days', enforcement: 'STRICT' },
+    workout_analysis: { limit: 6, window: '7 days', enforcement: 'STRICT' },
     athlete_profile_generation: { limit: 1, window: '24 hours', enforcement: 'STRICT' },
     goal_suggestions: { limit: 1, window: '24 hours', enforcement: 'STRICT' },
     goal_review: { limit: 1, window: '24 hours', enforcement: 'STRICT' },
@@ -40,7 +40,7 @@ export const QUOTA_REGISTRY: Record<
     unified_report_generation: { limit: 1, window: '30 days', enforcement: 'STRICT' },
     nutrition_analysis: { limit: 3, window: '7 days', enforcement: 'STRICT' },
     activity_recommendation: {
-      limit: 1,
+      limit: 2,
       window: '1 day',
       enforcement: 'STRICT',
       resetType: 'CALENDAR'

@@ -46,7 +46,8 @@ export const triggerCheckinCommand = new Command('checkin')
 
       const run = await generateDailyCheckinTask.trigger({
         userId: user.id,
-        date
+        date,
+        source: 'user'
       })
 
       console.log(chalk.green(`Successfully triggered run: ${run.id}`))

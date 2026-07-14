@@ -36,6 +36,12 @@
             >
               {{ featureDescription }}
             </p>
+            <p
+              v-if="quotaResetLabel"
+              class="text-xs text-primary-700 dark:text-primary-300 mt-2 font-semibold"
+            >
+              {{ quotaResetLabel }}
+            </p>
           </div>
 
           <!-- Specific Value Labels -->
@@ -132,19 +138,34 @@
         >
           {{ subscriptionsEnabled ? 'Maybe Later' : 'Close' }}
         </UButton>
-        <UButton
-          variant="link"
-          color="primary"
-          :to="'/settings/billing'"
-          @click="
-            () => {
-              void close()
-            }
-          "
-        >
-          View Full Pricing Details
-          <UIcon name="i-heroicons-arrow-right" class="w-4 h-4 ml-1" />
-        </UButton>
+        <div class="flex items-center gap-3">
+          <UButton
+            variant="link"
+            color="primary"
+            to="/pricing"
+            @click="
+              () => {
+                trackPricingView('upgrade_modal')
+                void close()
+              }
+            "
+          >
+            Compare all plans
+            <UIcon name="i-heroicons-arrow-right" class="w-4 h-4 ml-1" />
+          </UButton>
+          <UButton
+            variant="link"
+            color="neutral"
+            :to="'/settings/billing'"
+            @click="
+              () => {
+                void close()
+              }
+            "
+          >
+            Billing details
+          </UButton>
+        </div>
       </div>
     </template>
   </UModal>
@@ -165,13 +186,15 @@
     featureDescription?: string
     recommendedTier?: PricingTier
     bullets?: string[]
+    quotaResetLabel?: string
   }
 
   const props = withDefaults(defineProps<Props>(), {
     title: 'Upgrade Your Plan',
     featureTitle: 'Elite Feature',
     featureDescription: 'This feature requires a premium subscription.',
-    bullets: () => []
+    bullets: () => [],
+    quotaResetLabel: undefined
   })
 
   const isOpen = defineModel<boolean>('open', { default: false })
@@ -179,8 +202,13 @@
   const { currency, setCurrency } = useCurrency()
   const { createCheckoutSession, openCustomerPortal } = useStripe()
   const config = useRuntimeConfig()
-  const { trackCheckoutStart, trackBillingPortalView, trackModalComplete, trackModalDismiss } =
-    useAnalytics()
+  const {
+    trackCheckoutStart,
+    trackBillingPortalView,
+    trackModalComplete,
+    trackModalDismiss,
+    trackPricingView
+  } = useAnalytics()
   const subscriptionsEnabled = computed(() => config.public.subscriptionsEnabled)
 
   const billingInterval = ref<BillingInterval>('monthly')

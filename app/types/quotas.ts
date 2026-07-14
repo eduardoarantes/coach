@@ -7,4 +7,6 @@ export interface QuotaStatus {
   window: string
   resetsAt: Date | string | null
   enforcement: 'STRICT' | 'MEASURE'
+  nextTier?: 'SUPPORTER' | 'PRO' | null
+  nextTierLimit?: number | null
 }

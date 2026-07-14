@@ -1,0 +1,10 @@
+{
+  "meter_used_calendar_day": "{used} of {limit} used today",
+  "meter_used_window": "{used} of {limit} used",
+  "meter_resets_at": "resets {time}",
+  "meter_resets_midnight": "resets at midnight",
+  "meter_next_tier_supporter": "Supporter: {limit} per {window}",
+  "meter_next_tier_pro": "Pro: {limit} per {window}",
+  "meter_exhausted": "Limit reached for today",
+  "meter_upgrade_link": "Upgrade for more"
+}
