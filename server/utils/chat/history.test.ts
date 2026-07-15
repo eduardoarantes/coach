@@ -90,6 +90,41 @@ describe('chat history helpers', () => {
     ])
   })
 
+  it('removes runtime-only values from persisted tool metadata', () => {
+    const persisted = buildPersistedToolCalls(
+      [
+        {
+          type: 'tool-call',
+          toolCallId: 'call-runtime-metadata',
+          toolName: 'set_planned_workout_structure',
+          input: { workout_id: 'workout-1' },
+          providerMetadata: {
+            google: { thoughtSignature: 'signed-part' },
+            validation: {
+              addIssue: () => undefined,
+              optionalValue: undefined
+            }
+          }
+        }
+      ],
+      []
+    )
+
+    expect(persisted).toEqual([
+      expect.objectContaining({
+        toolCallId: 'call-runtime-metadata',
+        name: 'set_planned_workout_structure',
+        rawToolCall: expect.objectContaining({
+          providerMetadata: {
+            google: { thoughtSignature: 'signed-part' },
+            validation: {}
+          }
+        })
+      })
+    ])
+    expect(() => JSON.stringify(persisted)).not.toThrow()
+  })
+
   it('backs up truncation to the previous user turn when a retained window would start with assistant tool calls', () => {
     const result = truncateMessages(
       [

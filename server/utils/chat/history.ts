@@ -1,4 +1,5 @@
 import { convertToModelMessages } from 'ai'
+import { toPrismaInputJsonValue } from '../prisma-json'
 import { normalizeCoreMessagesForGemini } from './core-message-normalizer'
 
 /**
@@ -300,5 +301,10 @@ export function buildPersistedToolCalls(toolCalls: any[] = [], toolResults: any[
   toolCalls.forEach((toolCall: any) => register(toolCall))
   toolResults.forEach((toolResult: any) => register(toolResult))
 
-  return Array.from(toolCallMap.values()).filter((toolCall) => toolCall.name)
+  // AI SDK tool events can contain runtime-only values (for example Zod's
+  // `addIssue` function) inside raw provider metadata. Prisma JSON columns and
+  // websocket payloads must only receive plain JSON values.
+  return toPrismaInputJsonValue(
+    Array.from(toolCallMap.values()).filter((toolCall) => toolCall.name)
+  ) as any[]
 }
