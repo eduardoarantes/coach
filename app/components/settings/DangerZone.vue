@@ -1,7 +1,7 @@
 <template>
   <div class="space-y-6">
     <!-- Training Data Management -->
-    <UCard>
+    <UCard :ui="profileSettingsCardUi">
       <template #header>
         <div class="flex items-center gap-2">
           <UIcon name="i-heroicons-calendar" class="w-5 h-5 text-warning" />
@@ -58,7 +58,7 @@
     </UCard>
 
     <!-- Athlete Profile Management -->
-    <UCard>
+    <UCard :ui="profileSettingsCardUi">
       <template #header>
         <div class="flex items-center gap-2">
           <UIcon name="i-heroicons-user-circle" class="w-5 h-5 text-warning" />
@@ -89,7 +89,7 @@
     </UCard>
 
     <!-- AI Analysis Management -->
-    <UCard>
+    <UCard :ui="profileSettingsCardUi">
       <template #header>
         <div class="flex items-center gap-2">
           <UIcon name="i-heroicons-sparkles" class="w-5 h-5 text-warning" />
@@ -120,7 +120,7 @@
     </UCard>
 
     <!-- Imported Data Management (New) -->
-    <UCard>
+    <UCard :ui="profileSettingsCardUi">
       <template #header>
         <div class="flex items-center gap-2">
           <UIcon name="i-heroicons-circle-stack" class="w-5 h-5 text-warning" />
@@ -197,7 +197,7 @@
     </UCard>
 
     <!-- Account Deletion -->
-    <UCard>
+    <UCard :ui="profileSettingsCardUi">
       <template #header>
         <div class="flex items-center gap-2">
           <UIcon name="i-heroicons-exclamation-triangle" class="w-5 h-5 text-error" />
@@ -229,7 +229,7 @@
     </UCard>
 
     <!-- Data Portability -->
-    <UCard>
+    <UCard :ui="profileSettingsCardUi">
       <template #header>
         <div class="flex items-center gap-2">
           <UIcon name="i-heroicons-arrow-down-tray" class="w-5 h-5 text-primary" />
@@ -627,6 +627,7 @@
 <script setup lang="ts">
   import { useTranslate } from '@tolgee/vue'
   import { useAppLogout } from '#imports'
+  import { profileSettingsCardUi } from '~/utils/mobile-surface-ui'
 
   const { t } = useTranslate('settings')
   const toast = useToast()

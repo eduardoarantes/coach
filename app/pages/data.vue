@@ -103,9 +103,9 @@
     </template>
 
     <template #body>
-      <div class="p-3 sm:p-6 space-y-4 sm:space-y-6">
+      <div class="p-0 sm:p-6 space-y-4 sm:space-y-6">
         <!-- Page Header -->
-        <div class="flex items-center justify-between">
+        <div class="flex items-center justify-between px-4 sm:px-0">
           <div>
             <h1 class="text-2xl font-bold text-gray-900 dark:text-white">
               {{ tr('data_page_title', 'Data Management') }}
@@ -123,7 +123,9 @@
 
         <!-- Data Summary -->
         <div id="summary" class="scroll-mt-20" />
-        <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+        <div
+          class="bg-white dark:bg-gray-800 rounded-none sm:rounded-lg shadow-none sm:shadow ring-0 sm:ring-1 ring-gray-200 dark:ring-gray-800 border-y sm:border border-gray-200 dark:border-gray-800 p-4 sm:p-6"
+        >
           <h2 class="text-xl font-semibold text-gray-900 dark:text-white mb-4">
             {{ tr('data_summary_title', 'Data Summary') }}
           </h2>
@@ -169,7 +171,9 @@
 
         <!-- Fitness Data Table (WHOOP & Wellness) -->
         <div id="fitness" class="scroll-mt-20" />
-        <div class="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden">
+        <div
+          class="bg-white dark:bg-gray-800 rounded-none sm:rounded-lg shadow-none sm:shadow ring-0 sm:ring-1 ring-gray-200 dark:ring-gray-800 border-y sm:border border-gray-200 dark:border-gray-800 overflow-hidden"
+        >
           <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
             <h2 class="text-xl font-semibold text-gray-900 dark:text-white">
               {{ tr('data_fitness_title', 'Fitness & Recovery Data') }}
@@ -331,7 +335,9 @@
 
         <!-- Planned Workouts Section -->
         <div id="planned" class="scroll-mt-20" />
-        <div class="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden">
+        <div
+          class="bg-white dark:bg-gray-800 rounded-none sm:rounded-lg shadow-none sm:shadow ring-0 sm:ring-1 ring-gray-200 dark:ring-gray-800 border-y sm:border border-gray-200 dark:border-gray-800 overflow-hidden"
+        >
           <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
             <h2 class="text-xl font-semibold text-gray-900 dark:text-white">
               Upcoming Planned Workouts
@@ -449,7 +455,9 @@
 
         <!-- Racing Events Section -->
         <div id="events" class="scroll-mt-20" />
-        <div class="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden">
+        <div
+          class="bg-white dark:bg-gray-800 rounded-none sm:rounded-lg shadow-none sm:shadow ring-0 sm:ring-1 ring-gray-200 dark:ring-gray-800 border-y sm:border border-gray-200 dark:border-gray-800 overflow-hidden"
+        >
           <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
             <h2 class="text-xl font-semibold text-gray-900 dark:text-white">Racing Events</h2>
             <p class="text-sm text-gray-600 dark:text-gray-400 mt-1">
@@ -541,7 +549,9 @@
 
         <!-- Recent Workouts Table -->
         <div id="workouts" class="scroll-mt-20" />
-        <div class="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden">
+        <div
+          class="bg-white dark:bg-gray-800 rounded-none sm:rounded-lg shadow-none sm:shadow ring-0 sm:ring-1 ring-gray-200 dark:ring-gray-800 border-y sm:border border-gray-200 dark:border-gray-800 overflow-hidden"
+        >
           <div
             class="px-6 py-4 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center"
           >
@@ -752,7 +762,9 @@
 
         <!-- Nutrition Data Table -->
         <div id="nutrition" class="scroll-mt-20" />
-        <div class="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden">
+        <div
+          class="bg-white dark:bg-gray-800 rounded-none sm:rounded-lg shadow-none sm:shadow ring-0 sm:ring-1 ring-gray-200 dark:ring-gray-800 border-y sm:border border-gray-200 dark:border-gray-800 overflow-hidden"
+        >
           <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
             <div class="flex justify-between items-center">
               <div>

@@ -1,6 +1,7 @@
 <script setup lang="ts">
   import EventGoalWizard from '~/components/goals/EventGoalWizard.vue'
   import GoalCard from '~/components/goals/GoalCard.vue'
+  import { mobileListCardUi } from '~/utils/mobile-surface-ui'
 
   definePageMeta({
     middleware: 'auth'
@@ -400,7 +401,7 @@
 
         <div class="space-y-6">
           <!-- AI Features Section -->
-          <div v-if="!showWizard" class="flex gap-3">
+          <div v-if="!showWizard" class="flex gap-3 px-4 sm:px-0">
             <UButton
               color="primary"
               variant="outline"
@@ -437,7 +438,7 @@
           <!-- AI Suggestions Section -->
           <UCard
             v-if="showSuggestions && !showWizard"
-            :ui="{ body: 'p-4 sm:p-6', header: 'px-4 py-4 sm:px-6' }"
+            :ui="{ ...mobileListCardUi, body: 'p-4 sm:p-6', header: 'px-4 py-4 sm:px-6' }"
             class="overflow-hidden border-primary/15 bg-gradient-to-br from-white via-primary-50/30 to-cyan-50/40 dark:from-gray-900 dark:via-primary-950/10 dark:to-cyan-950/10"
           >
             <template #header>
@@ -659,7 +660,7 @@
           <!-- Goal Review Section -->
           <UCard
             v-if="showReview && !showWizard"
-            :ui="{ body: 'p-4 sm:p-6', header: 'px-4 py-4 sm:px-6' }"
+            :ui="{ ...mobileListCardUi, body: 'p-4 sm:p-6', header: 'px-4 py-4 sm:px-6' }"
             class="overflow-hidden border-primary/15 bg-gradient-to-br from-white via-emerald-50/25 to-primary-50/35 dark:from-gray-900 dark:via-emerald-950/10 dark:to-primary-950/10"
           >
             <template #header>
@@ -1051,13 +1052,13 @@
             />
           </div>
 
-          <div v-if="loading" class="space-y-4">
-            <USkeleton v-for="i in 2" :key="i" class="h-32 w-full" />
+          <div v-if="loading" class="space-y-0 sm:space-y-4">
+            <USkeleton v-for="i in 2" :key="i" class="h-32 w-full rounded-none sm:rounded-lg" />
           </div>
 
           <div
             v-else-if="goals.length === 0 && !showWizard"
-            class="text-center py-12 border-2 border-dashed border-gray-200 dark:border-gray-800 rounded-lg"
+            class="text-center py-12 border-y sm:border-2 border-dashed border-gray-200 dark:border-gray-800 rounded-none sm:rounded-lg px-4"
           >
             <div
               class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-primary/10 mb-4"
@@ -1082,7 +1083,10 @@
             </UButton>
           </div>
 
-          <div v-else-if="!showWizard" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div
+            v-else-if="!showWizard"
+            class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-0 md:gap-4"
+          >
             <GoalCard
               v-for="goal in goals"
               :key="goal.id"

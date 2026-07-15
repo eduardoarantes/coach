@@ -2,6 +2,7 @@
   import { useTranslate } from '@tolgee/vue'
   import { format } from 'date-fns'
   import type { SubscriptionStatus, SubscriptionTier } from '@prisma/client'
+  import { profileSettingsCardUi } from '~/utils/mobile-surface-ui'
 
   const { t } = useTranslate('settings')
   const tr = (key: string, fallback: string, params?: Record<string, any>) =>
@@ -442,7 +443,10 @@
 
 <template>
   <div class="space-y-6">
-    <UCard v-if="isPremium || showSuccessMessage" :ui="{ body: 'hidden' }">
+    <UCard
+      v-if="isPremium || showSuccessMessage"
+      :ui="{ ...profileSettingsCardUi, body: 'hidden' }"
+    >
       <template #header>
         <div class="flex items-center justify-between">
           <div>
@@ -499,7 +503,11 @@
         </template>
       </UAlert>
 
-      <UCard v-if="showSuccessMessage" class="relative overflow-hidden border-success/30">
+      <UCard
+        v-if="showSuccessMessage"
+        :ui="profileSettingsCardUi"
+        class="relative overflow-hidden border-success/30"
+      >
         <div class="absolute inset-0 pointer-events-none">
           <div
             v-for="piece in confettiPieces"
@@ -650,7 +658,7 @@
         :class="{ 'order-2 lg:order-2': !isPremium, 'order-1': isPremium }"
       >
         <!-- Detailed Status Card -->
-        <UCard class="lg:col-span-2" :ui="{ body: 'p-4 sm:p-6' }">
+        <UCard class="lg:col-span-2" :ui="{ ...profileSettingsCardUi, body: 'p-4 sm:p-6' }">
           <template #header>
             <div class="flex items-center justify-between">
               <h3 class="text-lg font-semibold">{{ t('billing_active_subscription') }}</h3>
@@ -835,7 +843,7 @@
         </UCard>
 
         <!-- Entitlements Summary -->
-        <UCard :ui="{ body: 'p-4 sm:p-6' }">
+        <UCard :ui="{ ...profileSettingsCardUi, body: 'p-4 sm:p-6' }">
           <template #header>
             <h3 class="text-lg font-semibold text-center">{{ t('billing_entitlements_title') }}</h3>
           </template>
@@ -972,7 +980,7 @@
           </div>
         </details>
 
-        <UCard :ui="{ body: 'p-4 sm:p-6' }">
+        <UCard :ui="{ ...profileSettingsCardUi, body: 'p-4 sm:p-6' }">
           <template #header>
             <h4 class="text-base font-semibold">{{ t('billing_faq_header') }}</h4>
           </template>

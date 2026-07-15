@@ -1,5 +1,5 @@
 <template>
-  <UCard :ui="{ body: 'p-0 sm:p-0' }" class="overflow-hidden">
+  <UCard :ui="{ ...mobileListCardUi, body: 'p-0 sm:p-0' }" class="overflow-hidden">
     <template #header>
       <div class="flex items-center justify-between">
         <h3 class="text-sm font-black uppercase tracking-widest text-neutral-500">
@@ -126,6 +126,8 @@
 </template>
 
 <script setup lang="ts">
+  import { mobileListCardUi } from '~/utils/mobile-surface-ui'
+
   const props = defineProps<{
     athletes: any[]
     weekDays: any[]

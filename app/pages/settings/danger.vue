@@ -1,6 +1,6 @@
 <template>
   <div class="space-y-6">
-    <UCard :ui="{ body: 'hidden' }">
+    <UCard :ui="{ ...profileSettingsCardUi, body: 'hidden' }">
       <template #header>
         <h2 class="text-xl font-bold uppercase tracking-tight text-red-600">Danger Zone</h2>
         <p class="text-sm text-gray-500 dark:text-gray-400">
@@ -13,6 +13,8 @@
 </template>
 
 <script setup lang="ts">
+  import { profileSettingsCardUi } from '~/utils/mobile-surface-ui'
+
   definePageMeta({
     middleware: 'auth'
   })

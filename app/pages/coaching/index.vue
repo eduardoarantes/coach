@@ -77,15 +77,15 @@
         <CoachingBanner />
 
         <!-- Loading State -->
-        <div v-if="loading" class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          <USkeleton class="lg:col-span-2 h-[400px] rounded-2xl" />
-          <USkeleton class="h-[400px] rounded-2xl" />
+        <div v-if="loading" class="grid grid-cols-1 lg:grid-cols-3 gap-0 lg:gap-8 px-0">
+          <USkeleton class="lg:col-span-2 h-[400px] rounded-none sm:rounded-2xl" />
+          <USkeleton class="h-[400px] rounded-none sm:rounded-2xl" />
         </div>
 
         <!-- Empty State -->
         <div
           v-else-if="overviewData.athletes.length === 0"
-          class="py-24 text-center border-2 border-dashed border-gray-200 dark:border-gray-800 rounded-2xl"
+          class="py-24 text-center border-y sm:border-2 border-dashed border-gray-200 dark:border-gray-800 rounded-none sm:rounded-2xl px-4"
         >
           <div class="bg-neutral-100 dark:bg-neutral-800 p-6 rounded-full inline-block mb-4">
             <UIcon name="i-heroicons-users" class="w-12 h-12 text-neutral-400" />
@@ -111,7 +111,7 @@
 
         <!-- 2. Main Strategic Grid -->
         <div v-else class="space-y-8">
-          <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
+          <div class="grid grid-cols-1 lg:grid-cols-3 gap-0 lg:gap-8 items-start">
             <!-- Weekly Compliance (2/3) -->
             <div class="lg:col-span-2">
               <CoachingWeeklyCompliance
@@ -142,12 +142,12 @@
               />
             </div>
 
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-0 sm:gap-4">
               <UCard
                 v-for="athlete in overviewData.athletes.slice(0, 8)"
                 :key="athlete.id"
                 class="hover:ring-2 hover:ring-primary-500 transition-all cursor-pointer group"
-                :ui="{ body: 'p-4' }"
+                :ui="mobileStatCardUi"
                 @click="
                   () => {
                     void router.push(`/coaching/athletes/${athlete.id}`)
@@ -183,6 +183,8 @@
 </template>
 
 <script setup lang="ts">
+  import { mobileStatCardUi } from '~/utils/mobile-surface-ui'
+
   const { tr } = useCoachingI18n()
 
   definePageMeta({

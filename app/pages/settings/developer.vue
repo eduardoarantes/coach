@@ -1,6 +1,6 @@
 <template>
   <div class="space-y-6">
-    <UCard :ui="{ body: 'hidden' }">
+    <UCard :ui="{ ...profileSettingsCardUi, body: 'hidden' }">
       <template #header>
         <h2 class="text-xl font-bold uppercase tracking-tight text-gray-900 dark:text-white">
           {{ t('dev_header') }}
@@ -12,7 +12,7 @@
     </UCard>
 
     <!-- Version History Link -->
-    <UCard>
+    <UCard :ui="profileSettingsCardUi">
       <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div class="flex items-start gap-3">
           <div class="p-2 bg-neutral-50 dark:bg-neutral-900/20 rounded-lg shrink-0">
@@ -56,7 +56,7 @@
     </UCard>
 
     <!-- Documentation Link -->
-    <UCard>
+    <UCard :ui="profileSettingsCardUi">
       <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div class="flex items-start gap-3">
           <div class="p-2 bg-primary-50 dark:bg-primary-900/20 rounded-lg shrink-0">
@@ -101,7 +101,7 @@
     </UCard>
 
     <!-- Bug Reports Link -->
-    <UCard>
+    <UCard :ui="profileSettingsCardUi">
       <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div class="flex items-start gap-3">
           <div class="p-2 bg-red-50 dark:bg-red-900/20 rounded-lg shrink-0">
@@ -130,7 +130,7 @@
     </UCard>
 
     <!-- Browse Ingested Data Link -->
-    <UCard>
+    <UCard :ui="profileSettingsCardUi">
       <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div class="flex items-start gap-3">
           <div class="p-2 bg-amber-50 dark:bg-amber-900/20 rounded-lg shrink-0">
@@ -162,7 +162,7 @@
     </UCard>
 
     <!-- OAuth Developer Portal Link -->
-    <UCard>
+    <UCard :ui="profileSettingsCardUi">
       <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div class="flex items-start gap-3">
           <div class="p-2 bg-blue-50 dark:bg-blue-900/20 rounded-lg shrink-0">
@@ -194,7 +194,7 @@
     </UCard>
 
     <!-- API Keys List -->
-    <UCard>
+    <UCard :ui="profileSettingsCardUi">
       <template #header>
         <div class="flex items-center justify-between">
           <h3 class="text-sm font-bold text-gray-900 dark:text-white uppercase tracking-widest">
@@ -433,6 +433,7 @@
 
 <script setup lang="ts">
   import { useTranslate } from '@tolgee/vue'
+  import { profileSettingsCardUi } from '~/utils/mobile-surface-ui'
 
   const { t } = useTranslate('settings')
   const toast = useToast()

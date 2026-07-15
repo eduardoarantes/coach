@@ -1,5 +1,7 @@
 <template>
-  <div class="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden">
+  <div
+    class="bg-white dark:bg-gray-800 rounded-none sm:rounded-lg shadow-none sm:shadow overflow-hidden ring-0 sm:ring-1 ring-gray-200 dark:ring-gray-800 border-y sm:border border-gray-200 dark:border-gray-800"
+  >
     <div v-if="loading" class="p-8 text-center text-gray-600 dark:text-gray-400">
       <UIcon name="i-lucide-loader-2" class="size-8 animate-spin mx-auto mb-2" />
       Loading events...
@@ -212,12 +214,15 @@
         </table>
       </div>
 
-      <div class="space-y-3 p-4 md:hidden">
+      <div class="divide-y divide-gray-200 dark:divide-gray-700 md:hidden">
         <UCard
           v-for="event in events"
           :key="`event-mobile-${event.id}`"
           class="cursor-pointer"
-          :ui="{ body: 'p-4 space-y-3' }"
+          :ui="{
+            root: 'rounded-none shadow-none ring-0 border-0',
+            body: 'p-4 space-y-3'
+          }"
           @click="
             () => {
               void $emit('navigate', event.id)
@@ -284,7 +289,7 @@
     <!-- Pagination -->
     <div
       v-if="totalEvents > itemsPerPage"
-      class="px-6 py-4 border-t border-gray-100 dark:border-gray-800 bg-gray-50/30 dark:bg-gray-950/30"
+      class="px-4 sm:px-6 py-4 border-t border-gray-100 dark:border-gray-800 bg-gray-50/30 dark:bg-gray-950/30"
     >
       <div class="flex flex-col-reverse sm:flex-row items-center justify-between gap-4">
         <div

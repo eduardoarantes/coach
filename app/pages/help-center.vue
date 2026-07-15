@@ -2,6 +2,7 @@
   import { useClipboard } from '@vueuse/core'
   import { useTranslate } from '@tolgee/vue'
   import IssueFormModal from '~/components/issues/IssueFormModal.vue'
+  import { mobileListCardUi } from '~/utils/mobile-surface-ui'
 
   const { t } = useTranslate('common')
 
@@ -107,7 +108,7 @@
     <template #body>
       <div class="p-0 sm:p-6 space-y-8 max-w-5xl mx-auto pb-24">
         <!-- Branding Header -->
-        <div>
+        <div class="px-4 sm:px-0">
           <h1 class="text-4xl font-black text-gray-900 dark:text-white uppercase tracking-tight">
             {{ t('help_header') }}
           </h1>
@@ -119,8 +120,11 @@
         </div>
 
         <!-- Primary Actions -->
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <UCard class="hover:ring-2 hover:ring-primary-500/50 transition-all group p-0">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-0 md:gap-6">
+          <UCard
+            :ui="{ ...mobileListCardUi, body: 'p-0' }"
+            class="hover:ring-2 hover:ring-primary-500/50 transition-all group"
+          >
             <button
               type="button"
               class="w-full text-left p-4 sm:p-6 rounded-[inherit] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500"
@@ -144,7 +148,10 @@
             </button>
           </UCard>
 
-          <UCard class="hover:ring-2 hover:ring-primary-500/50 transition-all group p-0">
+          <UCard
+            :ui="{ ...mobileListCardUi, body: 'p-0' }"
+            class="hover:ring-2 hover:ring-primary-500/50 transition-all group"
+          >
             <button
               type="button"
               class="w-full text-left p-4 sm:p-6 rounded-[inherit] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500"
@@ -168,7 +175,10 @@
             </button>
           </UCard>
 
-          <UCard class="hover:ring-2 hover:ring-primary-500/50 transition-all group p-0">
+          <UCard
+            :ui="{ ...mobileListCardUi, body: 'p-0' }"
+            class="hover:ring-2 hover:ring-primary-500/50 transition-all group"
+          >
             <button
               type="button"
               class="w-full text-left p-4 sm:p-6 rounded-[inherit] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500"
@@ -195,8 +205,9 @@
           </UCard>
         </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-0 md:gap-6">
           <UCard
+            :ui="mobileListCardUi"
             class="md:col-span-2 border-primary-200 dark:border-primary-800/60 bg-primary-50/60 dark:bg-primary-950/20"
           >
             <div class="space-y-3">
@@ -251,7 +262,8 @@
           </UCard>
 
           <UCard
-            class="md:col-span-1 hover:ring-2 hover:ring-primary-500/50 transition-all group p-0"
+            :ui="{ ...mobileListCardUi, body: 'p-0' }"
+            class="md:col-span-1 hover:ring-2 hover:ring-primary-500/50 transition-all group"
           >
             <button
               type="button"
@@ -290,14 +302,15 @@
 
         <!-- Secondary Resources -->
         <div class="space-y-4">
-          <h2 class="text-xs font-black uppercase tracking-widest text-gray-400">
+          <h2 class="text-xs font-black uppercase tracking-widest text-gray-400 px-4 sm:px-0">
             {{ t('help_resources_header') }}
           </h2>
-          <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-0 sm:gap-4">
             <template v-for="link in helpLinks" :key="link.title">
               <UCard
                 v-if="!link.disabled"
-                class="hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors group p-0"
+                :ui="{ ...mobileListCardUi, body: 'p-0' }"
+                class="hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors group"
               >
                 <button
                   type="button"
@@ -317,7 +330,7 @@
                   </div>
                 </button>
               </UCard>
-              <UCard v-else class="opacity-60 cursor-not-allowed">
+              <UCard v-else :ui="mobileListCardUi" class="opacity-60 cursor-not-allowed">
                 <div class="space-y-2">
                   <UIcon :name="link.icon" class="size-5 text-gray-400" />
                   <h4 class="font-bold text-sm">{{ link.title }}</h4>
@@ -330,11 +343,14 @@
 
         <!-- Account Diagnostics -->
         <div class="space-y-4 pt-4 border-t border-gray-100 dark:border-gray-800">
-          <h2 class="text-xs font-black uppercase tracking-widest text-gray-400">
+          <h2 class="text-xs font-black uppercase tracking-widest text-gray-400 px-4 sm:px-0">
             {{ t('help_diagnostics_header') }}
           </h2>
-          <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <UCard class="hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors group p-0">
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-0 sm:gap-4">
+            <UCard
+              :ui="{ ...mobileListCardUi, body: 'p-0' }"
+              class="hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors group"
+            >
               <button
                 type="button"
                 class="w-full text-left p-4 sm:p-6 rounded-[inherit] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500"

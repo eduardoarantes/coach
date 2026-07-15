@@ -33,10 +33,8 @@
 
         <!-- Invite Section -->
         <UCard
-          :ui="{
-            body: 'p-6',
-            root: 'overflow-hidden border-2 border-primary-500/20 bg-primary-50/30 dark:bg-primary-950/10'
-          }"
+          class="overflow-hidden border-2 border-primary-500/20 bg-primary-50/30 dark:bg-primary-950/10"
+          :ui="{ ...mobileListCardUi, body: 'p-4 sm:p-6' }"
         >
           <div class="flex flex-col md:flex-row md:items-center justify-between gap-6">
             <div class="space-y-1">
@@ -83,7 +81,7 @@
 
         <!-- My Teams Section (For Coaches) -->
         <div>
-          <div class="flex items-center justify-between mb-4">
+          <div class="flex items-center justify-between mb-4 px-4 sm:px-0">
             <h2 class="text-xl font-bold text-gray-900 dark:text-white">Professional Teams</h2>
             <div class="flex items-center gap-2">
               <UButton
@@ -115,13 +113,13 @@
             </div>
           </div>
 
-          <div v-if="loadingTeams" class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <USkeleton v-for="i in 2" :key="i" class="h-32 w-full rounded-xl" />
+          <div v-if="loadingTeams" class="grid grid-cols-1 md:grid-cols-2 gap-0 md:gap-4">
+            <USkeleton v-for="i in 2" :key="i" class="h-32 w-full rounded-none sm:rounded-xl" />
           </div>
 
           <div
             v-else-if="teams.length === 0"
-            class="text-center py-12 bg-neutral-50 dark:bg-neutral-800/30 rounded-xl border-2 border-dashed border-gray-200 dark:border-gray-800"
+            class="text-center py-12 bg-neutral-50 dark:bg-neutral-800/30 rounded-none sm:rounded-xl border-y sm:border-2 border-dashed border-gray-200 dark:border-gray-800 px-4"
           >
             <div class="bg-neutral-100 dark:bg-neutral-800 p-3 rounded-full mb-3 inline-block">
               <UIcon name="i-heroicons-shield-check" class="w-6 h-6 text-neutral-400" />
@@ -152,10 +150,11 @@
             </div>
           </div>
 
-          <div v-else class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div v-else class="grid grid-cols-1 md:grid-cols-2 gap-0 md:gap-4">
             <UCard
               v-for="membership in teams"
               :key="membership.id"
+              :ui="mobileListCardUi"
               class="hover:ring-2 hover:ring-primary-500 transition-all cursor-pointer group"
               @click="
                 () => {
@@ -197,10 +196,12 @@
 
         <!-- My Coaches List -->
         <div>
-          <h2 class="text-xl font-bold text-gray-900 dark:text-white mb-4">My Coaches</h2>
+          <h2 class="text-xl font-bold text-gray-900 dark:text-white mb-4 px-4 sm:px-0">
+            My Coaches
+          </h2>
 
-          <div v-if="loading" class="space-y-4">
-            <UCard v-for="i in 2" :key="i">
+          <div v-if="loading" class="space-y-0 sm:space-y-4">
+            <UCard v-for="i in 2" :key="i" :ui="mobileListCardUi">
               <div class="flex items-center gap-3">
                 <USkeleton class="h-10 w-10 rounded-full" />
                 <USkeleton class="h-4 w-48" />
@@ -210,7 +211,7 @@
 
           <div
             v-else-if="coaches.length === 0"
-            class="text-center py-12 bg-neutral-50 dark:bg-neutral-800/30 rounded-lg border border-gray-100 dark:border-gray-800"
+            class="text-center py-12 bg-neutral-50 dark:bg-neutral-800/30 rounded-none sm:rounded-lg border-y sm:border border-gray-100 dark:border-gray-800 px-4"
           >
             <div class="bg-neutral-100 dark:bg-neutral-800 p-3 rounded-full mb-3 inline-block">
               <UIcon name="i-heroicons-academic-cap" class="w-6 h-6 text-neutral-400" />
@@ -218,8 +219,12 @@
             <p class="text-neutral-500 text-sm">You haven't connected with any coaches yet.</p>
           </div>
 
-          <div v-else class="space-y-3">
-            <UCard v-for="rel in coaches" :key="rel.id" :ui="{ body: 'p-3 sm:p-4' }">
+          <div v-else class="space-y-0 sm:space-y-3">
+            <UCard
+              v-for="rel in coaches"
+              :key="rel.id"
+              :ui="{ ...mobileListCardUi, body: 'p-3 sm:p-4' }"
+            >
               <div class="flex items-center justify-between">
                 <div class="flex items-center gap-3">
                   <UAvatar :src="rel.coach.image" :alt="rel.coach.name" />
@@ -374,6 +379,7 @@
 </template>
 
 <script setup lang="ts">
+  import { mobileListCardUi } from '~/utils/mobile-surface-ui'
   const { tr } = useCoachingI18n()
   definePageMeta({
     middleware: 'auth'

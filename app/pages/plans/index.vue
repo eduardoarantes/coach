@@ -20,17 +20,18 @@
 
         <!-- Templates Section -->
         <div>
-          <h3 class="text-lg font-semibold mb-4 flex items-center gap-2">
+          <h3 class="text-lg font-semibold mb-4 flex items-center gap-2 px-4 sm:px-0">
             <UIcon name="i-heroicons-bookmark" class="w-5 h-5 text-primary" />
             Templates
           </h3>
-          <div v-if="templates.length === 0" class="text-muted text-sm italic">
+          <div v-if="templates.length === 0" class="text-muted text-sm italic px-4 sm:px-0">
             No templates saved yet. Save a plan as a template to reuse it later.
           </div>
-          <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-0 md:gap-4">
             <UCard
               v-for="plan in templates"
               :key="plan.id"
+              :ui="mobileListCardUi"
               class="relative group hover:border-primary/50 transition-colors cursor-pointer"
               @click="
                 () => {
@@ -115,7 +116,7 @@
 
         <!-- Past Plans Section -->
         <div>
-          <div class="flex items-center justify-between mb-4">
+          <div class="flex items-center justify-between mb-4 px-4 sm:px-0">
             <h3 class="text-lg font-semibold flex items-center gap-2">
               <UIcon name="i-heroicons-clock" class="w-5 h-5 text-gray-500" />
               Plan History
@@ -127,13 +128,14 @@
               Showing {{ Math.min(3, history.length) }} of {{ history.length }}
             </div>
           </div>
-          <div v-if="history.length === 0" class="text-muted text-sm italic">
+          <div v-if="history.length === 0" class="text-muted text-sm italic px-4 sm:px-0">
             No plan history found.
           </div>
-          <div v-else class="space-y-3">
+          <div v-else class="space-y-0 sm:space-y-3">
             <UCard
               v-for="plan in paginatedHistory"
               :key="plan.id"
+              :ui="{ ...mobileListCardUi, body: 'p-0' }"
               class="cursor-pointer hover:border-primary/50 transition-colors"
               @click="
                 () => {
@@ -154,7 +156,7 @@
             </UCard>
 
             <!-- Show More / Pagination -->
-            <div v-if="history.length > 3" class="flex justify-center pt-2">
+            <div v-if="history.length > 3" class="flex justify-center pt-2 px-4 sm:px-0">
               <UButton
                 v-if="!showAllHistory"
                 color="neutral"
@@ -311,6 +313,7 @@
 <script setup lang="ts">
   import MiniWorkoutChart from '~/components/workouts/MiniWorkoutChart.vue'
   import PlanOverviewModal from '~/components/plans/PlanOverviewModal.vue'
+  import { mobileListCardUi } from '~/utils/mobile-surface-ui'
 
   const {
     formatDate: baseFormatDate,

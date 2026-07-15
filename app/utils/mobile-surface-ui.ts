@@ -24,3 +24,21 @@ export const recoverySectionCardUi = {
   root: 'rounded-none sm:rounded-lg shadow-none sm:shadow',
   body: 'p-4 sm:p-5'
 } as const
+
+/**
+ * List / action cards (issues, help, events, etc.) — full-bleed on mobile,
+ * rounded + ring on sm+. Pair with page text in `px-4 sm:px-0`; do not wrap
+ * these cards in another horizontal gutter.
+ */
+export const mobileListCardUi = {
+  root: 'rounded-none sm:rounded-lg shadow-none sm:shadow ring-0 sm:ring-1 ring-gray-200 dark:ring-gray-800 border-y sm:border',
+  header: 'p-4 sm:p-5',
+  body: 'p-4 sm:p-5',
+  footer: 'p-4 sm:p-5'
+} as const
+
+/** Compact metric / summary tiles on list pages. */
+export const mobileStatCardUi = {
+  root: 'rounded-none sm:rounded-lg shadow-none sm:shadow ring-0 sm:ring-1 ring-gray-200 dark:ring-gray-800 border-y sm:border',
+  body: 'p-4'
+} as const

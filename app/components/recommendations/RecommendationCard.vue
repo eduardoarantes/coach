@@ -4,6 +4,7 @@
     class="flex flex-col h-full transition-all duration-200 cursor-pointer hover:ring-2 hover:ring-primary-500/50"
     :class="[recommendation.isPinned ? 'ring-2 ring-primary-500 bg-primary-50/10' : '']"
     :ui="{
+      ...mobileListCardUi,
       header: 'py-3 px-4',
       body: 'flex-1 py-3 px-4',
       footer: 'h-12 flex items-center shrink-0 border-t border-gray-100 dark:border-gray-800 px-4'
@@ -132,6 +133,7 @@
 
 <script setup lang="ts">
   import { renderSafeInlineMarkdown } from '~/utils/publicRichText'
+  import { mobileListCardUi } from '~/utils/mobile-surface-ui'
 
   const props = defineProps<{
     recommendation: any

@@ -2,6 +2,7 @@
   import { useDebounce } from '@vueuse/core'
   import { useTranslate } from '@tolgee/vue'
   import IssueFormModal from '~/components/issues/IssueFormModal.vue'
+  import { mobileListCardUi, mobileStatCardUi } from '~/utils/mobile-surface-ui'
 
   const { t } = useTranslate('common')
   const tr = (key: string, fallback: string) => {
@@ -162,8 +163,8 @@
         </div>
 
         <!-- Summary Stats -->
-        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 px-4 sm:px-0">
-          <UCard :ui="{ body: 'p-4' }">
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-0 sm:gap-4">
+          <UCard :ui="mobileStatCardUi">
             <div class="flex items-center gap-3">
               <div class="p-2 bg-gray-100 dark:bg-gray-800 rounded-lg">
                 <UIcon name="i-heroicons-ticket" class="size-5 text-gray-500" />
@@ -176,7 +177,7 @@
               </div>
             </div>
           </UCard>
-          <UCard :ui="{ body: 'p-4' }">
+          <UCard :ui="mobileStatCardUi">
             <div class="flex items-center gap-3">
               <div class="p-2 bg-warning-50 dark:bg-warning-900/20 rounded-lg">
                 <UIcon name="i-heroicons-clock" class="size-5 text-warning-500" />
@@ -189,7 +190,7 @@
               </div>
             </div>
           </UCard>
-          <UCard :ui="{ body: 'p-4' }">
+          <UCard :ui="mobileStatCardUi">
             <div class="flex items-center gap-3">
               <div class="p-2 bg-success-50 dark:bg-success-900/20 rounded-lg">
                 <UIcon name="i-heroicons-check-circle" class="size-5 text-success-500" />
@@ -246,15 +247,15 @@
         </UDashboardToolbar>
 
         <!-- Tickets Grid -->
-        <div v-if="pending" class="px-4 sm:px-0">
-          <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <USkeleton v-for="i in 4" :key="i" class="h-48 w-full rounded-xl" />
+        <div v-if="pending">
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-0 sm:gap-6">
+            <USkeleton v-for="i in 4" :key="i" class="h-48 w-full rounded-none sm:rounded-xl" />
           </div>
         </div>
 
         <div
           v-else-if="!filteredReports.length"
-          class="mx-4 sm:mx-0 py-24 text-center bg-white dark:bg-gray-900 rounded-2xl border border-dashed border-gray-200 dark:border-gray-700"
+          class="py-24 text-center bg-white dark:bg-gray-900 rounded-none sm:rounded-2xl border-y sm:border border-dashed border-gray-200 dark:border-gray-700"
         >
           <UIcon
             name="i-heroicons-ticket"
@@ -268,13 +269,14 @@
           </p>
         </div>
 
-        <div v-else class="space-y-6 px-4 sm:px-0">
-          <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div v-else class="space-y-6">
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-0 sm:gap-6">
             <UCard
               v-for="report in filteredReports"
               :key="report.id"
               class="flex flex-col relative group hover:ring-2 hover:ring-primary-500/50 transition-all cursor-pointer"
               :ui="{
+                ...mobileListCardUi,
                 body: 'flex-1 flex flex-col p-4 sm:p-5',
                 header: 'p-4 sm:p-5 pb-0 sm:pb-0'
               }"
@@ -366,7 +368,10 @@
           </div>
 
           <!-- Pagination -->
-          <div v-if="reportsData && reportsData.totalPages > 1" class="flex justify-center mt-8">
+          <div
+            v-if="reportsData && reportsData.totalPages > 1"
+            class="flex justify-center mt-8 px-4 sm:px-0"
+          >
             <UPagination v-model:page="page" :items-per-page="limit" :total="reportsData.total" />
           </div>
         </div>

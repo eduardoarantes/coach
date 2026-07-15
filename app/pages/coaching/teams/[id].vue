@@ -30,10 +30,10 @@
     </template>
 
     <template #body>
-      <div v-if="loading" class="p-6 space-y-6">
-        <USkeleton class="h-20 w-full rounded-xl" />
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <USkeleton v-for="i in 3" :key="i" class="h-40 w-full rounded-xl" />
+      <div v-if="loading" class="p-0 sm:p-6 space-y-6">
+        <USkeleton class="h-20 w-full rounded-none sm:rounded-xl" />
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-0 md:gap-6">
+          <USkeleton v-for="i in 3" :key="i" class="h-40 w-full rounded-none sm:rounded-xl" />
         </div>
       </div>
 
@@ -57,7 +57,7 @@
           <!-- Roster Tab -->
           <template #roster>
             <div class="space-y-6 pt-4">
-              <div class="flex items-center justify-between">
+              <div class="flex items-center justify-between px-4 sm:px-0">
                 <h3 class="text-lg font-bold">Team Roster</h3>
                 <UButton
                   v-if="['OWNER', 'ADMIN', 'COACH'].includes(myRole)"
@@ -105,7 +105,7 @@
                   />
                 </div>
               </div>
-              <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-0 md:gap-6">
                 <CoachingAthleteCard
                   v-for="rel in roster"
                   :key="rel.id"
@@ -117,10 +117,8 @@
 
               <UCard
                 v-if="canShareAthleteInvite"
-                :ui="{
-                  body: 'p-6',
-                  root: 'overflow-hidden border-2 border-primary-500/20 bg-primary-50/30 dark:bg-primary-950/10'
-                }"
+                class="overflow-hidden border-2 border-primary-500/20 bg-primary-50/30 dark:bg-primary-950/10"
+                :ui="{ ...mobileListCardUi, body: 'p-4 sm:p-6' }"
               >
                 <div class="flex flex-col xl:flex-row xl:items-center justify-between gap-6">
                   <div class="space-y-3 max-w-2xl">
@@ -237,7 +235,7 @@
             <div class="space-y-4 pt-4">
               <h3 class="text-lg font-bold">Team Staff</h3>
               <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <UCard v-for="member in staffMembers" :key="member.id">
+                <UCard v-for="member in staffMembers" :key="member.id" :ui="mobileListCardUi">
                   <div class="flex items-center justify-between">
                     <div class="flex items-center gap-3">
                       <UAvatar :src="member.user.image" :alt="member.user.name" />
@@ -331,7 +329,10 @@
                 class="pt-8 border-t border-gray-100 dark:border-gray-800"
               >
                 <h3 class="text-lg font-bold text-error-600 mb-2">Danger Zone</h3>
-                <UCard :ui="{ body: 'p-4', root: 'border-error-500/20 bg-error-50/10' }">
+                <UCard
+                  class="border-error-500/20 bg-error-50/10"
+                  :ui="{ ...mobileListCardUi, body: 'p-4' }"
+                >
                   <div class="flex items-center justify-between">
                     <div>
                       <p class="font-bold text-sm">Delete Team</p>
@@ -573,6 +574,7 @@
 
 <script setup lang="ts">
   import { formatDistanceToNow } from 'date-fns'
+  import { mobileListCardUi } from '~/utils/mobile-surface-ui'
 
   definePageMeta({
     middleware: 'auth'

@@ -134,7 +134,9 @@
         </div>
 
         <!-- Reports Table -->
-        <div class="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden">
+        <div
+          class="bg-white dark:bg-gray-800 rounded-none sm:rounded-lg shadow-none sm:shadow overflow-hidden ring-0 sm:ring-1 ring-gray-200 dark:ring-gray-800 border-y sm:border border-gray-200 dark:border-gray-800"
+        >
           <div v-if="reportStore.status === 'pending'" class="hidden md:block overflow-x-auto">
             <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
               <thead class="bg-gray-50 dark:bg-gray-900">
@@ -178,11 +180,17 @@
             </table>
           </div>
 
-          <div v-if="reportStore.status === 'pending'" class="space-y-3 p-4 md:hidden">
+          <div
+            v-if="reportStore.status === 'pending'"
+            class="divide-y divide-gray-200 dark:divide-gray-700 md:hidden"
+          >
             <UCard
               v-for="i in 3"
               :key="`report-mobile-skeleton-${i}`"
-              :ui="{ body: 'p-4 space-y-3' }"
+              :ui="{
+                root: 'rounded-none shadow-none ring-0 border-0',
+                body: 'p-4 space-y-3'
+              }"
             >
               <USkeleton class="h-5 w-2/3" />
               <USkeleton class="h-4 w-1/2" />
@@ -316,11 +324,14 @@
               </table>
             </div>
 
-            <div class="space-y-3 p-4 md:hidden">
+            <div class="divide-y divide-gray-200 dark:divide-gray-700 md:hidden">
               <UCard
                 v-for="report in reportStore.reports"
                 :key="`report-mobile-${report.id}`"
-                :ui="{ body: 'p-4 space-y-3' }"
+                :ui="{
+                  root: 'rounded-none shadow-none ring-0 border-0',
+                  body: 'p-4 space-y-3'
+                }"
               >
                 <div class="flex items-start gap-3">
                   <UIcon

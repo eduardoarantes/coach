@@ -82,14 +82,14 @@
     </template>
 
     <template #body>
-      <div class="px-4 py-4 sm:p-6 max-w-4xl mx-auto">
+      <div class="p-0 sm:p-6 max-w-4xl mx-auto space-y-4 sm:space-y-6 pb-24">
         <div v-if="pending" class="flex justify-center py-20">
           <UIcon name="i-heroicons-arrow-path" class="w-8 h-8 animate-spin text-primary" />
         </div>
 
-        <div v-else-if="profile">
+        <div v-else-if="profile" class="space-y-4 sm:space-y-6">
           <!-- Header -->
-          <div class="mb-6">
+          <div class="mb-6 px-4 sm:px-0">
             <div class="flex items-center justify-between mb-4">
               <div>
                 <h2 class="text-3xl font-bold">
@@ -118,7 +118,7 @@
             icon="i-heroicons-information-circle"
             title="Viewing Historical Profile"
             :description="`You are viewing the athlete profile as it was generated on ${formatDate(profile.createdAt)}. This profile cannot be regenerated as it reflects past data.`"
-            class="mb-6"
+            class="mb-6 mx-4 sm:mx-0"
           />
 
           <!-- Status Alert -->
@@ -141,7 +141,10 @@
           />
 
           <!-- Content - Structured Profile Display -->
-          <div v-if="profile.status === 'COMPLETED' && profile.analysisJson" class="space-y-6">
+          <div
+            v-if="profile.status === 'COMPLETED' && profile.analysisJson"
+            class="space-y-0 sm:space-y-6"
+          >
             <!-- Executive Summary -->
             <UCard :ui="athleteProfileCardUi">
               <template #header>

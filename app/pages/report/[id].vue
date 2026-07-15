@@ -21,10 +21,10 @@
     </template>
 
     <template #body>
-      <div class="p-4 sm:p-6 max-w-4xl mx-auto">
-        <div v-if="pending && !report" class="space-y-6">
+      <div class="p-0 sm:p-6 max-w-4xl mx-auto space-y-0 sm:space-y-6 pb-24">
+        <div v-if="pending && !report" class="space-y-0 sm:space-y-6">
           <!-- Header Skeleton -->
-          <div class="mb-6">
+          <div class="mb-6 px-4 sm:px-0">
             <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
               <div class="space-y-2">
                 <USkeleton class="h-8 w-64" />
@@ -35,7 +35,7 @@
           </div>
 
           <!-- Cards Skeleton -->
-          <UCard v-for="i in 3" :key="i">
+          <UCard v-for="i in 3" :key="i" :ui="mobileListCardUi">
             <template #header>
               <div class="flex items-center justify-between">
                 <USkeleton class="h-6 w-48" />
@@ -48,9 +48,9 @@
           </UCard>
         </div>
 
-        <div v-else-if="report">
+        <div v-else-if="report" class="space-y-0 sm:space-y-6">
           <!-- Header -->
-          <div class="mb-6">
+          <div class="mb-6 px-4 sm:px-0">
             <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
               <div>
                 <h2 class="text-xl sm:text-3xl font-bold">{{ reportTitle }}</h2>
@@ -78,7 +78,7 @@
                 'Your AI coach is analyzing your training data. This may take a few moments...'
               )
             "
-            class="mb-6"
+            class="mb-6 mx-4 sm:mx-0"
           />
 
           <UAlert
@@ -87,13 +87,16 @@
             icon="i-heroicons-exclamation-triangle"
             :title="tr('failed_title', 'Report Generation Failed')"
             :description="tr('failed_desc', 'Unable to generate report. Please try again.')"
-            class="mb-6"
+            class="mb-6 mx-4 sm:mx-0"
           />
 
           <!-- Content - Structured JSON Display -->
-          <div v-if="report.status === 'COMPLETED' && report.analysisJson" class="space-y-6">
+          <div
+            v-if="report.status === 'COMPLETED' && report.analysisJson"
+            class="space-y-0 sm:space-y-6"
+          >
             <!-- Quick Take / Executive Summary -->
-            <UCard>
+            <UCard :ui="mobileListCardUi">
               <template #header>
                 <h3 class="text-xl font-semibold">{{ tr('quick_take', 'Quick Take') }}</h3>
               </template>
@@ -105,7 +108,7 @@
             <!-- Athlete Profile Sections -->
             <template v-if="report.analysisJson.type === 'athlete_profile'">
               <!-- Current Fitness -->
-              <UCard v-if="report.analysisJson.current_fitness">
+              <UCard v-if="report.analysisJson.current_fitness" :ui="mobileListCardUi">
                 <template #header>
                   <div class="flex items-center justify-between">
                     <h3 class="text-xl font-semibold">
@@ -138,7 +141,7 @@
               </UCard>
 
               <!-- Training Characteristics -->
-              <UCard v-if="report.analysisJson.training_characteristics">
+              <UCard v-if="report.analysisJson.training_characteristics" :ui="mobileListCardUi">
                 <template #header>
                   <h3 class="text-xl font-semibold">
                     {{ tr('training_characteristics', 'Training Characteristics') }}
@@ -202,7 +205,7 @@
               </UCard>
 
               <!-- Recovery Profile -->
-              <UCard v-if="report.analysisJson.recovery_profile">
+              <UCard v-if="report.analysisJson.recovery_profile" :ui="mobileListCardUi">
                 <template #header>
                   <h3 class="text-xl font-semibold">
                     {{ tr('recovery_profile', 'Recovery Profile') }}
@@ -255,7 +258,7 @@
               </UCard>
 
               <!-- Nutrition Profile -->
-              <UCard v-if="report.analysisJson.nutrition_profile">
+              <UCard v-if="report.analysisJson.nutrition_profile" :ui="mobileListCardUi">
                 <template #header>
                   <h3 class="text-xl font-semibold">
                     {{ tr('nutrition_profile', 'Nutrition Profile') }}
@@ -312,7 +315,7 @@
               </UCard>
 
               <!-- Recent Performance -->
-              <UCard v-if="report.analysisJson.recent_performance">
+              <UCard v-if="report.analysisJson.recent_performance" :ui="mobileListCardUi">
                 <template #header>
                   <div class="flex items-center justify-between">
                     <h3 class="text-xl font-semibold">
@@ -376,7 +379,7 @@
               </UCard>
 
               <!-- Planning Context -->
-              <UCard v-if="report.analysisJson.planning_context">
+              <UCard v-if="report.analysisJson.planning_context" :ui="mobileListCardUi">
                 <template #header>
                   <h3 class="text-xl font-semibold">
                     {{ tr('planning_context', 'Planning Context') }}
@@ -429,7 +432,7 @@
               </UCard>
 
               <!-- Recommendations Summary (for athlete profile) -->
-              <UCard v-if="report.analysisJson.recommendations_summary">
+              <UCard v-if="report.analysisJson.recommendations_summary" :ui="mobileListCardUi">
                 <template #header>
                   <h3 class="text-xl font-semibold flex items-center gap-2">
                     <UIcon name="i-heroicons-light-bulb" class="w-6 h-6" />
@@ -483,7 +486,11 @@
 
             <!-- Standard Report Sections (for non-athlete-profile reports) -->
             <template v-else>
-              <UCard v-for="section in report.analysisJson.sections" :key="section.title">
+              <UCard
+                v-for="section in report.analysisJson.sections"
+                :key="section.title"
+                :ui="mobileListCardUi"
+              >
                 <template #header>
                   <div class="flex items-center justify-between">
                     <h3 class="text-xl font-semibold">{{ section.title }}</h3>
@@ -510,7 +517,7 @@
             </template>
 
             <!-- Recommendations -->
-            <UCard v-if="report.analysisJson.recommendations?.length">
+            <UCard v-if="report.analysisJson.recommendations?.length" :ui="mobileListCardUi">
               <template #header>
                 <h3 class="text-xl font-semibold flex items-center gap-2">
                   <UIcon name="i-heroicons-light-bulb" class="w-6 h-6" />
@@ -537,7 +544,7 @@
             </UCard>
 
             <!-- Metrics Summary -->
-            <UCard v-if="report.analysisJson.metrics_summary">
+            <UCard v-if="report.analysisJson.metrics_summary" :ui="mobileListCardUi">
               <template #header>
                 <h3 class="text-xl font-semibold">
                   {{ tr('metrics_summary', 'Metrics Summary') }}
@@ -604,12 +611,17 @@
           <UCard
             v-else-if="report.status === 'COMPLETED' && report.markdown"
             class="prose prose-lg max-w-none"
+            :ui="mobileListCardUi"
           >
             <MDC :value="report.markdown" :components="{}" />
           </UCard>
 
           <!-- Nutrition Analyzed -->
-          <UCard v-if="report.nutrition && report.nutrition.length > 0" class="mt-6">
+          <UCard
+            v-if="report.nutrition && report.nutrition.length > 0"
+            class="mt-6"
+            :ui="mobileListCardUi"
+          >
             <template #header>
               <h3 class="text-xl font-semibold flex items-center gap-2">
                 <UIcon name="i-heroicons-cake" class="w-6 h-6" />
@@ -670,7 +682,11 @@
           </UCard>
 
           <!-- Workouts Analyzed -->
-          <UCard v-if="report.workouts && report.workouts.length > 0" class="mt-6">
+          <UCard
+            v-if="report.workouts && report.workouts.length > 0"
+            class="mt-6"
+            :ui="mobileListCardUi"
+          >
             <template #header>
               <h3 class="text-xl font-semibold flex items-center gap-2">
                 <UIcon name="i-heroicons-list-bullet" class="w-6 h-6" />
@@ -720,7 +736,7 @@
           </UCard>
 
           <!-- Suggestions (for daily coach) -->
-          <UCard v-if="report.suggestions" class="mt-6">
+          <UCard v-if="report.suggestions" class="mt-6" :ui="mobileListCardUi">
             <template #header>
               <h3 class="text-xl font-semibold flex items-center gap-2">
                 <UIcon name="i-heroicons-light-bulb" class="w-6 h-6" />
@@ -806,6 +822,7 @@
 
 <script setup lang="ts">
   import { formatDistance as formatDist } from '~/utils/metrics'
+  import { mobileListCardUi } from '~/utils/mobile-surface-ui'
 
   const route = useRoute()
   const { formatDate: baseFormatDate, formatDateTime, formatShortDate } = useFormat()

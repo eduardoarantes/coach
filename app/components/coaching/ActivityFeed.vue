@@ -1,5 +1,8 @@
 <template>
-  <UCard class="h-full flex flex-col" :ui="{ body: 'px-0 py-0 sm:px-0 sm:py-0' }">
+  <UCard
+    class="h-full flex flex-col"
+    :ui="{ ...mobileListCardUi, body: 'px-0 py-0 sm:px-0 sm:py-0', header: 'p-0' }"
+  >
     <template #header>
       <div class="px-4 py-4 sm:px-6 flex items-center gap-2">
         <UIcon name="i-heroicons-clock" class="w-5 h-5 text-primary-500" />
@@ -76,6 +79,8 @@
 </template>
 
 <script setup lang="ts">
+  import { mobileListCardUi } from '~/utils/mobile-surface-ui'
+
   const props = defineProps<{
     feed: any[]
     loading?: boolean

@@ -58,9 +58,9 @@
     </template>
 
     <template #body>
-      <div class="p-3 sm:p-6 space-y-4 sm:space-y-6">
+      <div class="p-0 sm:p-6 space-y-4 sm:space-y-6">
         <!-- Page Header -->
-        <div>
+        <div class="px-4 sm:px-0">
           <h1 class="text-2xl font-bold text-gray-900 dark:text-white">
             {{ t('history_page_title') }}
           </h1>
@@ -70,9 +70,9 @@
         </div>
 
         <!-- Summary Stats -->
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-0 sm:gap-4">
           <button
-            class="rounded-xl p-3 sm:p-4 border text-left transition-colors bg-blue-50 dark:bg-blue-900/20 border-blue-100 dark:border-blue-800/50"
+            class="rounded-none sm:rounded-xl p-3 sm:p-4 border-y sm:border text-left transition-colors bg-blue-50 dark:bg-blue-900/20 border-blue-100 dark:border-blue-800/50"
           >
             <div class="flex items-center justify-between mb-1">
               <span
@@ -89,7 +89,7 @@
           </button>
 
           <button
-            class="rounded-xl p-3 sm:p-4 border text-left transition-colors bg-emerald-50 dark:bg-emerald-900/20 border-emerald-100 dark:border-emerald-800/50"
+            class="rounded-none sm:rounded-xl p-3 sm:p-4 border-y sm:border text-left transition-colors bg-emerald-50 dark:bg-emerald-900/20 border-emerald-100 dark:border-emerald-800/50"
           >
             <div class="flex items-center justify-between mb-1">
               <span
@@ -106,7 +106,7 @@
           </button>
 
           <button
-            class="rounded-xl p-3 sm:p-4 border text-left transition-colors bg-amber-50 dark:bg-amber-900/20 border-amber-100 dark:border-amber-800/50"
+            class="rounded-none sm:rounded-xl p-3 sm:p-4 border-y sm:border text-left transition-colors bg-amber-50 dark:bg-amber-900/20 border-amber-100 dark:border-amber-800/50"
           >
             <div class="flex items-center justify-between mb-1">
               <span
@@ -123,7 +123,7 @@
           </button>
 
           <button
-            class="rounded-xl p-3 sm:p-4 border text-left transition-colors bg-purple-50 dark:bg-purple-900/20 border-purple-100 dark:border-purple-800/50"
+            class="rounded-none sm:rounded-xl p-3 sm:p-4 border-y sm:border text-left transition-colors bg-purple-50 dark:bg-purple-900/20 border-purple-100 dark:border-purple-800/50"
           >
             <div class="flex items-center justify-between mb-1">
               <span
@@ -142,7 +142,7 @@
 
         <!-- Nutrition Quality Scores -->
         <div class="space-y-6">
-          <div class="flex items-center justify-between px-1">
+          <div class="flex items-center justify-between px-4 sm:px-0">
             <h2 class="text-xl font-bold text-gray-900 dark:text-white uppercase tracking-tight">
               {{ t('history_quality_header') }}
             </h2>
@@ -155,8 +155,8 @@
           </div>
 
           <div v-if="nutritionScoresLoading" class="space-y-6">
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-              <UCard v-for="i in 5" :key="i">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-0 md:gap-4">
+              <UCard v-for="i in 5" :key="i" :ui="mobileStatCardUi">
                 <div class="space-y-2">
                   <USkeleton class="h-4 w-20" />
                   <USkeleton class="h-8 w-12" />
@@ -202,7 +202,7 @@
 
           <div v-else-if="nutritionTrendsData" class="space-y-6">
             <!-- Score Cards -->
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-0 md:gap-4">
               <ScoreCard
                 title="Overall"
                 :score="nutritionTrendsData.summary?.avgOverall"
@@ -291,7 +291,7 @@
             </div>
 
             <!-- Trend Chart and Radar Chart Side by Side -->
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-6">
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-0 lg:gap-6">
               <!-- Score Trends (2/3 width) -->
               <div class="lg:col-span-2">
                 <UCard
@@ -366,7 +366,7 @@
         />
 
         <!-- Charts Section -->
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6">
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-0 lg:gap-6">
           <!-- Calorie Tracking Chart -->
           <UCard
             :ui="{
@@ -731,6 +731,7 @@
 
 <script setup lang="ts">
   import { useTranslate } from '@tolgee/vue'
+  import { mobileStatCardUi } from '~/utils/mobile-surface-ui'
   import {
     Chart as ChartJS,
     CategoryScale,

@@ -1,5 +1,5 @@
 <template>
-  <UCard>
+  <UCard :ui="profileSettingsCardUi">
     <template #header>
       <div class="flex items-center justify-between">
         <div>
@@ -27,6 +27,7 @@
 
 <script setup lang="ts">
   import { useTranslate } from '@tolgee/vue'
+  import { profileSettingsCardUi } from '~/utils/mobile-surface-ui'
 
   const { t } = useTranslate('settings')
   const config = useRuntimeConfig()

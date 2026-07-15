@@ -66,13 +66,13 @@
 
         <!-- Pinned / Focus Section -->
         <section>
-          <div class="flex items-center gap-2 mb-4">
+          <div class="flex items-center gap-2 mb-4 px-4 sm:px-0">
             <UIcon name="i-heroicons-paper-clip" class="w-5 h-5 text-primary-500" />
             <h2 class="text-xl font-bold text-gray-900 dark:text-white">Focus Area</h2>
           </div>
           <div
             v-if="sortedPinnedRecs && sortedPinnedRecs.length > 0"
-            class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-4"
+            class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-0 md:gap-4"
           >
             <RecommendationCard
               v-for="rec in sortedPinnedRecs"
@@ -82,7 +82,7 @@
               @update-status="updateStatus"
             />
           </div>
-          <div v-else class="py-8 text-center text-gray-500 dark:text-gray-400 italic">
+          <div v-else class="py-8 text-center text-gray-500 dark:text-gray-400 italic px-4 sm:px-0">
             Pin recommendations to guide the AI. Focused items inform your daily coaching advice,
             ensuring the AI knows what you're actively working on.
           </div>
@@ -90,7 +90,7 @@
 
         <!-- Filter Toolbar -->
         <div
-          class="flex items-center justify-between pb-4 border-b border-gray-100 dark:border-gray-800"
+          class="flex items-center justify-between pb-4 border-b border-gray-100 dark:border-gray-800 px-4 sm:px-0"
         >
           <div class="flex items-center gap-2">
             <USelectMenu
@@ -105,18 +105,18 @@
 
         <!-- Current Advices Section -->
         <section>
-          <div class="flex items-center gap-2 mb-4">
+          <div class="flex items-center gap-2 mb-4 px-4 sm:px-0">
             <UIcon name="i-heroicons-sparkles" class="w-5 h-5 text-primary-500" />
             <h2 class="text-xl font-bold text-gray-900 dark:text-white">Current Advices</h2>
           </div>
-          <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-0 lg:gap-4">
             <div v-if="activePending" class="col-span-full py-8 flex justify-center">
               <UIcon name="i-heroicons-arrow-path" class="w-8 h-8 animate-spin text-gray-400" />
             </div>
             <template v-else>
               <div
                 v-if="sortedActiveRecs?.length === 0"
-                class="col-span-full py-8 text-center text-gray-500"
+                class="col-span-full py-8 text-center text-gray-500 px-4 sm:px-0"
               >
                 No active recommendations. You're doing great!
               </div>
@@ -134,7 +134,7 @@
         <!-- History Section -->
         <section v-if="sortedHistoryRecs?.length > 0 || historyPending">
           <div
-            class="flex items-center justify-between gap-2 mb-4 pt-4 border-t border-gray-100 dark:border-gray-800 cursor-pointer select-none"
+            class="flex items-center justify-between gap-2 mb-4 pt-4 border-t border-gray-100 dark:border-gray-800 cursor-pointer select-none px-4 sm:px-0"
             @click="
               () => {
                 isHistoryOpen = !isHistoryOpen
@@ -161,7 +161,7 @@
             />
           </div>
 
-          <div v-if="isHistoryOpen" class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <div v-if="isHistoryOpen" class="grid grid-cols-1 lg:grid-cols-2 gap-0 lg:gap-4">
             <div v-if="historyPending" class="col-span-full py-8 flex justify-center">
               <UIcon name="i-heroicons-arrow-path" class="w-8 h-8 animate-spin text-gray-400" />
             </div>

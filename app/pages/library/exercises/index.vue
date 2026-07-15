@@ -155,9 +155,9 @@
 
         <div
           v-if="loading && !exerciseItems.length"
-          class="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3"
+          class="grid grid-cols-1 gap-0 md:grid-cols-2 md:gap-4 xl:grid-cols-3"
         >
-          <UCard v-for="i in 6" :key="i" class="min-h-[220px]">
+          <UCard v-for="i in 6" :key="i" class="min-h-[220px]" :ui="mobileListCardUi">
             <USkeleton class="mb-4 h-5 w-2/3" />
             <USkeleton class="mb-3 h-4 w-1/2" />
             <USkeleton class="mb-2 h-20 w-full" />
@@ -193,12 +193,13 @@
           </UButton>
         </div>
 
-        <div v-else class="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+        <div v-else class="grid grid-cols-1 gap-0 md:grid-cols-2 md:gap-4 xl:grid-cols-3">
           <UCard
             v-for="exercise in filteredExercises"
             :key="exercise.id"
             class="group flex h-full cursor-pointer flex-col transition-all hover:border-primary/50"
             :ui="{
+              ...mobileListCardUi,
               header: 'px-4 py-3 sm:px-4',
               body: 'flex flex-1 flex-col px-4 py-3 sm:px-4',
               footer: 'px-4 py-3 sm:px-4'
@@ -1062,6 +1063,7 @@
     type StrengthPrescriptionMode,
     type StrengthSetRow
   } from '~/utils/strengthWorkout'
+  import { mobileListCardUi } from '~/utils/mobile-surface-ui'
 
   definePageMeta({
     middleware: ['auth']

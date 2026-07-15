@@ -1,6 +1,6 @@
 <template>
   <div class="space-y-6">
-    <UCard :ui="{ body: 'hidden' }">
+    <UCard :ui="{ ...profileSettingsCardUi, body: 'hidden' }">
       <template #header>
         <div class="flex items-start justify-between gap-4">
           <div>
@@ -110,11 +110,14 @@
         </p>
       </div>
 
-      <div v-else class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
+      <div v-else class="grid grid-cols-1 md:grid-cols-2 gap-0 md:gap-4 mt-6">
         <UCard
           v-for="app in mergedApps"
           :key="app.id"
-          :ui="{ body: 'flex flex-col h-full justify-between gap-4' }"
+          :ui="{
+            ...profileSettingsCardUi,
+            body: 'flex flex-col h-full justify-between gap-4 px-0 py-4 sm:px-6 sm:py-6'
+          }"
         >
           <div class="flex items-start gap-4 min-w-0">
             <UAvatar
@@ -315,6 +318,7 @@
   import { isAutoDeduplicateWorkoutsEnabled } from '~/utils/ingestion-settings'
   import { isIntegrationConnected } from '~/utils/integrations'
   import { useResolvedTranslate } from '~/composables/useResolvedTranslate'
+  import { profileSettingsCardUi } from '~/utils/mobile-surface-ui'
 
   const { t, tr } = useResolvedTranslate('settings')
   const toast = useToast()

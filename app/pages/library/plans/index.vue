@@ -154,9 +154,9 @@
 
             <div
               v-if="loading && !planItems.length"
-              class="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3"
+              class="grid grid-cols-1 gap-0 md:grid-cols-2 md:gap-4 xl:grid-cols-3"
             >
-              <UCard v-for="i in 6" :key="i" class="min-h-[200px]">
+              <UCard v-for="i in 6" :key="i" class="min-h-[200px]" :ui="mobileListCardUi">
                 <USkeleton class="mb-4 h-4 w-3/4" />
                 <USkeleton class="mb-4 h-20 w-full" />
                 <div class="flex justify-between">
@@ -190,11 +190,12 @@
               >
             </div>
 
-            <div v-else class="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+            <div v-else class="grid grid-cols-1 gap-0 md:grid-cols-2 md:gap-4 xl:grid-cols-3">
               <UCard
                 v-for="plan in filteredPlans"
                 :key="plan.id"
                 class="group relative flex cursor-pointer flex-col transition-all hover:border-primary/50"
+                :ui="mobileListCardUi"
                 :draggable="selectedTab === 'my'"
                 @click="
                   () => {
@@ -530,6 +531,7 @@
 <script setup lang="ts">
   import TrainingPlanFolderSelector from '~/components/plans/library/TrainingPlanFolderSelector.vue'
   import PlanShareModal from '~/components/plans/library/PlanShareModal.vue'
+  import { mobileListCardUi } from '~/utils/mobile-surface-ui'
 
   useHead({
     title: 'Training Plans'

@@ -5,6 +5,7 @@
       'hover:ring-2 hover:ring-primary-500 cursor-pointer': canInteract,
       'opacity-80 grayscale-[0.5]': !canInteract
     }"
+    :ui="mobileListCardUi"
     @click="
       () => {
         canInteract ? $emit('view', athlete) : null
@@ -242,6 +243,7 @@
     Filler
   } from 'chart.js'
   import { formatDistanceToNow } from 'date-fns'
+  import { mobileListCardUi } from '~/utils/mobile-surface-ui'
 
   ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Tooltip, Filler)
 

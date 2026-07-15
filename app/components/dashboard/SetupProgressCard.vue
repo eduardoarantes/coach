@@ -1,20 +1,43 @@
 <template>
-  <UCard v-if="status" class="border border-primary-500/20 bg-primary-50/40 dark:bg-primary-950/20">
-    <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-      <div class="space-y-2">
-        <div class="flex items-center gap-2">
+  <UCard
+    v-if="status"
+    :ui="{
+      root: 'rounded-none sm:rounded-lg shadow-none sm:shadow',
+      body: 'p-4 sm:p-5'
+    }"
+    class="border-y sm:border border-primary-500/30 bg-primary-50/40 dark:bg-primary-950/20"
+  >
+    <div class="flex flex-col gap-3 sm:gap-4 sm:flex-row sm:items-start sm:justify-between">
+      <div class="space-y-2 min-w-0 flex-1">
+        <div class="flex items-start gap-2">
           <UIcon
             v-if="status.importState === 'importing'"
             name="i-heroicons-arrow-path"
-            class="w-5 h-5 text-primary-500 animate-spin"
+            class="w-5 h-5 text-primary-500 animate-spin shrink-0 mt-0.5"
           />
           <UIcon
             v-else-if="status.importState === 'failed'"
             name="i-heroicons-exclamation-triangle"
-            class="w-5 h-5 text-red-500"
+            class="w-5 h-5 text-red-500 shrink-0 mt-0.5"
           />
-          <UIcon v-else name="i-heroicons-sparkles" class="w-5 h-5 text-primary-500" />
-          <h2 class="font-bold text-gray-900 dark:text-white">{{ headline }}</h2>
+          <UIcon
+            v-else
+            name="i-heroicons-sparkles"
+            class="w-5 h-5 text-primary-500 shrink-0 mt-0.5"
+          />
+          <h2 class="font-bold text-gray-900 dark:text-white leading-snug flex-1 min-w-0">
+            {{ headline }}
+          </h2>
+          <UButton
+            v-if="!status.activationComplete"
+            color="neutral"
+            variant="ghost"
+            size="sm"
+            icon="i-heroicons-x-mark"
+            class="shrink-0 -mt-1 -mr-1 sm:hidden"
+            aria-label="Dismiss setup progress"
+            @click="emit('dismiss')"
+          />
         </div>
         <p class="text-sm text-gray-600 dark:text-gray-300">{{ description }}</p>
         <p v-if="status.workoutCount > 0 || status.wellnessCount > 0" class="text-xs text-gray-500">
@@ -27,13 +50,15 @@
         </p>
       </div>
 
-      <div class="flex flex-wrap gap-2 shrink-0">
+      <div class="flex w-full sm:w-auto flex-col sm:flex-row gap-2 shrink-0 sm:justify-end">
         <UButton
           v-if="status.importState === 'failed'"
           color="primary"
           variant="solid"
           size="sm"
+          block
           icon="i-heroicons-arrow-path"
+          class="sm:w-auto"
           @click="emit('sync')"
         >
           {{ t('setup_progress_retry_sync') }}
@@ -43,6 +68,8 @@
           color="primary"
           variant="solid"
           size="sm"
+          block
+          class="sm:w-auto"
           @click="emit('complete')"
         >
           {{ t('setup_progress_view_insight') }}
@@ -52,6 +79,8 @@
           color="neutral"
           variant="outline"
           size="sm"
+          block
+          class="sm:w-auto"
           to="/settings/apps"
         >
           {{ t('setup_progress_connect_apps') }}
@@ -62,6 +91,7 @@
           variant="ghost"
           size="sm"
           icon="i-heroicons-x-mark"
+          class="hidden sm:inline-flex"
           aria-label="Dismiss setup progress"
           @click="emit('dismiss')"
         />

@@ -113,8 +113,8 @@
         <UTabs v-model="selectedTab" :items="tabItems" class="w-full">
           <template #content="{ item }">
             <div v-if="item.value === 'overview'" class="space-y-6 pt-4">
-              <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-4">
-                <UCard>
+              <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-0 md:gap-4">
+                <UCard :ui="mobileListCardUi">
                   <template #header>
                     <h3 class="font-bold text-xs text-gray-500 uppercase">Fitness (CTL)</h3>
                   </template>
@@ -123,7 +123,7 @@
                   </p>
                 </UCard>
 
-                <UCard>
+                <UCard :ui="mobileListCardUi">
                   <template #header>
                     <h3 class="font-bold text-xs text-gray-500 uppercase">Fatigue (ATL)</h3>
                   </template>
@@ -132,7 +132,7 @@
                   </p>
                 </UCard>
 
-                <UCard>
+                <UCard :ui="mobileListCardUi">
                   <template #header>
                     <h3 class="font-bold text-xs text-gray-500 uppercase">Form (TSB)</h3>
                   </template>
@@ -144,7 +144,7 @@
                   </p>
                 </UCard>
 
-                <UCard>
+                <UCard :ui="mobileListCardUi">
                   <template #header>
                     <h3 class="font-bold text-xs text-gray-500 uppercase">Readiness</h3>
                   </template>
@@ -160,7 +160,7 @@
                   </p>
                 </UCard>
 
-                <UCard>
+                <UCard :ui="mobileListCardUi">
                   <template #header>
                     <h3 class="font-bold text-xs text-gray-500 uppercase">7d Compliance</h3>
                   </template>
@@ -178,7 +178,7 @@
               </div>
 
               <div class="grid grid-cols-1 xl:grid-cols-3 gap-4">
-                <UCard class="xl:col-span-2">
+                <UCard class="xl:col-span-2" :ui="mobileListCardUi">
                   <template #header>
                     <div class="flex items-center justify-between gap-3">
                       <div>
@@ -203,7 +203,7 @@
                   </div>
                 </UCard>
 
-                <UCard>
+                <UCard :ui="mobileListCardUi">
                   <template #header>
                     <h3 class="font-bold">Recovery Snapshot</h3>
                   </template>
@@ -247,7 +247,7 @@
               </div>
 
               <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <UCard>
+                <UCard :ui="mobileListCardUi">
                   <template #header>
                     <div class="flex items-center justify-between">
                       <div>
@@ -302,7 +302,7 @@
                   </div>
                 </UCard>
 
-                <UCard>
+                <UCard :ui="mobileListCardUi">
                   <template #header>
                     <div>
                       <h3 class="font-bold">Recent Completed Work</h3>
@@ -372,7 +372,7 @@
                 </UButton>
               </div>
               <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
-                <UCard>
+                <UCard :ui="mobileListCardUi">
                   <template #header>
                     <h3 class="font-bold">Schedule Pulse</h3>
                   </template>
@@ -392,7 +392,7 @@
                   </div>
                 </UCard>
 
-                <UCard class="lg:col-span-2">
+                <UCard class="lg:col-span-2" :ui="mobileListCardUi">
                   <template #header>
                     <h3 class="font-bold">Upcoming Events</h3>
                   </template>
@@ -418,7 +418,7 @@
               </div>
 
               <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <UCard>
+                <UCard :ui="mobileListCardUi">
                   <template #header>
                     <h3 class="font-bold">Upcoming Planned Sessions</h3>
                   </template>
@@ -451,7 +451,7 @@
                   </div>
                 </UCard>
 
-                <UCard>
+                <UCard :ui="mobileListCardUi">
                   <template #header>
                     <h3 class="font-bold">Recent Completed Sessions</h3>
                   </template>
@@ -491,19 +491,19 @@
 
             <div v-else-if="item.value === 'zones'" class="space-y-6 pt-4">
               <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <UCard>
+                <UCard :ui="mobileListCardUi">
                   <template #header>
                     <h3 class="font-bold text-xs text-gray-500 uppercase">FTP</h3>
                   </template>
                   <p class="text-3xl font-black">{{ athlete.zoneSummary?.ftp ?? '--' }}</p>
                 </UCard>
-                <UCard>
+                <UCard :ui="mobileListCardUi">
                   <template #header>
                     <h3 class="font-bold text-xs text-gray-500 uppercase">LTHR</h3>
                   </template>
                   <p class="text-3xl font-black">{{ athlete.zoneSummary?.lthr ?? '--' }}</p>
                 </UCard>
-                <UCard>
+                <UCard :ui="mobileListCardUi">
                   <template #header>
                     <h3 class="font-bold text-xs text-gray-500 uppercase">Max HR</h3>
                   </template>
@@ -512,7 +512,7 @@
               </div>
 
               <div class="grid grid-cols-1 xl:grid-cols-2 gap-6">
-                <UCard>
+                <UCard :ui="mobileListCardUi">
                   <template #header>
                     <h3 class="font-bold">Power Zones</h3>
                   </template>
@@ -531,7 +531,7 @@
                   </div>
                 </UCard>
 
-                <UCard>
+                <UCard :ui="mobileListCardUi">
                   <template #header>
                     <h3 class="font-bold">Heart Rate Zones</h3>
                   </template>
@@ -592,6 +592,7 @@
 
 <script setup lang="ts">
   import { Line as LineChart } from 'vue-chartjs'
+  import { mobileListCardUi } from '~/utils/mobile-surface-ui'
   import {
     Chart as ChartJS,
     CategoryScale,

@@ -1,9 +1,9 @@
 <template>
   <div
-    class="bg-white dark:bg-gray-900 p-4 rounded-xl border border-gray-100 dark:border-gray-800 shadow-sm overflow-hidden relative group transition-all duration-300"
+    class="bg-white dark:bg-gray-900 p-4 rounded-none sm:rounded-xl border-y sm:border border-x-0 sm:border-x border-gray-100 dark:border-gray-800 shadow-none sm:shadow-sm overflow-hidden relative group transition-all duration-300"
     :class="[
       canClick
-        ? 'hover:border-primary-300 dark:hover:border-primary-700 cursor-pointer shadow-md'
+        ? 'hover:border-primary-300 dark:hover:border-primary-700 cursor-pointer sm:shadow-md'
         : ''
     ]"
     @click="

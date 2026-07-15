@@ -1,6 +1,7 @@
 <template>
   <UCard
     class="cursor-pointer hover:bg-gray-50/50 dark:hover:bg-gray-800/20 transition-colors group"
+    :ui="mobileListCardUi"
     @click="
       () => {
         void emit('edit', goal)
@@ -97,6 +98,8 @@
 </template>
 
 <script setup lang="ts">
+  import { mobileListCardUi } from '~/utils/mobile-surface-ui'
+
   const { formatDate, getUserLocalDate } = useFormat()
 
   const props = defineProps<{

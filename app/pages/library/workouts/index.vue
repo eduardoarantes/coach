@@ -226,9 +226,9 @@
 
             <div
               v-if="loading && !templateItems.length"
-              class="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3"
+              class="grid grid-cols-1 gap-0 md:grid-cols-2 md:gap-4 xl:grid-cols-3"
             >
-              <UCard v-for="i in 6" :key="i" class="min-h-[200px]">
+              <UCard v-for="i in 6" :key="i" class="min-h-[200px]" :ui="mobileListCardUi">
                 <USkeleton class="mb-4 h-4 w-3/4" />
                 <USkeleton class="mb-4 h-20 w-full" />
                 <div class="flex justify-between">
@@ -272,13 +272,14 @@
 
             <div
               v-else-if="librarySource !== 'all'"
-              class="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3"
+              class="grid grid-cols-1 gap-0 md:grid-cols-2 md:gap-4 xl:grid-cols-3"
             >
               <UCard
                 v-for="template in filteredTemplates"
                 :key="template.id"
                 class="group cursor-pointer transition-all hover:border-primary/50"
                 :ui="{
+                  ...mobileListCardUi,
                   header: 'px-4 py-3 sm:px-4',
                   body: 'px-4 py-3 sm:px-4',
                   footer: 'px-4 py-2 sm:px-4'
@@ -447,13 +448,14 @@
 
                 <div
                   v-if="group.items.length"
-                  class="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3"
+                  class="grid grid-cols-1 gap-0 md:grid-cols-2 md:gap-4 xl:grid-cols-3"
                 >
                   <UCard
                     v-for="template in group.items"
                     :key="template.id"
                     class="group cursor-pointer transition-all hover:border-primary/50"
                     :ui="{
+                      ...mobileListCardUi,
                       header: 'px-4 py-3 sm:px-4',
                       body: 'px-4 py-3 sm:px-4',
                       footer: 'px-4 py-2 sm:px-4'
@@ -751,6 +753,7 @@
   import WorkoutTemplateEditor from '~/components/workouts/WorkoutTemplateEditor.vue'
   import WorkoutTemplatePreviewModal from '~/components/workouts/WorkoutTemplatePreviewModal.vue'
   import { getWorkoutIcon } from '~/utils/activity-types'
+  import { mobileListCardUi } from '~/utils/mobile-surface-ui'
 
   useHead({
     title: 'Workouts'

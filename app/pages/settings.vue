@@ -18,8 +18,10 @@
     </template>
 
     <template #body>
-      <div class="w-full p-4 sm:p-6" :class="isFullWidth ? 'max-w-full' : 'max-w-4xl mx-auto'">
-        <NuxtPage />
+      <div class="w-full p-0 sm:p-6" :class="isFullWidth ? 'max-w-full' : 'max-w-4xl mx-auto'">
+        <div class="px-4 sm:px-0">
+          <NuxtPage />
+        </div>
       </div>
     </template>
   </UDashboardPanel>

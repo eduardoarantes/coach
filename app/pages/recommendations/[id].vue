@@ -43,21 +43,23 @@
     </template>
 
     <template #body>
-      <div class="p-2 sm:p-6 space-y-6 sm:space-y-10">
+      <div class="p-0 sm:p-6 space-y-6 sm:space-y-10 pb-24">
         <div v-if="pending" class="flex justify-center py-12">
           <UIcon name="i-heroicons-arrow-path" class="w-8 h-8 animate-spin text-primary" />
         </div>
 
-        <div v-else-if="rec" class="space-y-8">
-          <h1 class="text-2xl sm:text-3xl font-extrabold text-gray-900 dark:text-white px-1">
+        <div v-else-if="rec" class="space-y-6 sm:space-y-8">
+          <h1
+            class="text-2xl sm:text-3xl font-extrabold text-gray-900 dark:text-white px-4 sm:px-0"
+          >
             {{ rec.title }}
           </h1>
 
           <!-- Main Content Section -->
-          <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div class="grid grid-cols-1 lg:grid-cols-3 gap-0 lg:gap-6">
             <!-- Left: Main Detail (2/3) -->
-            <div class="lg:col-span-2 space-y-6">
-              <UCard :ui="{ body: 'p-4 sm:p-6' }">
+            <div class="lg:col-span-2 space-y-0 sm:space-y-6">
+              <UCard :ui="{ ...mobileListCardUi, body: 'p-4 sm:p-6' }">
                 <template #header>
                   <div class="flex items-center justify-between">
                     <div class="flex items-center gap-2">
@@ -141,7 +143,7 @@
               <!-- Action Plan / Implementation Guide -->
               <div v-if="rec.implementationGuide" class="space-y-4">
                 <h3
-                  class="text-xl font-bold text-gray-900 dark:text-white px-1 flex items-center gap-2"
+                  class="text-xl font-bold text-gray-900 dark:text-white px-4 sm:px-0 flex items-center gap-2"
                 >
                   <UIcon
                     name="i-heroicons-clipboard-document-list"
@@ -150,9 +152,9 @@
                   Action Plan
                 </h3>
 
-                <div class="grid gap-6">
+                <div class="grid gap-0 sm:gap-6">
                   <!-- Strategy Summary -->
-                  <UCard :ui="{ body: 'p-5' }">
+                  <UCard :ui="{ ...mobileListCardUi, body: 'p-4 sm:p-5' }">
                     <h4
                       class="font-bold text-gray-900 dark:text-white mb-2 flex items-center gap-2"
                     >
@@ -165,8 +167,8 @@
                   </UCard>
 
                   <!-- Key Actions -->
-                  <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <UCard :ui="{ body: 'p-5' }" class="h-full">
+                  <div class="grid grid-cols-1 md:grid-cols-2 gap-0 md:gap-4">
+                    <UCard :ui="{ ...mobileListCardUi, body: 'p-4 sm:p-5' }" class="h-full">
                       <h4
                         class="font-bold text-gray-900 dark:text-white mb-3 flex items-center gap-2"
                       >
@@ -185,7 +187,7 @@
                       </ul>
                     </UCard>
 
-                    <UCard :ui="{ body: 'p-5' }" class="h-full">
+                    <UCard :ui="{ ...mobileListCardUi, body: 'p-4 sm:p-5' }" class="h-full">
                       <h4
                         class="font-bold text-gray-900 dark:text-white mb-3 flex items-center gap-2"
                       >
@@ -209,9 +211,9 @@
                   </div>
 
                   <!-- Pitfalls & Metrics -->
-                  <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div class="grid grid-cols-1 md:grid-cols-2 gap-0 md:gap-4">
                     <UCard
-                      :ui="{ body: 'p-5' }"
+                      :ui="{ ...mobileListCardUi, body: 'p-4 sm:p-5' }"
                       class="bg-red-50/50 dark:bg-red-900/10 border-red-100 dark:border-red-900/30"
                     >
                       <h4
@@ -239,7 +241,7 @@
                     </UCard>
 
                     <UCard
-                      :ui="{ body: 'p-5' }"
+                      :ui="{ ...mobileListCardUi, body: 'p-4 sm:p-5' }"
                       class="bg-green-50/50 dark:bg-green-900/10 border-green-100 dark:border-green-900/30"
                     >
                       <h4
@@ -276,7 +278,7 @@
 
               <!-- Evolution History -->
               <div v-if="rec.history && rec.history.length > 0" class="space-y-4">
-                <h3 class="text-xl font-bold text-gray-900 dark:text-white px-1">
+                <h3 class="text-xl font-bold text-gray-900 dark:text-white px-4 sm:px-0">
                   Evolution History
                 </h3>
                 <div
@@ -322,8 +324,8 @@
             </div>
 
             <!-- Right: Meta Info (1/3) -->
-            <div class="space-y-6">
-              <UCard :ui="{ body: 'p-4 sm:p-6' }">
+            <div class="space-y-0 sm:space-y-6">
+              <UCard :ui="{ ...mobileListCardUi, body: 'p-4 sm:p-6' }">
                 <template #header>
                   <h3 class="font-bold">Meta Details</h3>
                 </template>
@@ -372,6 +374,7 @@
 </template>
 
 <script setup lang="ts">
+  import { mobileListCardUi } from '~/utils/mobile-surface-ui'
   const route = useRoute()
   const recId = route.params.id as string
   const toast = useToast()

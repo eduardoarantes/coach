@@ -1,6 +1,6 @@
 <template>
   <div class="space-y-6">
-    <UCard :ui="{ body: 'hidden' }">
+    <UCard :ui="{ ...profileSettingsCardUi, body: 'hidden' }">
       <template #header>
         <div class="flex items-center gap-4">
           <UButton
@@ -23,7 +23,7 @@
     </UCard>
 
     <div v-if="pending" class="space-y-6">
-      <UCard v-for="i in 3" :key="i">
+      <UCard v-for="i in 3" :key="i" :ui="profileSettingsCardUi">
         <template #header>
           <div class="flex items-center justify-between">
             <USkeleton class="h-6 w-24" />
@@ -59,7 +59,7 @@
     </div>
 
     <div v-else class="space-y-6">
-      <UCard v-for="release in data" :key="release.version">
+      <UCard v-for="release in data" :key="release.version" :ui="profileSettingsCardUi">
         <template #header>
           <div class="flex items-center justify-between">
             <div class="flex items-center gap-2">
@@ -85,6 +85,7 @@
 <script setup lang="ts">
   import { h } from 'vue'
   import { useTranslate } from '@tolgee/vue'
+  import { profileSettingsCardUi } from '~/utils/mobile-surface-ui'
 
   const { t } = useTranslate('settings')
 

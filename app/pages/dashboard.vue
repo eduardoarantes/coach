@@ -117,38 +117,35 @@
 
           <!-- Dashboard Grid -->
           <template v-else>
-            <div
-              v-if="showCompactSetupCard && onboardingStatus"
-              class="p-4 sm:p-6 pb-0 max-w-6xl mx-auto"
-            >
+            <div class="p-0 sm:p-6 !pt-0 space-y-4 sm:space-y-8">
               <DashboardSetupProgressCard
+                v-if="showCompactSetupCard && onboardingStatus"
                 :status="onboardingStatus"
                 @sync="handleSync"
                 @complete="handleCompleteSetup"
                 @dismiss="handleCompleteSetup"
               />
-            </div>
-            <!-- Garmin Attribution -->
-            <div v-if="isGarminConnected" class="flex justify-end px-4 sm:px-6 pt-1 pb-0">
-              <div class="flex items-center gap-1.5">
-                <span
-                  class="text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-widest"
-                  >{{ t('attribution_garmin') }}</span
-                >
-                <img
-                  src="/images/logos/Garmin-Tag-black-high-res.png"
-                  class="h-5 w-auto dark:hidden"
-                  alt="Garmin"
-                />
-                <img
-                  src="/images/logos/Garmin-Tag-white-high-res.png"
-                  class="h-5 w-auto hidden dark:block"
-                  alt="Garmin"
-                />
-              </div>
-            </div>
 
-            <div class="p-0 sm:p-6 !pt-0 space-y-4 sm:space-y-8">
+              <!-- Garmin Attribution -->
+              <div v-if="isGarminConnected" class="flex justify-end px-4 sm:px-0">
+                <div class="flex items-center gap-1.5">
+                  <span
+                    class="text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-widest"
+                    >{{ t('attribution_garmin') }}</span
+                  >
+                  <img
+                    src="/images/logos/Garmin-Tag-black-high-res.png"
+                    class="h-5 w-auto dark:hidden"
+                    alt="Garmin"
+                  />
+                  <img
+                    src="/images/logos/Garmin-Tag-white-high-res.png"
+                    class="h-5 w-auto hidden dark:block"
+                    alt="Garmin"
+                  />
+                </div>
+              </div>
+
               <div v-if="userStore.isTrialActive" class="px-4 sm:px-0">
                 <div
                   class="relative overflow-hidden rounded-xl p-4 sm:p-6 shadow-lg group"

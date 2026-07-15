@@ -1,6 +1,6 @@
 <template>
   <div class="space-y-6">
-    <UCard :ui="{ body: 'hidden' }">
+    <UCard :ui="{ ...profileSettingsCardUi, body: 'hidden' }">
       <template #header>
         <h2 class="text-xl font-bold uppercase tracking-tight">{{ t('ai_coach_header') }}</h2>
         <p class="text-sm text-gray-500 dark:text-gray-400">
@@ -11,6 +11,7 @@
 
     <UCard
       v-if="showUpgradeBanner && !hasSuccessBypass && !userStore.hasMinimumTier('SUPPORTER')"
+      :ui="profileSettingsCardUi"
       class="mb-6"
     >
       <div class="flex items-start gap-4">
@@ -88,6 +89,7 @@
 <script setup lang="ts">
   import { useLocalStorage } from '@vueuse/core'
   import { useTranslate } from '@tolgee/vue'
+  import { profileSettingsCardUi } from '~/utils/mobile-surface-ui'
 
   const { t } = useTranslate('settings')
   const toast = useToast()

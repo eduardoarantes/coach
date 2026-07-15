@@ -2,6 +2,7 @@
   import { ANALYTICS_SYSTEM_PRESETS } from '~/utils/analytics-presets'
   import draggable from 'vuedraggable'
   import { useDebounceFn } from '@vueuse/core'
+  import { mobileListCardUi } from '~/utils/mobile-surface-ui'
 
   definePageMeta({
     middleware: 'auth'
@@ -902,7 +903,7 @@
         </div>
 
         <div
-          class="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-gray-100 dark:border-gray-800 pb-2"
+          class="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-gray-100 dark:border-gray-800 pb-2 px-4 sm:px-0"
         >
           <div class="flex items-center gap-1 overflow-x-auto no-scrollbar py-1">
             <draggable
@@ -1032,19 +1033,22 @@
 
         <div v-if="tabs[activeTab]?.slot === 'dashboard'">
           <!-- Dashboard Grid -->
-          <div v-if="loadingDashboards" class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <USkeleton v-for="i in 2" :key="i" class="h-[400px] rounded-2xl" />
+          <div v-if="loadingDashboards" class="grid grid-cols-1 lg:grid-cols-2 gap-0 lg:gap-6">
+            <USkeleton v-for="i in 2" :key="i" class="h-[400px] rounded-none sm:rounded-2xl" />
           </div>
 
           <div v-else-if="dashboardWidgets.length > 0">
             <draggable
               v-model="dashboardWidgets"
               item-key="instanceId"
-              class="grid grid-cols-1 lg:grid-cols-2 gap-6"
+              class="grid grid-cols-1 lg:grid-cols-2 gap-0 lg:gap-6"
               handle=".drag-handle"
             >
               <template #item="{ element }">
-                <UCard :ui="{ body: 'p-0 sm:p-0 overflow-hidden' }" class="relative group">
+                <UCard
+                  :ui="{ ...mobileListCardUi, body: 'p-0 sm:p-0 overflow-hidden' }"
+                  class="relative group"
+                >
                   <template #header>
                     <div class="flex items-center justify-between">
                       <div class="flex items-center gap-2 drag-handle cursor-move">

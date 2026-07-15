@@ -1,5 +1,6 @@
 <script setup lang="ts">
   import { useTranslate } from '@tolgee/vue'
+  import { mobileListCardUi } from '~/utils/mobile-surface-ui'
 
   definePageMeta({
     middleware: 'auth'
@@ -83,7 +84,7 @@
     </template>
 
     <template #body>
-      <div class="p-4 sm:p-6 max-w-4xl mx-auto space-y-4">
+      <div class="p-0 sm:p-6 max-w-4xl mx-auto space-y-0 sm:space-y-4 pb-24">
         <UAlert
           v-if="error"
           color="error"
@@ -91,7 +92,7 @@
           icon="i-heroicons-exclamation-circle"
           :title="error"
           :description="tr('notifications_load_error_desc', 'Notifications could not be loaded.')"
-          class="mb-4"
+          class="mb-4 mx-4 sm:mx-0"
         >
           <template #actions>
             <UButton
@@ -110,11 +111,14 @@
           </template>
         </UAlert>
 
-        <div v-if="loading && notifications.length === 0" class="flex flex-col gap-4">
-          <USkeleton v-for="i in 5" :key="i" class="h-24 w-full rounded-xl" />
+        <div v-if="loading && notifications.length === 0" class="flex flex-col gap-0 sm:gap-4">
+          <USkeleton v-for="i in 5" :key="i" class="h-24 w-full rounded-none sm:rounded-xl" />
         </div>
 
-        <div v-else-if="notifications.length === 0 && !error" class="py-24 text-center">
+        <div
+          v-else-if="notifications.length === 0 && !error"
+          class="py-24 text-center px-4 sm:px-0"
+        >
           <UIcon
             name="i-heroicons-bell-slash"
             class="w-16 h-16 text-gray-200 dark:text-gray-800 mx-auto mb-4"
@@ -127,11 +131,11 @@
           </p>
         </div>
 
-        <div v-else class="space-y-3">
+        <div v-else class="space-y-0 sm:space-y-3">
           <UCard
             v-for="notification in notifications"
             :key="notification.id"
-            :ui="{ body: 'p-4 sm:p-5' }"
+            :ui="mobileListCardUi"
             class="transition-all cursor-pointer hover:ring-2 hover:ring-primary-500/50"
             :class="{
               'bg-primary-50/20 dark:bg-primary-900/5 ring-1 ring-primary-100 dark:ring-primary-900/50':
@@ -195,7 +199,7 @@
             </div>
           </UCard>
 
-          <div v-if="total > limit" class="flex justify-center pt-8">
+          <div v-if="total > limit" class="flex justify-center pt-8 px-4 sm:px-0">
             <UPagination v-model:page="page" :total="total" :items-per-page="limit" />
           </div>
         </div>

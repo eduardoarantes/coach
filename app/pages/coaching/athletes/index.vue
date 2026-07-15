@@ -54,7 +54,7 @@
           @refresh="fetchGroups"
         />
 
-        <UCard v-if="pendingRequests.length > 0" :ui="{ body: 'p-6' }">
+        <UCard v-if="pendingRequests.length > 0" :ui="{ ...mobileListCardUi, body: 'p-4 sm:p-6' }">
           <div class="flex items-center justify-between gap-4 mb-4">
             <div>
               <h2 class="text-lg font-bold text-gray-900 dark:text-white">
@@ -167,8 +167,8 @@
           </div>
         </UCard>
 
-        <div v-if="loading" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          <UCard v-for="i in 3" :key="i">
+        <div v-if="loading" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-0 md:gap-6">
+          <UCard v-for="i in 3" :key="i" :ui="mobileListCardUi">
             <template #header>
               <div class="flex items-center gap-3">
                 <USkeleton class="h-12 w-12 rounded-full" />
@@ -234,7 +234,7 @@
           </div>
         </div>
 
-        <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-0 md:gap-6">
           <CoachingAthleteCard
             v-for="rel in filteredAthletes"
             :key="rel.id"
@@ -246,7 +246,7 @@
 
         <div
           v-if="activeGroupId !== 'all' && filteredAthletes.length === 0"
-          class="py-12 text-center flex flex-col items-center justify-center bg-neutral-50 dark:bg-neutral-800/20 rounded-lg border border-gray-100 dark:border-gray-800"
+          class="py-12 text-center flex flex-col items-center justify-center bg-neutral-50 dark:bg-neutral-800/20 rounded-none sm:rounded-lg border-y sm:border border-gray-100 dark:border-gray-800"
         >
           <p class="text-neutral-500 text-sm italic font-medium">
             {{ tr('athletes_no_group', 'No athletes assigned to this group yet.') }}
@@ -254,9 +254,10 @@
         </div>
 
         <UCard
+          class="overflow-hidden border-2 border-primary-500/20 bg-primary-50/30 dark:bg-primary-950/10"
           :ui="{
-            body: 'p-6',
-            root: 'overflow-hidden border-2 border-primary-500/20 bg-primary-50/30 dark:bg-primary-950/10'
+            ...mobileListCardUi,
+            body: 'p-4 sm:p-6'
           }"
         >
           <div class="flex flex-col xl:flex-row xl:items-center justify-between gap-6">
@@ -319,7 +320,7 @@
           </div>
         </UCard>
 
-        <UCard v-if="pendingInvites.length > 0" :ui="{ body: 'p-6' }">
+        <UCard v-if="pendingInvites.length > 0" :ui="{ ...mobileListCardUi, body: 'p-4 sm:p-6' }">
           <div class="flex items-center justify-between gap-4 mb-4">
             <div>
               <h2 class="text-lg font-bold text-gray-900 dark:text-white">
@@ -564,6 +565,8 @@
 </template>
 
 <script setup lang="ts">
+  import { mobileListCardUi } from '~/utils/mobile-surface-ui'
+
   const { formatRelativeTime } = useFormat()
   const { tr } = useCoachingI18n()
 
