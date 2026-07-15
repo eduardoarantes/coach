@@ -183,29 +183,23 @@
 </template>
 
 <script setup lang="ts">
-  import { useTranslate } from '@tolgee/vue'
-
-  const { t } = useTranslate('coaching')
-  const tr = (key: string, fallback: string) => {
-    if (typeof t.value !== 'function') return fallback
-    const translated = t.value(key)
-    return translated === key ? fallback : translated
-  }
+  const { tr } = useCoachingI18n()
 
   definePageMeta({
     middleware: 'auth'
   })
 
   useHead({
-    title: () => tr('index_meta_title', 'Coach Dashboard | Coaching'),
+    title: computed(() => tr('index_meta_title', 'Coach Dashboard | Coaching')),
     meta: [
       {
         name: 'description',
-        content: () =>
+        content: computed(() =>
           tr(
             'index_meta_description',
             'Strategic overview of your athletes performance and compliance.'
           )
+        )
       }
     ]
   })

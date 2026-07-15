@@ -4,7 +4,7 @@ export function useCoachingI18n() {
   const { t } = useTranslate('coaching')
 
   const tr = (key: string, fallback: string, params?: Record<string, string | number>) => {
-    if (typeof t.value !== 'function') return fallback
+    if (!t?.value || typeof t.value !== 'function') return fallback
     let translated = t.value(key)
     if (translated === key) translated = fallback
     if (params) {

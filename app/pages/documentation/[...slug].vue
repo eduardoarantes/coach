@@ -5,14 +5,16 @@
   })
 
   const route = useRoute()
+  const docPath = computed(() => route.path.replace(/\/$/, '') || '/')
 
-  // Fetch the page content
-  const { data: page } = await useAsyncData(route.path, () => {
-    return queryCollection('content').path(route.path).first()
-  })
+  const { data: page } = await useAsyncData(
+    () => `doc:${docPath.value}`,
+    () => queryCollection('content').path(docPath.value).first(),
+    { watch: [docPath] }
+  )
 
   if (!page.value) {
-    throw createError({ statusCode: 404, statusMessage: 'Page not found' })
+    throw createError({ statusCode: 404, statusMessage: 'Page not found', fatal: true })
   }
 
   useSeoMeta({

@@ -26,7 +26,21 @@ if (!config.public.sentryEnabled || !config.public.sentryDsn) {
       '/_nuxt/builds/meta/dev.json',
       'Failed to fetch dynamically imported module',
       'Importing a module script failed',
-      'error loading dynamically imported module'
-    ]
+      'error loading dynamically imported module',
+      'useLocalStorage is not defined',
+      'getActivePinia()'
+    ],
+    beforeSend(event) {
+      const message = event.exception?.values?.[0]?.value || event.message || ''
+      if (typeof message === 'string') {
+        if (message === 'Page not found' && event.request?.url?.includes('/documentation/')) {
+          return null
+        }
+        if (message.includes('Failed to parse JSON file') && message.includes('hero.json')) {
+          return null
+        }
+      }
+      return event
+    }
   })
 }

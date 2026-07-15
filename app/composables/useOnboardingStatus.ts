@@ -1,4 +1,3 @@
-import { useLocalStorage } from '@vueuse/core'
 import type { OnboardingStatus } from '#shared/onboarding-status'
 
 const CONNECT_LATER_KEY = 'cw-onboarding-connect-later'
@@ -6,7 +5,7 @@ const CONNECT_LATER_KEY = 'cw-onboarding-connect-later'
 export function useOnboardingStatus() {
   const status = useState<OnboardingStatus | null>('onboarding-status', () => null)
   const isLoading = useState('onboarding-status-loading', () => false)
-  const connectLater = useLocalStorage(CONNECT_LATER_KEY, false)
+  const connectLater = useCookie<boolean>(CONNECT_LATER_KEY, { default: () => false })
 
   async function refresh() {
     isLoading.value = true

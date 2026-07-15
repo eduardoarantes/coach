@@ -35,6 +35,21 @@ if (!config.public.sentryEnabled || !config.public.sentryDsn) {
         if (/Failed to refresh (Ultrahuman|Whoop|Withings) token/i.test(message)) {
           return null
         }
+
+        if (message === 'Page not found' && event.request?.url?.includes('/documentation/')) {
+          return null
+        }
+
+        if (message.includes('Failed to parse JSON file') && message.includes('hero.json')) {
+          return null
+        }
+
+        if (
+          message.includes('getActivePinia()') ||
+          message.includes('useLocalStorage is not defined')
+        ) {
+          return null
+        }
       }
 
       return event

@@ -25,7 +25,9 @@
 <template>
   <UApp>
     <ImpersonationBanner />
-    <CoachingBanner />
+    <ClientOnly>
+      <CoachingBanner />
+    </ClientOnly>
     <NuxtRouteAnnouncer />
     <NuxtLayout>
       <NuxtPage />
