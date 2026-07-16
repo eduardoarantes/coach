@@ -1,7 +1,13 @@
 import type { PartnerCampaign, PartnerCampaignRedemption, SubscriptionTier } from '@prisma/client'
 import { prisma } from './db'
 import { maxSubscriptionTier, resolveEffectiveTier } from '../../shared/effective-tier'
+import { normalizeSlug } from '../../shared/slug'
 import { getUserEntitlements, type UserEntitlements } from './entitlements'
+import {
+  getPublishedCampaignEvents,
+  getUserEnrollmentForPublicEvent,
+  type PublicEventPublicView
+} from './public-events'
 
 export type PartnerCampaignAvailability =
   'AVAILABLE' | 'DISABLED' | 'NOT_STARTED' | 'EXPIRED' | 'CAPACITY_REACHED'
@@ -12,6 +18,16 @@ export type ActivePromotionalGrant = {
   campaignSlug: string
   partnerName: string
   campaignName: string
+}
+
+export type PartnerCampaignEventView = PublicEventPublicView & {
+  isPrimary: boolean
+  displayOrder: number
+  enrollment?: {
+    enrolled: boolean
+    goalId: string | null
+    eventId: string | null
+  }
 }
 
 export type PartnerCampaignPublicView = {
@@ -25,6 +41,8 @@ export type PartnerCampaignPublicView = {
   availability: PartnerCampaignAvailability
   windowStartsAt: string | null
   windowEndsAt: string | null
+  publicUrl: string
+  events: PartnerCampaignEventView[]
 }
 
 export type PartnerRedemptionResult = {
@@ -46,7 +64,7 @@ const TIER_RANK: Record<SubscriptionTier, number> = {
 }
 
 export function normalizePartnerCampaignSlug(slug: string): string {
-  return slug.trim().toLowerCase()
+  return normalizeSlug(slug)
 }
 
 export function getCampaignAvailability(
@@ -65,7 +83,8 @@ export function getCampaignAvailability(
 
 export function toPartnerCampaignPublicView(
   campaign: PartnerCampaign,
-  now = new Date()
+  now = new Date(),
+  events: PartnerCampaignEventView[] = []
 ): PartnerCampaignPublicView {
   return {
     slug: campaign.slug,
@@ -77,7 +96,41 @@ export function toPartnerCampaignPublicView(
     redemptionCount: campaign.redemptionCount,
     availability: getCampaignAvailability(campaign, now),
     windowStartsAt: campaign.windowStartsAt?.toISOString() ?? null,
-    windowEndsAt: campaign.windowEndsAt?.toISOString() ?? null
+    windowEndsAt: campaign.windowEndsAt?.toISOString() ?? null,
+    publicUrl: `/partners/${campaign.slug}`,
+    events
+  }
+}
+
+export async function getPartnerCampaignPublicPayload(slug: string, userId?: string | null) {
+  const campaign = await getPartnerCampaignBySlug(slug)
+  if (!campaign) return null
+
+  const events = await getPublishedCampaignEvents(campaign.id)
+  const eventsWithEnrollment: PartnerCampaignEventView[] = await Promise.all(
+    events.map(async (event) => {
+      let enrollment: PartnerCampaignEventView['enrollment'] = {
+        enrolled: false,
+        goalId: null,
+        eventId: null
+      }
+
+      if (userId) {
+        const state = await getUserEnrollmentForPublicEvent(userId, event.id)
+        enrollment = {
+          enrolled: state.enrolled,
+          goalId: state.goalId,
+          eventId: state.eventId
+        }
+      }
+
+      const { id: _id, ...publicView } = event
+      return { ...publicView, enrollment }
+    })
+  )
+
+  return {
+    campaign: toPartnerCampaignPublicView(campaign, new Date(), eventsWithEnrollment)
   }
 }
 

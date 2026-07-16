@@ -28,6 +28,7 @@ import supportCommand from './support'
 import importCommand from './import'
 import translationsCommand from './translations'
 import partnersCommand from './partners'
+import eventsCommand from './events'
 
 const program = new Command()
 
@@ -59,6 +60,7 @@ program.addCommand(supportCommand)
 program.addCommand(importCommand)
 program.addCommand(translationsCommand)
 program.addCommand(partnersCommand)
+program.addCommand(eventsCommand)
 
 program.parse(process.argv)
 

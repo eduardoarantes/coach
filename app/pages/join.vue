@@ -113,19 +113,7 @@
               {{ joinFreeForeverNote }}
             </p>
 
-            <div class="relative my-6">
-              <div class="absolute inset-0 flex items-center">
-                <span class="w-full border-t border-white/10" />
-              </div>
-              <div class="relative flex justify-center text-xs">
-                <span
-                  class="bg-[oklch(14%_0.018_155)] px-3 font-bold uppercase tracking-widest text-gray-400"
-                  >{{ joinSecureOAuth }}</span
-                >
-              </div>
-            </div>
-
-            <p class="text-sm text-gray-400">
+            <p class="mt-8 text-sm text-gray-400">
               {{ joinAlreadyAccount }}
               <NuxtLink
                 :to="
@@ -212,7 +200,6 @@
     'Start free with a 14-day full-access trial. No credit card required.',
     ['Create your Coach Watts account. No credit card required.']
   )
-  const joinSecureOAuth = translateOrFallback('login.secure_oauth', 'Secure OAuth Login')
   const joinErrorTitle = translateOrFallback('join.error_title', 'Signup failed')
   const joinErrorGoogle = translateOrFallback(
     'join.error_google',

@@ -2,6 +2,7 @@
   import { useTolgee } from '@tolgee/vue'
 
   const tolgee = useTolgee(['language'])
+  const localeCookie = useCookie('cw_locale', { maxAge: 60 * 60 * 24 * 365 })
 
   const languageOptions = [
     { value: 'de', label: 'Deutsch' },
@@ -23,6 +24,7 @@
     },
     set: (language: string) => {
       const tolgeeLang = language === 'zh-CN' ? 'zh' : language
+      localeCookie.value = tolgeeLang
       void tolgee.value.changeLanguage(tolgeeLang)
     }
   })

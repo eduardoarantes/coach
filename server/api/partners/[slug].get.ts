@@ -1,8 +1,8 @@
 import {
   getPartnerCampaignBySlug,
+  getPartnerCampaignPublicPayload,
   getUserRedemptionForCampaign,
-  normalizePartnerCampaignSlug,
-  toPartnerCampaignPublicView
+  normalizePartnerCampaignSlug
 } from '../../utils/partner-campaigns'
 import { getServerSession } from '../../utils/session'
 
@@ -12,12 +12,12 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 400, message: 'Campaign slug is required' })
   }
 
-  const campaign = await getPartnerCampaignBySlug(slug)
-  if (!campaign) {
+  const session = await getServerSession(event)
+  const payload = await getPartnerCampaignPublicPayload(slug, session?.user?.id)
+  if (!payload) {
     throw createError({ statusCode: 404, message: 'Partner campaign not found' })
   }
 
-  const session = await getServerSession(event)
   let userState: {
     authenticated: boolean
     alreadyRedeemed: boolean
@@ -29,7 +29,10 @@ export default defineEventHandler(async (event) => {
   }
 
   if (session?.user?.id) {
-    const redemption = await getUserRedemptionForCampaign(session.user.id, campaign.id)
+    const campaign = await getPartnerCampaignBySlug(slug)
+    const redemption = campaign
+      ? await getUserRedemptionForCampaign(session.user.id, campaign.id)
+      : null
     userState = {
       authenticated: true,
       alreadyRedeemed: Boolean(redemption),
@@ -38,7 +41,7 @@ export default defineEventHandler(async (event) => {
   }
 
   return {
-    campaign: toPartnerCampaignPublicView(campaign),
+    campaign: payload.campaign,
     userState,
     slug: normalizePartnerCampaignSlug(slug)
   }

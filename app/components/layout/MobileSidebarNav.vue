@@ -12,6 +12,7 @@
 
   const mobileNavScrollRef = ref<HTMLElement | null>(null)
   const showScrollHint = ref(false)
+  let revealTimeout: ReturnType<typeof setTimeout> | null = null
 
   function updateScrollHint() {
     const element = mobileNavScrollRef.value
@@ -33,12 +34,78 @@
     updateScrollHint()
   }
 
+  /** Scroll just enough to reveal expanded submenu items without hiding the trigger. */
+  function revealExpandedGroup(trigger: Element) {
+    const container = mobileNavScrollRef.value
+    if (!container) return
+
+    const item = trigger.closest('li')
+    if (!item || !container.contains(item)) return
+
+    const content = item.querySelector<HTMLElement>('[data-slot="content"]')
+    const groupBottom = content ?? item
+    const padding = 12
+    const containerRect = container.getBoundingClientRect()
+    const triggerRect = trigger.getBoundingClientRect()
+    const bottomRect = groupBottom.getBoundingClientRect()
+
+    let delta = 0
+    if (bottomRect.bottom > containerRect.bottom - padding) {
+      delta = bottomRect.bottom - (containerRect.bottom - padding)
+    }
+
+    // Prefer keeping the trigger visible at the top when the submenu is tall.
+    const maxDelta = triggerRect.top - (containerRect.top + padding)
+    if (delta > 0) {
+      container.scrollBy({
+        top: Math.min(delta, Math.max(0, maxDelta)),
+        behavior: 'smooth'
+      })
+    }
+
+    updateScrollHint()
+  }
+
+  function scheduleRevealExpandedGroup(trigger: Element) {
+    if (revealTimeout) clearTimeout(revealTimeout)
+
+    // Wait for accordion open + height animation before measuring.
+    revealTimeout = setTimeout(() => {
+      revealTimeout = null
+      if (trigger.getAttribute('aria-expanded') !== 'true') return
+      revealExpandedGroup(trigger)
+    }, 220)
+  }
+
+  function onNavClick(event: MouseEvent) {
+    const target = event.target
+    if (!(target instanceof Element)) return
+
+    const trigger = target.closest<HTMLElement>('[aria-expanded]')
+    if (!trigger || !mobileNavScrollRef.value?.contains(trigger)) return
+
+    // Only scroll when opening (collapsed → expanded).
+    if (trigger.getAttribute('aria-expanded') !== 'false') return
+
+    scheduleRevealExpandedGroup(trigger)
+  }
+
   onMounted(() => {
-    mobileNavScrollRef.value?.addEventListener('scroll', updateScrollHint, { passive: true })
+    const container = mobileNavScrollRef.value
+    container?.addEventListener('scroll', updateScrollHint, { passive: true })
+    // Capture phase: read aria-expanded before the accordion toggles it.
+    container?.addEventListener('click', onNavClick, true)
     nextTick(() => {
       scrollActiveItemIntoView()
       updateScrollHint()
     })
+  })
+
+  onBeforeUnmount(() => {
+    const container = mobileNavScrollRef.value
+    container?.removeEventListener('scroll', updateScrollHint)
+    container?.removeEventListener('click', onNavClick, true)
+    if (revealTimeout) clearTimeout(revealTimeout)
   })
 
   watch(

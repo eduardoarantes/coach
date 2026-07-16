@@ -27,10 +27,6 @@
               <UIcon name="i-heroicons-check-circle-solid" class="h-4 w-4 text-primary-400" />
               Connected training &amp; wellness data
             </li>
-            <li class="flex items-center gap-2">
-              <UIcon name="i-heroicons-check-circle-solid" class="h-4 w-4 text-primary-400" />
-              Secure OAuth sign-in
-            </li>
           </ul>
         </aside>
 
@@ -102,34 +98,7 @@
               </UButton>
             </div>
 
-            <div class="relative my-6">
-              <div class="absolute inset-0 flex items-center">
-                <span class="w-full border-t border-white/10" />
-              </div>
-              <div class="relative flex justify-center text-xs">
-                <span
-                  class="flex items-center gap-1.5 bg-[oklch(14%_0.018_155)] px-3 font-bold uppercase tracking-widest text-gray-400"
-                >
-                  <UIcon name="i-heroicons-lock-closed-solid" class="h-3 w-3" />
-                  Secure OAuth Login
-                </span>
-              </div>
-            </div>
-
-            <div
-              class="flex flex-wrap items-center gap-4 text-xs font-bold uppercase tracking-widest text-gray-400"
-            >
-              <span class="inline-flex items-center gap-1.5">
-                <UIcon name="i-heroicons-shield-check-solid" class="h-3.5 w-3.5 text-primary-400" />
-                SSL Encrypted
-              </span>
-              <span class="inline-flex items-center gap-1.5">
-                <UIcon name="i-heroicons-key-solid" class="h-3.5 w-3.5 text-primary-400" />
-                256-bit AES
-              </span>
-            </div>
-
-            <p class="mt-6 text-sm text-gray-400">
+            <p class="mt-8 text-sm text-gray-400">
               {{ t('login.new_athlete') }}
               <NuxtLink
                 :to="

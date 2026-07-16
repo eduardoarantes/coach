@@ -1,5 +1,7 @@
 <template>
-  <UDashboardPanel id="event-detail">
+  <PublicEventLanding v-if="!isUuid" :slug="routeParam" :campaign-slug="campaignSlug" />
+
+  <UDashboardPanel v-else id="event-detail">
     <template #header>
       <UDashboardNavbar>
         <template #leading>
@@ -357,16 +359,34 @@
 
 <script setup lang="ts">
   import EventForm from '~/components/events/EventForm.vue'
+  import PublicEventLanding from '~/components/events/PublicEventLanding.vue'
+
+  const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
 
   definePageMeta({
-    middleware: 'auth',
-    layout: 'default'
+    middleware: 'event-detail',
+    auth: false
   })
 
   const route = useRoute()
   const router = useRouter()
   const toast = useToast()
   const { formatDateUTC } = useFormat()
+
+  const routeParam = computed(() => String(route.params.id || ''))
+  const isUuid = computed(() => UUID_RE.test(routeParam.value))
+  const campaignSlug = computed(() => {
+    const value = route.query.campaign
+    return typeof value === 'string' ? value : null
+  })
+
+  watch(
+    isUuid,
+    (uuid) => {
+      setPageLayout(uuid ? 'default' : 'home')
+    },
+    { immediate: true }
+  )
 
   const event = ref<any>(null)
   const loading = ref(true)
@@ -376,6 +396,9 @@
   const deleting = ref(false)
 
   useHead(() => {
+    if (!isUuid.value) {
+      return { title: 'Event | Coach Watts' }
+    }
     if (!event.value) {
       return { title: 'Event Details' }
     }
@@ -386,6 +409,11 @@
   })
 
   async function fetchEvent() {
+    if (!isUuid.value) {
+      loading.value = false
+      return
+    }
+
     loading.value = true
     error.value = null
     try {

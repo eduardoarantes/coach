@@ -1848,6 +1848,7 @@ model PartnerCampaign {
   createdAt          DateTime                    @default(now())
   updatedAt          DateTime                    @updatedAt
   redemptions        PartnerCampaignRedemption[]
+  campaignEvents     PartnerCampaignEvent[]
 
   @@index([isActive])
 }
@@ -1868,6 +1869,53 @@ model PartnerCampaignRedemption {
   @@unique([campaignId, userId])
   @@index([userId, endsAt])
   @@index([campaignId])
+}
+
+/// Canonical organizer event catalog. Never shared as a multi-athlete Event row.
+model PublicEvent {
+  id               String                 @id @default(uuid())
+  slug             String                 @unique
+  title            String
+  description      String?
+  organizerName    String
+  date             DateTime
+  timezone         String                 @default("UTC")
+  startTime        String?
+  type             String?
+  subType          String?
+  distance         Float?
+  elevation        Int?
+  expectedDuration Float?
+  terrain          String?
+  city             String?
+  country          String?
+  location         String?
+  isVirtual        Boolean                @default(false)
+  websiteUrl       String?
+  registrationUrl  String?
+  imageUrl         String?
+  isPublished      Boolean                @default(false)
+  createdAt        DateTime               @default(now())
+  updatedAt        DateTime               @updatedAt
+  campaignEvents   PartnerCampaignEvent[]
+
+  @@index([isPublished, date])
+}
+
+model PartnerCampaignEvent {
+  id          String          @id @default(uuid())
+  campaignId  String
+  publicEventId String
+  displayOrder Int            @default(0)
+  isPrimary   Boolean         @default(false)
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+  campaign    PartnerCampaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  publicEvent PublicEvent     @relation(fields: [publicEventId], references: [id], onDelete: Cascade)
+
+  @@unique([campaignId, publicEventId])
+  @@index([campaignId, displayOrder])
+  @@index([publicEventId])
 }
 
 model LlmUsage {

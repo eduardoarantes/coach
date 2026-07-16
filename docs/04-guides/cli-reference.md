@@ -25,16 +25,25 @@ pnpm cw:cli <command> [subcommand] [options]
 
 #### Partner campaigns (`partners`)
 
-Manage time-limited partner promotional access.
+Manage time-limited partner promotional access and attached public events.
 
-- `create [--prod]`: Create a campaign.
+- `create [--event-slug ...] [--prod --confirm-prod] [--dry-run]`: Create a campaign.
 - `list [--prod]`: List campaigns with aggregate redemption counts.
-- `show <slug> [--prod]`: Inspect one campaign.
-- `disable <slug> [--prod]`: Stop new redemptions.
-- `update-capacity <slug> [--max-redemptions N] [--enable] [--prod]`: Adjust capacity or re-enable.
+- `show <slug> [--prod]`: Inspect one campaign, events, and public URLs.
+- `attach-event <campaign> <event> [--primary] [--prod --confirm-prod]`
+- `detach-event <campaign> <event> [--prod --confirm-prod]`
+- `disable <slug> [--prod --confirm-prod]`: Stop new redemptions.
+- `update-capacity <slug> [--max-redemptions N] [--enable] [--prod --confirm-prod]`
 - `user-grant <email-or-id> [--prod]`: Inspect a user's promotional grant for support.
 
-See [partner-campaigns.md](./partner-campaigns.md).
+#### Public events (`events`)
+
+Canonical organizer event catalog (not athlete-owned Events).
+
+- `create --slug ... --title ... --organizer-name ... --date YYYY-MM-DD [--published] [--upsert] [--prod --confirm-prod] [--dry-run]`
+- `show|list|update|publish|unpublish`
+
+Production writes require both `--prod` and `--confirm-prod`. See [partner-campaigns.md](./partner-campaigns.md).
 
 #### 1. Database (`db`)
 

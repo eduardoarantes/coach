@@ -443,6 +443,41 @@ export function useAnalytics() {
         status,
         ...(reason ? { reason } : {})
       })
+    },
+
+    trackPartnerEventView: (campaignSlug: string | null, eventSlug: string) => {
+      trackEvent('partner_event_view', {
+        ...(campaignSlug ? { campaign_slug: campaignSlug } : {}),
+        event_slug: eventSlug
+      })
+    },
+
+    trackPartnerEventJoinStart: (campaignSlug: string | null, eventSlug: string) => {
+      trackEvent('partner_event_join_start', {
+        ...(campaignSlug ? { campaign_slug: campaignSlug } : {}),
+        event_slug: eventSlug
+      })
+    },
+
+    trackPartnerEventJoinCompleted: (campaignSlug: string | null, eventSlug: string) => {
+      trackEvent('partner_event_join_completed', {
+        ...(campaignSlug ? { campaign_slug: campaignSlug } : {}),
+        event_slug: eventSlug
+      })
+    },
+
+    trackPartnerEventJoinAlreadyExists: (campaignSlug: string | null, eventSlug: string) => {
+      trackEvent('partner_event_join_already_exists', {
+        ...(campaignSlug ? { campaign_slug: campaignSlug } : {}),
+        event_slug: eventSlug
+      })
+    },
+
+    trackOfficialEventRegistrationClick: (campaignSlug: string | null, eventSlug: string) => {
+      trackEvent('official_event_registration_click', {
+        ...(campaignSlug ? { campaign_slug: campaignSlug } : {}),
+        event_slug: eventSlug
+      })
     }
   }
 }

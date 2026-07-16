@@ -1,14 +1,40 @@
-# Partner Campaigns
+# Partner Campaigns & Public Events
 
 Partner campaigns grant time-limited complimentary access through promotional entitlements. They do not create Stripe subscriptions and do not modify `trialEndsAt`.
 
-## Public URL
+Campaigns can also attach one or more **canonical public events**. Athletes can then explicitly add those events as personal Coach Watts training goals. That is **not** official race registration.
 
-Each campaign is available at:
+## Architecture
 
-`https://coachwatts.com/partners/<slug>`
+| Concept                | Model                                           | Ownership                              |
+| ---------------------- | ----------------------------------------------- | -------------------------------------- |
+| Partner offer          | `PartnerCampaign` + `PartnerCampaignRedemption` | Platform / operator                    |
+| Canonical event        | `PublicEvent`                                   | Platform / operator catalog            |
+| Campaign ↔ events      | `PartnerCampaignEvent`                          | Join with display order + primary flag |
+| Athlete calendar event | `Event`                                         | Per-user (`source=coachwatts_catalog`) |
+| Athlete training goal  | `Goal` type `EVENT`                             | Per-user, linked to their own `Event`  |
 
-Example: [https://coachwatts.com/partners/skool4cyclists](https://coachwatts.com/partners/skool4cyclists)
+Never share one organizer-owned `Event` row across athletes.
+
+## Public URLs
+
+- Partner campaign: `https://coachwatts.com/partners/<campaign-slug>`
+- Canonical event: `https://coachwatts.com/events/<event-slug>`
+- User-owned event detail remains UUID-based and authenticated: `/events/<uuid>`
+
+## Athlete journey
+
+1. Open partner URL
+2. Sign up or log in (callback preserved)
+3. Redeem partner benefit (no card, no auto-charge)
+4. Explicitly confirm “Add to my Coach Watts goals”
+5. Optional: open official registration URL separately
+
+Wording rules:
+
+- Never imply the athlete registered for the organizer’s race
+- Always show official registration separately when available
+- Enrollment always requires explicit confirmation
 
 ## Entitlement behavior
 
@@ -19,82 +45,124 @@ Effective tier is the highest currently valid tier from:
 3. Active promotional/partner grant
 4. FREE
 
-Rules:
-
-- Promotional grants never shorten, replace, or damage paid subscriptions.
-- Expired grants stop applying automatically; no cleanup job is required.
-- Redemption is one per user per campaign and idempotent.
-- No payment card or Stripe checkout is involved in redemption.
-
 ## Privacy boundaries
 
-- Partners receive aggregate campaign metrics only (page views, signup starts, redemption counts/reasons).
-- Workout, biometric, recovery, nutrition, goal, and account-level data are never shared with partners.
-- CLI support commands may inspect an individual user's grant for internal support, but that output must not be exported to partners.
+- Partners receive aggregate campaign metrics only
+- Never expose participants, accounts, goals, workouts, biometrics, recovery, nutrition, or training data
+- Never transfer participant lists to or from organizers
 
-## Create a campaign (development)
+## Create a public event (development)
+
+```bash
+pnpm cw:cli events create \
+  --slug pilis-kupa-2026 \
+  --title "XIX. Pilis Kupa – 2. forduló" \
+  --organizer-name "Esztergomi Küllőszaggatók Kerékpár Egyesület" \
+  --date "2026-09-27" \
+  --timezone "Europe/Budapest" \
+  --sport CYCLING \
+  --sub-type "Hill Climb Time Trial" \
+  --city "Esztergom" \
+  --country HU \
+  --website-url "https://example.com" \
+  --registration-url "https://example.com/register" \
+  --published \
+  --upsert
+```
+
+## Create a campaign and attach events
 
 ```bash
 pnpm cw:cli partners create \
-  --slug skool4cyclists \
-  --partner-name "Jack Burke / SKOOL 4 Cyclists" \
-  --campaign-name "SKOOL 4 Cyclists PRO pilot" \
+  --slug pilis-kupa-2026 \
+  --partner-name "Esztergomi Küllőszaggatók" \
+  --campaign-name "Pilis Kupa 60-day preparation pilot" \
   --granted-tier PRO \
   --duration-days 60 \
-  --max-redemptions 50
+  --max-redemptions 200 \
+  --event-slug pilis-kupa-2026
 ```
 
-## Production campaign creation
-
-Production writes require `--prod` and explicit human confirmation before running.
+Attach / detach later:
 
 ```bash
+pnpm cw:cli partners attach-event pilis-kupa-2026 pilis-kupa-2026 --primary
+pnpm cw:cli partners detach-event pilis-kupa-2026 other-event-slug
+pnpm cw:cli partners show pilis-kupa-2026
+```
+
+## Production writes
+
+All production writes require:
+
+- `--prod`
+- `--confirm-prod`
+
+Use `--dry-run` to preview without writing.
+
+```bash
+pnpm cw:cli events create \
+  --prod --confirm-prod --dry-run \
+  --slug pilis-kupa-2026 \
+  --title "XIX. Pilis Kupa – 2. forduló" \
+  --organizer-name "Esztergomi Küllőszaggatók Kerékpár Egyesület" \
+  --date "2026-09-27" \
+  --timezone "Europe/Budapest" \
+  --sport CYCLING \
+  --published --upsert
+
+pnpm cw:cli events create \
+  --prod --confirm-prod \
+  --slug pilis-kupa-2026 \
+  --title "XIX. Pilis Kupa – 2. forduló" \
+  --organizer-name "Esztergomi Küllőszaggatók Kerékpár Egyesület" \
+  --date "2026-09-27" \
+  --timezone "Europe/Budapest" \
+  --sport CYCLING \
+  --city "Esztergom" \
+  --country HU \
+  --registration-url "https://example.com/register" \
+  --published --upsert
+
 pnpm cw:cli partners create \
-  --prod \
-  --slug skool4cyclists \
-  --partner-name "Jack Burke / SKOOL 4 Cyclists" \
-  --campaign-name "SKOOL 4 Cyclists PRO pilot" \
+  --prod --confirm-prod \
+  --slug pilis-kupa-2026 \
+  --partner-name "Esztergomi Küllőszaggatók" \
+  --campaign-name "Pilis Kupa 60-day preparation pilot" \
   --granted-tier PRO \
   --duration-days 60 \
-  --max-redemptions 50
+  --max-redemptions 200 \
+  --event-slug pilis-kupa-2026
 ```
 
-Expected result:
+Expected URLs:
 
-- A `PartnerCampaign` row with slug `skool4cyclists`
-- Public page availability `AVAILABLE`
-- Live URL: `https://coachwatts.com/partners/skool4cyclists`
+- `https://coachwatts.com/partners/pilis-kupa-2026`
+- `https://coachwatts.com/events/pilis-kupa-2026`
 
-## Support and inspection
+## Rollback
 
 ```bash
-pnpm cw:cli partners list --prod
-pnpm cw:cli partners show skool4cyclists --prod
-pnpm cw:cli partners user-grant user@example.com --prod
+pnpm cw:cli partners disable <campaign-slug> --prod --confirm-prod
+pnpm cw:cli events unpublish <event-slug> --prod --confirm-prod
 ```
 
-## Disable or rollback
+Existing redeemed grants remain valid until `endsAt`. Existing athlete goals remain unless the athlete removes them.
 
-To stop new redemptions immediately:
-
-```bash
-pnpm cw:cli partners disable skool4cyclists --prod
-```
-
-To increase capacity or re-enable:
-
-```bash
-pnpm cw:cli partners update-capacity skool4cyclists --max-redemptions 75 --enable --prod
-```
-
-Existing redeemed grants remain valid until their `endsAt` timestamp even after a campaign is disabled.
-
-## Analytics events
-
-Aggregate-only partner events:
+## Analytics (aggregate only)
 
 - `partner_page_view`
 - `partner_signup_start`
-- `partner_redemption` (`completed`, `already_redeemed`, `rejected`)
+- `partner_redemption`
+- `partner_event_view`
+- `partner_event_join_start`
+- `partner_event_join_completed`
+- `partner_event_join_already_exists`
+- `official_event_registration_click`
 
-Existing integration and activity analytics (`integration_connect_success`, etc.) continue to support week-2 and week-8 funnel reporting without exposing partner-specific athlete data.
+## API routes
+
+- `GET /api/partners/:slug` — campaign + published attached events + enrollment state
+- `POST /api/partners/:slug/redeem` — redeem promotional benefit
+- `GET /api/public-events/:slug` — published canonical event
+- `POST /api/public-events/:slug/join` — upsert user Event + EVENT Goal

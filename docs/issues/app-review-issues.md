@@ -1,8 +1,8 @@
 # App Review — Issue Tracker
 
-Last reviewed: 2026-07-16 (issues 307–311 — Garmin Health/Activity compliance)
+Last reviewed: 2026-07-16 (issues 312–322 — Garmin integration reliability/security follow-up)
 
-Documents app-wide issues **039–311** from systematic codebase and live UI review. Complements structure-generation tracker [issues.md](./issues.md) (001–038, **37 / 38 fixed**).
+Documents app-wide issues **039–322** from systematic codebase and live UI review. Complements structure-generation tracker [issues.md](./issues.md) (001–038, **37 / 38 fixed**).
 
 **Progress:** [REVIEW-PROGRESS.md](./REVIEW-PROGRESS.md) (~96% complete)
 
@@ -10,22 +10,25 @@ Documents app-wide issues **039–311** from systematic codebase and live UI rev
 
 ## Summary by priority
 
-| Priority | Count (039–218) | Active (excl. postponed) |
-| -------- | --------------- | ------------------------ |
-| Critical | 3               | 0                        |
-| High     | 45              | 6                        |
-| Medium   | 108             | 59                       |
-| Low      | 24              | 5                        |
+| Priority | Count (039–322) | Active (status Open) |
+| -------- | --------------- | -------------------- |
+| Critical | 7               | 3                    |
+| High     | 73              | 24                   |
+| Medium   | 168             | 57                   |
+| Low      | 36              | 7                    |
 
 ## Top clusters (fix these first)
 
 ### P0 — Critical runtime & security (active)
 
-| ID                                                       | Title                                                         |
-| -------------------------------------------------------- | ------------------------------------------------------------- |
-| [062](./062-chat-planned-workout-pollstartedat-crash.md) | ~~Chat planned-workout card `pollStartedAt` crash~~ **Fixed** |
-| ~~[069](./069-garmin-webhook-unauthenticated.md)~~       | Garmin webhook — **Postponed**                                |
-| ~~[058](./058-oauth-refresh-weak-client-binding.md)~~    | OAuth refresh — **Postponed**                                 |
+| ID                                                               | Title                                                         |
+| ---------------------------------------------------------------- | ------------------------------------------------------------- |
+| [062](./062-chat-planned-workout-pollstartedat-crash.md)         | ~~Chat planned-workout card `pollStartedAt` crash~~ **Fixed** |
+| [263](./263-public-share-invite-single-use.md)                   | Public coaching-share invite is single-use                    |
+| [312](./312-garmin-activity-file-callback-token-exfiltration.md) | Garmin callback can exfiltrate access tokens                  |
+| [313](./313-garmin-webhook-multi-user-batch-misrouting.md)       | Garmin multi-user webhook batches are misrouted               |
+| ~~[069](./069-garmin-webhook-unauthenticated.md)~~               | Garmin webhook — **Postponed**                                |
+| ~~[058](./058-oauth-refresh-weak-client-binding.md)~~            | OAuth refresh — **Postponed**                                 |
 
 ### P1 — High-impact user flows
 
@@ -46,8 +49,10 @@ Documents app-wide issues **039–311** from systematic codebase and live UI rev
 | [187](./187-profile-tab-unmount-popper-crash.md)                                                               | ~~Profile settings popper crash (Sentry 18A)~~ **Fixed**   |
 | [190](./190-autodetect-drops-ftp-hr-thresholds.md)                                                             | ~~Autodetect drops FTP/HR thresholds~~ **Fixed**           |
 | [197](./197-connected-apps-hides-failed-status.md)                                                             | ~~Connected apps hides FAILED integrations~~ **Fixed**     |
+| [314](./314-garmin-refresh-token-rotation-races.md)                                                            | Garmin refresh token rotation is race-prone                |
+| [315](./315-garmin-disabled-fetches-hide-requested-failure.md)                                                 | Disabled Garmin fetches hide requested-data failure        |
 
-**Still active (high, 039–218):** [040](./040-billing-success-without-activation.md), [056](./056-orchestrate-progress-key-mismatch.md), [139](./139-fitness-index-90-day-api-cap.md), [144](./144-admin-issue-reactions-no-admin-check.md), [161](./161-connect-yazio-no-auth-middleware.md), [162](./162-fit-ingest-no-file-ownership-check.md)
+**Earlier active high issues (039–218):** [040](./040-billing-success-without-activation.md), [056](./056-orchestrate-progress-key-mismatch.md), [139](./139-fitness-index-90-day-api-cap.md), [144](./144-admin-issue-reactions-no-admin-check.md), [161](./161-connect-yazio-no-auth-middleware.md), [162](./162-fit-ingest-no-file-ownership-check.md)
 
 ### P2 — Recurring pattern: stuck loading spinners
 
@@ -576,6 +581,34 @@ Audit of Health/Activity ingest against `tmp/garmin-api` partner docs. Safe patc
 - **309:** Pull + backfill for bodyComps/userMetrics only; other Health types remain deferred.
 - **310:** Fail-soft permissions refresh on ingest + OAuth callback.
 - **311:** Documented only — no polling policy change yet.
+
+## Issues 312–322 (Garmin integration reliability/security follow-up — 2026-07-16)
+
+Second pass across OAuth, Push/Ping routing, FIT callback retrieval, token rotation, ingest/backfill
+status, Health field mapping, activity cadence, and Training/Courses publishing. Compared against the
+checked-in Garmin partner PDFs and OpenAPI snapshots under `tmp/garmin-api`.
+
+| ID                                                                 | Title                                               | Priority | Type                      | Status |
+| ------------------------------------------------------------------ | --------------------------------------------------- | -------- | ------------------------- | ------ |
+| [312](./312-garmin-activity-file-callback-token-exfiltration.md)   | Activity file callback can exfiltrate access tokens | Critical | Security Bug              | Open   |
+| [313](./313-garmin-webhook-multi-user-batch-misrouting.md)         | Webhook multi-user batches are misrouted            | Critical | Security / Data Integrity | Open   |
+| [314](./314-garmin-refresh-token-rotation-races.md)                | Refresh token rotation is race-prone                | High     | Bug                       | Open   |
+| [315](./315-garmin-disabled-fetches-hide-requested-failure.md)     | Disabled fetches hide failure of requested data     | High     | Bug                       | Open   |
+| [316](./316-garmin-permission-refresh-preserves-revoked-grants.md) | Permission refresh preserves revoked grants         | Medium   | Bug                       | Open   |
+| [317](./317-garmin-backfill-reports-success-after-failure.md)      | Backfill reports success after failure              | Medium   | Bug                       | Open   |
+| [318](./318-garmin-recovery-fields-do-not-match-health-api.md)     | Recovery fields do not match Health API models      | Medium   | Bug / Data Quality        | Open   |
+| [319](./319-garmin-run-swim-cadence-not-imported.md)               | Run and swim cadence are not imported               | Medium   | Bug / Data Quality        | Open   |
+| [320](./320-garmin-oauth-callback-not-bound-to-initiation.md)      | OAuth callback is not bound to its initiation       | Medium   | Security Bug              | Open   |
+| [321](./321-garmin-external-user-ownership-race.md)                | External Garmin user ownership check is race-prone  | Medium   | Security / Data Integrity | Open   |
+| [322](./322-garmin-trail-course-mapped-as-running.md)              | Trail courses are mapped as road running            | Low      | Bug                       | Open   |
+
+### Recommended fix order (312–322)
+
+1. **312 + 313** — prevent credential disclosure and cross-user data routing
+2. **314 + 315** — stabilize token lifecycle and sync truthfulness
+3. **321 + 320** — enforce Garmin account ownership and OAuth correlation
+4. **316 + 317** — correct permissions and backfill status
+5. **318 + 319 + 322** — data-quality and sport-mapping corrections
 
 ## Recommended fix order (app review)
 
