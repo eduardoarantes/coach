@@ -1,14 +1,14 @@
 <template>
   <div class="space-y-12">
-    <div class="flex flex-wrap justify-center items-center gap-6">
+    <div class="flex flex-wrap items-center justify-start gap-4">
       <div
-        class="inline-flex items-center gap-1 bg-white/5 p-1.5 rounded-2xl border border-white/5 backdrop-blur-md"
+        class="inline-flex items-center gap-1 rounded-xl border border-white/10 bg-white/5 p-1.5"
       >
         <button
-          class="px-6 py-2 rounded-xl text-xs font-black uppercase tracking-widest transition-all"
+          class="rounded-lg px-5 py-2 text-xs font-bold uppercase tracking-widest transition-colors"
           :class="
             billingInterval === 'monthly'
-              ? 'bg-primary-500 text-black shadow-lg shadow-primary-500/20'
+              ? 'bg-primary-500 text-black'
               : 'text-gray-400 hover:text-white'
           "
           @click="
@@ -20,10 +20,10 @@
           {{ t('billing.monthly') }}
         </button>
         <button
-          class="px-6 py-2 rounded-xl text-xs font-black uppercase tracking-widest transition-all flex items-center gap-2"
+          class="flex items-center gap-2 rounded-lg px-5 py-2 text-xs font-bold uppercase tracking-widest transition-colors"
           :class="
             billingInterval === 'annual'
-              ? 'bg-primary-500 text-black shadow-lg shadow-primary-500/20'
+              ? 'bg-primary-500 text-black'
               : 'text-gray-400 hover:text-white'
           "
           @click="
@@ -46,7 +46,7 @@
         class="inline-flex items-center gap-1 bg-white/5 p-1.5 rounded-2xl border border-white/5 backdrop-blur-md"
       >
         <button
-          class="px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest transition-all"
+          class="px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest transition-colors"
           :class="
             currency === 'usd'
               ? 'bg-white/10 text-white shadow-sm'
@@ -61,7 +61,7 @@
           USD
         </button>
         <button
-          class="px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest transition-all"
+          class="px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest transition-colors"
           :class="
             currency === 'eur'
               ? 'bg-white/10 text-white shadow-sm'
@@ -85,16 +85,12 @@
       <div
         v-for="plan in displayedPlans"
         :key="plan.key"
-        class="flex flex-col relative overflow-hidden rounded-[2.5rem] floating-card-base grain-overlay p-8 sm:p-10 transition-all duration-500 group border-white/10"
-        :class="[
-          getCardClass(plan),
-          getPlanOrderClass(plan),
-          isPrimaryPlan(plan) ? 'shadow-2xl shadow-primary-500/10' : ''
-        ]"
+        class="group relative flex flex-col overflow-hidden rounded-2xl border border-white/10 bg-[oklch(16%_0.02_155)] p-8 sm:p-10 transition-[border-color] duration-200 hover:border-white/20"
+        :class="[getCardClass(plan), getPlanOrderClass(plan)]"
       >
         <div
           v-if="isPrimaryPlan(plan)"
-          class="absolute inset-0 rounded-[2.5rem] pointer-events-none ring-2 ring-primary-500/50 animate-pulse-border"
+          class="pointer-events-none absolute inset-0 rounded-2xl ring-1 ring-primary-500/40"
         />
 
         <div
@@ -182,7 +178,7 @@
           <UButton
             size="xl"
             block
-            class="h-16 rounded-2xl text-[12px] font-black uppercase tracking-[0.2em] transition-all"
+            class="h-14 rounded-xl text-[12px] font-bold uppercase tracking-[0.15em] transition-colors"
             :color="isPrimaryPlan(plan) ? 'primary' : 'neutral'"
             :variant="isPrimaryPlan(plan) ? 'solid' : 'outline'"
             :disabled="isCurrentPlan(plan) || loading"
@@ -324,12 +320,12 @@
 
   function getCardClass(plan: PricingPlan): string {
     if (isPrimaryPlan(plan)) {
-      return 'border-primary-500/50 lg:scale-[1.03] z-10'
+      return 'z-10 border-primary-500/40'
     }
     if (plan.key === 'free') {
-      return 'border-white/10 hover:scale-[1.01]'
+      return 'border-white/10'
     }
-    return 'border-white/5 opacity-80 hover:opacity-100 hover:scale-[1.01]'
+    return 'border-white/8 opacity-90 hover:opacity-100'
   }
 
   function getPlanOrderClass(plan: PricingPlan): string {

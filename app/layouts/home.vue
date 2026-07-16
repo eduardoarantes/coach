@@ -56,7 +56,7 @@
             </ClientOnly>
           </div>
           <UButton
-            v-if="route.path !== '/join'"
+            v-if="!isAuthPage"
             to="/join"
             color="primary"
             size="sm"
@@ -64,22 +64,13 @@
           >
             {{ t('nav.get_started') }}
           </UButton>
-          <div class="hidden items-center gap-2 sm:flex">
-            <UButton
-              v-if="route.path !== '/login'"
-              to="/login"
-              variant="ghost"
-              color="neutral"
-              class="whitespace-nowrap"
-              >{{ t('nav.sign_in') }}</UButton
-            >
-            <UButton
-              v-if="route.path !== '/join'"
-              to="/join"
-              color="primary"
-              class="whitespace-nowrap"
-              >{{ t('nav.get_started') }}</UButton
-            >
+          <div v-if="!isAuthPage" class="hidden items-center gap-2 sm:flex">
+            <UButton to="/login" variant="ghost" color="neutral" class="whitespace-nowrap">{{
+              t('nav.sign_in')
+            }}</UButton>
+            <UButton to="/join" color="primary" class="whitespace-nowrap">{{
+              t('nav.get_started')
+            }}</UButton>
           </div>
 
           <UPopover class="lg:hidden">
@@ -111,18 +102,13 @@
                   class="text-sm font-medium whitespace-nowrap transition-colors hover:text-primary"
                   >{{ t('nav.stories') }}</NuxtLink
                 >
-                <hr class="border-white/10" />
-                <UButton
-                  v-if="route.path !== '/login'"
-                  to="/login"
-                  variant="ghost"
-                  color="neutral"
-                  block
-                  >{{ t('nav.sign_in') }}</UButton
-                >
-                <UButton v-if="route.path !== '/join'" to="/join" color="primary" block>{{
-                  t('nav.get_started')
-                }}</UButton>
+                <template v-if="!isAuthPage">
+                  <hr class="border-white/10" />
+                  <UButton to="/login" variant="ghost" color="neutral" block>{{
+                    t('nav.sign_in')
+                  }}</UButton>
+                  <UButton to="/join" color="primary" block>{{ t('nav.get_started') }}</UButton>
+                </template>
               </div>
             </template>
           </UPopover>
@@ -134,7 +120,7 @@
       <slot />
     </main>
 
-    <PublicFooter />
+    <PublicFooter v-if="!isAuthPage" />
   </div>
 </template>
 
@@ -144,6 +130,7 @@
 
   const route = useRoute()
   const { t } = useTranslate('common')
+  const isAuthPage = computed(() => route.path === '/join' || route.path === '/login')
 
   useHead({
     link: [

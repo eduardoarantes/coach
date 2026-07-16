@@ -67,9 +67,12 @@
     twitterImage: '/images/og-image.png'
   })
 
-  // Only redirect if authenticated, otherwise stay on landing page
+  const route = useRoute()
+
+  // Only redirect if authenticated, otherwise stay on landing page.
+  // ?preview=1 keeps the marketing page visible under AUTH_BYPASS_USER.
   watchEffect(() => {
-    if (status.value === 'authenticated') {
+    if (status.value === 'authenticated' && route.query.preview !== '1') {
       navigateTo('/dashboard')
     }
   })

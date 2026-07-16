@@ -198,40 +198,28 @@
 <template>
   <div class="bg-gray-900 border-t border-gray-800 isolate">
     <!-- 1. Hero Section -->
-    <section
-      class="relative min-h-[90vh] flex items-center justify-center overflow-hidden py-10 lg:py-20 px-6"
-    >
-      <!-- Targeted Focal Glimmers -->
-      <div
-        class="absolute left-1/4 top-1/4 -translate-x-1/2 -translate-y-1/2 w-[400px] h-[400px] bg-primary-600/15 rounded-full blur-[80px] -z-10 pointer-events-none opacity-40"
-      />
-      <div
-        class="absolute right-1/4 bottom-1/4 translate-x-1/2 translate-y-1/2 w-[400px] h-[400px] bg-emerald-600/15 rounded-full blur-[80px] -z-10 pointer-events-none opacity-40"
-      />
-
+    <section class="relative overflow-hidden px-6 py-14 lg:py-20">
       <UContainer>
-        <div class="flex flex-col lg:flex-row items-center gap-16 lg:gap-24">
+        <div class="flex flex-col items-start gap-12 lg:flex-row lg:items-center lg:gap-20">
           <!-- Text Content -->
-          <motion.div v-bind="scrollVariants" class="flex-1 text-center lg:text-left z-10">
+          <motion.div v-bind="scrollVariants" class="z-10 flex-1 text-left">
             <h1
-              class="text-3xl sm:text-6xl lg:text-8xl font-black uppercase tracking-tight text-white mb-6 lg:mb-8 leading-[0.9]"
+              class="font-athletic mb-6 text-3xl font-bold uppercase leading-[0.9] tracking-tight text-white sm:text-5xl lg:mb-8 lg:text-6xl"
             >
               {{ t('hero_title_1') }} <br class="hidden sm:block" />
-              <span class="text-primary-500">{{ t('hero_title_accent') }}</span>
+              <span class="text-primary-400">{{ t('hero_title_accent') }}</span>
               <br class="hidden sm:block" />
               {{ t('hero_title_2') }}
             </h1>
-            <p class="text-xl text-gray-400 max-w-xl mb-12 leading-relaxed font-medium">
+            <p class="mb-10 max-w-xl text-lg font-medium leading-relaxed text-gray-400 sm:text-xl">
               {{ t('hero_desc') }}
             </p>
-            <div
-              class="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-4"
-            >
+            <div class="flex flex-col items-stretch gap-3 sm:flex-row sm:items-center sm:gap-4">
               <UButton
                 size="xl"
                 to="/join"
                 color="primary"
-                class="w-full sm:w-auto font-black px-10 h-16 rounded-2xl text-lg shadow-[0_0_40px_rgba(34,197,94,0.3)] hover:scale-105 active:scale-95 transition-all"
+                class="h-14 w-full rounded-xl px-8 text-sm font-bold uppercase tracking-[0.12em] transition-colors sm:w-auto"
                 >{{ t('hero_cta_start') }}</UButton
               >
               <UButton
@@ -275,36 +263,15 @@
               </svg>
 
               <!-- Central Hub -->
-              <motion.div
-                class="relative z-30 w-28 h-28 sm:w-32 sm:h-32 lg:w-44 lg:h-44 bg-gray-950 rounded-3xl sm:rounded-[2.5rem] lg:rounded-[3rem] shadow-[0_0_80px_rgba(34,197,94,0.3)] flex items-center justify-center p-8 sm:p-8 lg:p-10 lg:translate-x-[70px] animate-breathing-pulse border-none shadow-[inset_0_1px_1px_rgba(255,255,255,0.1)]"
-                :animate="{ scale: [1, 1.05, 1] }"
-                :transition="{ duration: 5, repeat: Infinity, ease: 'easeInOut' }"
+              <div
+                class="relative z-30 flex h-28 w-28 items-center justify-center rounded-2xl border border-white/10 bg-[oklch(14%_0.018_155)] p-6 sm:h-32 sm:w-32 lg:h-40 lg:w-40 lg:translate-x-[70px] lg:p-8"
               >
-                <!-- 1px Gradient Border -->
-                <div
-                  class="absolute inset-0 rounded-2xl sm:rounded-[2.5rem] lg:rounded-[3rem] p-px pointer-events-none z-50"
-                >
-                  <div
-                    class="w-full h-full rounded-2xl sm:rounded-[2.5rem] lg:rounded-[3rem] border border-white/10"
-                    style="
-                      border-image: linear-gradient(
-                          to bottom right,
-                          rgba(255, 255, 255, 0.2),
-                          rgba(0, 220, 130, 0.5)
-                        )
-                        1;
-                    "
-                  />
-                </div>
                 <img
                   src="/media/logo_square.webp"
                   alt="Coach Watts"
-                  class="w-full h-full object-contain"
+                  class="h-full w-full object-contain"
                 />
-                <div
-                  class="absolute inset-0 rounded-2xl sm:rounded-[2.5rem] lg:rounded-[3rem] bg-primary-500/10 blur-2xl animate-pulse -z-10"
-                />
-              </motion.div>
+              </div>
 
               <div
                 v-for="(integ, i) in integrations.slice(0, 8)"
@@ -321,7 +288,7 @@
                   :style="{ animationDelay: `${i * 0.5}s` }"
                 >
                   <div
-                    class="relative w-20 h-20 bg-black/80 backdrop-blur-[12px] rounded-2xl p-4 transition-all duration-500 group-hover:bg-[#0c0e12] group-hover:shadow-[0_0_40px_rgba(34,197,94,0.15)] cursor-default flex items-center justify-center grain-overlay shadow-xl border-none shadow-[inset_0_1px_1px_rgba(255,255,255,0.05)]"
+                    class="relative w-20 h-20 bg-black/80 backdrop-blur-[12px] rounded-2xl p-4 transition-[border-color,background-color] duration-200 group-hover:bg-[#0c0e12] group-hover:shadow-[0_0_40px_rgba(34,197,94,0.15)] cursor-default flex items-center justify-center grain-overlay shadow-xl border-none shadow-[inset_0_1px_1px_rgba(255,255,255,0.05)]"
                   >
                     <!-- 1px Gradient Border Overlay -->
                     <div class="absolute inset-0 rounded-2xl p-px pointer-events-none z-50">
@@ -347,7 +314,7 @@
                       v-else
                       :src="integ.src"
                       :alt="integ.name"
-                      class="w-full h-full object-contain filter grayscale opacity-30 transition-all duration-500 group-hover:grayscale-0 group-hover:invert-0 group-hover:brightness-100 group-hover:opacity-100 group-hover:scale-110"
+                      class="w-full h-full object-contain filter grayscale opacity-30 transition-[border-color,background-color] duration-200 group-hover:grayscale-0 group-hover:invert-0 group-hover:brightness-100 group-hover:opacity-100"
                       :class="{
                         'invert brightness-200': integ.color === '#000000' || !integ.color
                       }"
@@ -360,12 +327,12 @@
                 </motion.div>
               </div>
 
-              <!-- Mobile Grid -->
-              <div class="lg:hidden grid grid-cols-3 gap-4 w-full max-w-sm">
+              <!-- Mobile Grid — full 2×3, no clipped carousel -->
+              <div class="grid w-full max-w-md grid-cols-2 gap-3 sm:grid-cols-3 lg:hidden">
                 <div
                   v-for="integ in integrations.slice(0, 6)"
                   :key="`mobile-${integ.name}`"
-                  class="flex flex-col items-center gap-2 p-4 bg-gray-950/40 rounded-2xl border border-white/5"
+                  class="flex flex-col items-center gap-2 rounded-xl border border-white/10 bg-[oklch(16%_0.02_155)] p-4"
                 >
                   <div class="w-12 h-12 flex items-center justify-center">
                     <UIcon
@@ -487,7 +454,7 @@
               </div>
               <div class="flex items-start justify-between sm:justify-between lg:justify-between">
                 <div
-                  class="w-12 h-12 sm:w-20 sm:h-20 bg-gray-950 rounded-2xl border border-white/5 p-2 sm:p-5 flex items-center justify-center transition-all duration-500 group-hover:border-primary-500/50 group-hover:scale-105 mx-auto sm:mx-0"
+                  class="w-12 h-12 sm:w-20 sm:h-20 bg-gray-950 rounded-2xl border border-white/5 p-2 sm:p-5 flex items-center justify-center transition-[border-color,background-color] duration-200 group-hover:border-primary-500/50 mx-auto sm:mx-0"
                 >
                   <UIcon
                     v-if="integ.isIcon"
@@ -499,7 +466,7 @@
                     v-else
                     :src="integ.src"
                     :alt="integ.name"
-                    class="w-full h-full object-contain filter grayscale opacity-50 group-hover:grayscale-0 group-hover:opacity-100 transition-all duration-500"
+                    class="w-full h-full object-contain filter grayscale opacity-50 group-hover:grayscale-0 group-hover:opacity-100 transition-[border-color,background-color] duration-200"
                     :class="{ 'invert brightness-150': integ.color === '#000000' || !integ.color }"
                     :style="{ transform: `scale(${integ.weight || 1})` }"
                   />
@@ -516,9 +483,7 @@
               </div>
 
               <div class="space-y-1 sm:space-y-3 text-center sm:text-left">
-                <h3
-                  class="text-sm sm:text-2xl font-black text-white uppercase tracking-tight italic"
-                >
+                <h3 class="text-sm font-bold uppercase tracking-tight text-white sm:text-2xl">
                   {{ integ.name }}
                 </h3>
                 <p class="hidden sm:block text-base text-gray-400 leading-relaxed font-medium">
@@ -528,12 +493,12 @@
 
               <div class="hidden sm:flex items-center gap-2 mt-auto">
                 <span
-                  class="text-xs font-black text-primary-500 uppercase tracking-widest opacity-0 group-hover:opacity-100 transition-all duration-500 translate-x-2 group-hover:translate-x-0"
+                  class="text-xs font-black text-primary-500 uppercase tracking-widest opacity-0 group-hover:opacity-100 transition-[border-color,background-color] duration-200 translate-x-2 group-hover:translate-x-0"
                   >{{ t('learn_more') }}</span
                 >
                 <UIcon
                   name="i-heroicons-arrow-right"
-                  class="w-4 h-4 text-primary-500 transform -translate-x-4 opacity-0 group-hover:translate-x-0 group-hover:opacity-100 transition-all duration-500"
+                  class="w-4 h-4 text-primary-500 transform -translate-x-4 opacity-0 group-hover:translate-x-0 group-hover:opacity-100 transition-[border-color,background-color] duration-200"
                 />
               </div>
             </div>
@@ -575,7 +540,7 @@
                       <div class="text-xs font-black text-gray-600 uppercase tracking-widest mb-1">
                         {{ t('f1_ui_readiness') }}
                       </div>
-                      <div class="text-4xl sm:text-6xl font-black text-white italic font-athletic">
+                      <div class="font-athletic text-4xl font-bold text-white sm:text-6xl">
                         94<span class="text-sm sm:text-xl text-primary-500 ml-2 sm:ml-3">{{
                           t('f1_ui_optimal')
                         }}</span>
@@ -610,7 +575,7 @@
 
                   <!-- AI Insight Note (Midnight Charcoal) -->
                   <div
-                    class="p-5 sm:p-8 rounded-2xl sm:rounded-[32px] bg-[#0c0e12] border border-white/5 shadow-2xl relative overflow-hidden group/insight transition-all duration-500 hover:border-primary-500/20 w-full"
+                    class="p-5 sm:p-8 rounded-2xl sm:rounded-[32px] bg-[#0c0e12] border border-white/5 shadow-2xl relative overflow-hidden group/insight transition-[border-color,background-color] duration-200 hover:border-primary-500/20 w-full"
                   >
                     <div
                       class="absolute top-0 right-0 p-4 opacity-10 group-hover/insight:opacity-30 group-hover/insight:scale-110 transition-all duration-700"
@@ -703,17 +668,17 @@
             <div
               class="bg-gray-800/80 backdrop-blur-xl rounded-3xl sm:rounded-[48px] border border-white/10 p-8 sm:p-14 shadow-[0_40px_80px_-20px_rgba(0,0,0,0.6)] relative w-full"
             >
-              <div class="text-center mb-12">
+              <div class="mb-12 text-left">
                 <div class="text-xs font-black text-white/40 uppercase tracking-[0.15em] mb-4">
                   {{ t('f2_ui_label') }}
                 </div>
-                <div class="text-3xl font-black text-white tracking-tight italic">
+                <div class="text-3xl font-bold tracking-tight text-white">
                   {{ t('f2_ui_workout') }}
                 </div>
               </div>
               <div class="space-y-5 mb-12">
                 <div
-                  class="flex items-center justify-between p-6 bg-white/5 rounded-3xl border border-white/5 group hover:border-blue-500/50 hover:bg-blue-500/5 transition-all duration-500 cursor-pointer hover:scale-[1.02] active:scale-[0.98]"
+                  class="flex items-center justify-between p-6 bg-white/5 rounded-3xl border border-white/5 group hover:border-blue-500/40 hover:bg-blue-500/5 transition-[border-color,background-color] duration-200 cursor-pointer"
                 >
                   <div class="flex items-center gap-5">
                     <div
@@ -731,27 +696,21 @@
                   />
                 </div>
                 <div
-                  class="flex items-center justify-between p-6 bg-white/5 rounded-3xl border border-white/5 group hover:border-blue-500/50 hover:bg-blue-500/5 transition-all duration-500 cursor-pointer hover:scale-[1.02] active:scale-[0.98]"
+                  class="flex cursor-pointer items-center justify-between rounded-2xl border border-white/10 bg-white/5 p-6 transition-[border-color,background-color] duration-200 hover:border-blue-500/40 hover:bg-blue-500/5"
                 >
                   <div class="flex items-center gap-5">
                     <div
-                      class="w-14 h-14 bg-gray-900 rounded-2xl flex items-center justify-center border border-white/10 group-hover:border-blue-500/30"
+                      class="flex h-14 w-14 items-center justify-center rounded-2xl border border-white/10 bg-gray-900"
                     >
-                      <UIcon name="i-heroicons-bolt" class="w-8 h-8 text-blue-500" />
+                      <UIcon name="i-heroicons-bolt" class="h-8 w-8 text-blue-500" />
                     </div>
-                    <span class="text-lg font-black text-white uppercase tracking-tight">{{
+                    <span class="text-lg font-bold uppercase tracking-tight text-white">{{
                       t('f2_ui_export')
                     }}</span>
                   </div>
-                  <UIcon
-                    name="i-heroicons-arrow-down-tray"
-                    class="w-6 h-6 text-white/40 group-hover:text-blue-500 transition-colors"
-                  />
+                  <UIcon name="i-heroicons-arrow-down-tray" class="h-6 w-6 text-white/40" />
                 </div>
               </div>
-              <div
-                class="absolute -z-10 bg-blue-500/10 blur-[100px] w-full h-full inset-0 rounded-full"
-              />
             </div>
           </div>
         </motion.div>
@@ -759,29 +718,30 @@
     </section>
 
     <!-- Final CTA -->
-    <section
-      class="py-20 lg:py-48 relative text-center px-6 overflow-hidden border-t border-white/5"
-    >
-      <motion.div v-bind="scrollVariants" class="max-w-4xl mx-auto">
-        <h2
-          class="text-4xl sm:text-6xl lg:text-9xl font-black uppercase text-white mb-8 leading-[0.8] tracking-tighter"
-        >
-          {{ t('cta_title_1') }} <br />
-          <span class="text-primary-500">{{ t('cta_title_accent') }}</span> <br />
-          {{ t('cta_title_2') }}
-        </h2>
-        <p class="text-lg sm:text-2xl text-gray-400 mb-12 font-medium max-w-2xl mx-auto">
-          {{ t('cta_description') }}
-        </p>
-        <div class="flex items-center justify-center">
-          <UButton
-            size="xl"
-            to="/join"
-            color="primary"
-            class="w-full sm:w-auto font-black px-12 h-20 rounded-3xl text-xl sm:text-2xl shadow-[0_0_50px_rgba(34,197,94,0.4)] hover:scale-105 active:scale-95 transition-all"
-            >{{ t('cta_button') }}</UButton
+    <section class="relative overflow-hidden border-t border-white/8 px-6 py-16 sm:py-24">
+      <motion.div
+        v-bind="scrollVariants"
+        class="mx-auto flex max-w-[88rem] flex-col gap-8 lg:flex-row lg:items-end lg:justify-between"
+      >
+        <div class="max-w-xl text-left">
+          <h2
+            class="font-athletic text-4xl font-bold uppercase leading-[0.9] tracking-tight text-white sm:text-5xl"
           >
+            {{ t('cta_title_1') }}
+            <span class="text-primary-400">{{ t('cta_title_accent') }}</span>
+            {{ t('cta_title_2') }}
+          </h2>
+          <p class="mt-4 text-lg font-medium text-gray-400">
+            {{ t('cta_description') }}
+          </p>
         </div>
+        <UButton
+          size="xl"
+          to="/join"
+          color="primary"
+          class="h-14 w-full whitespace-nowrap rounded-xl px-8 text-sm font-bold uppercase tracking-[0.12em] transition-colors sm:w-auto"
+          >{{ t('cta_button') }}</UButton
+        >
       </motion.div>
     </section>
   </div>

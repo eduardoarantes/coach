@@ -9,7 +9,8 @@ export default defineNuxtRouteMiddleware(async (to, from) => {
     return
   }
 
-  if (status.value === 'authenticated') {
+  // ?preview=1 keeps guest pages visible under AUTH_BYPASS_USER (local review only)
+  if (status.value === 'authenticated' && to.query.preview !== '1') {
     return navigateTo('/dashboard')
   }
 })

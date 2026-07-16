@@ -6,6 +6,15 @@
     "theme_axes": "dark / display-condensed / cool",
     "vibe": "athletic green-ink endurance",
     "enrichment": "none",
-    "brief": "Landing page audit patch — kill AI nav/footer/chrome/italics"
+    "brief": "Public pages audit patch \u2014 join/login/stories/works-with/public nav"
+  },
+  {
+    "date": "2026-07-16",
+    "macrostructure": "Workbench",
+    "theme": "custom",
+    "theme_axes": "dark / display-condensed / cool",
+    "vibe": "athletic green-ink endurance",
+    "enrichment": "none",
+    "brief": "Landing page audit patch \u2014 kill AI nav/footer/chrome/italics"
   }
 ]
