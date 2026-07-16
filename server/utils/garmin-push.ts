@@ -299,8 +299,10 @@ function buildGarminSteps(
     if (nested.length > 0) {
       const repeatOrder = stepOrder++
       const childSteps = nested
-        .map((child) => convert(child))
-        .filter((child): child is Record<string, unknown> => child != null)
+        .map((child: any) => convert(child))
+        .filter(
+          (child: Record<string, unknown> | null): child is Record<string, unknown> => child != null
+        )
       return {
         type: 'WorkoutRepeatStep',
         stepOrder: repeatOrder,
