@@ -150,7 +150,13 @@ export default defineEventHandler(async (event) => {
         try {
           await updateGarminWorkout(integration, workoutId, payload)
         } catch (e: any) {
-          if (String(e?.message || '').includes('(404)')) {
+          const message = String(e?.message || '')
+          // Stale Garmin ids or missing ownerId (Training API V2) → recreate.
+          if (
+            message.includes('(404)') ||
+            message.includes('requires ownerId') ||
+            e?.code === 'GARMIN_OWNER_ID_REQUIRED'
+          ) {
             workoutId = null
           } else {
             throw e
