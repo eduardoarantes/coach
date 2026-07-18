@@ -290,23 +290,25 @@ import zhSupport from '../i18n/zh/support.json'
 import zhTestDynamic from '../i18n/zh/test-dynamic.json'
 import zhWorksWith from '../i18n/zh/works-with.json'
 import zhIntegrations from '../i18n/zh/integrations.json'
+import {
+  AI_LANGUAGE_TO_UI_LOCALE,
+  detectBrowserUiLocale,
+  isDefaultLanguagePreference,
+  LOCALE_COOKIE_NAME,
+  normalizeUiLocale,
+  parseAcceptLanguageHeader,
+  type UiLocale
+} from '../../shared/ui-locale'
 
 const LANGUAGE_MAP: Record<string, string> = {
-  English: 'en',
-  Spanish: 'es',
-  French: 'fr',
-  German: 'de',
-  Italian: 'it',
+  ...AI_LANGUAGE_TO_UI_LOCALE,
   Portuguese: 'pt',
-  Dutch: 'nl',
   Danish: 'da',
   Norwegian: 'no',
   Swedish: 'sv',
   Finnish: 'fi',
   Polish: 'pl',
-  Russian: 'ru',
   Turkish: 'tr',
-  Hungarian: 'hu',
   Romanian: 'ro',
   Slovak: 'sk',
   Czech: 'cs',
@@ -317,20 +319,7 @@ const LANGUAGE_MAP: Record<string, string> = {
   Estonian: 'et',
   Latvian: 'lv',
   Lithuanian: 'lt',
-  Japanese: 'ja',
-  Chinese: 'zh',
   Korean: 'ko'
-}
-
-/** Locales with static translation data registered below. */
-const UI_LOCALES = new Set(['en', 'de', 'es', 'fr', 'hu', 'it', 'ja', 'nl', 'ru', 'zh'])
-
-function normalizeUiLocale(value: unknown): string | null {
-  if (typeof value !== 'string') return null
-  const normalized = value.trim().toLowerCase()
-  if (normalized === 'zh-cn' || normalized === 'zh-hans') return 'zh'
-  if (UI_LOCALES.has(normalized)) return normalized
-  return null
 }
 
 export default defineNuxtPlugin((nuxtApp) => {
@@ -350,11 +339,29 @@ export default defineNuxtPlugin((nuxtApp) => {
     }
   }
 
-  // Determine initial language: ?lang= > cookie > session > en
-  const localeCookie = useCookie('cw_locale', { maxAge: 60 * 60 * 24 * 365 })
+  // Determine initial language:
+  // ?lang= > cookie > explicit user preference > browser > default session/en
+  const localeCookie = useCookie(LOCALE_COOKIE_NAME, { maxAge: 60 * 60 * 24 * 365 })
   const { data: session } = useAuth()
   const route = useRoute()
   const langFromQuery = normalizeUiLocale(route.query.lang)
+  const sessionUser = session.value?.user as
+    { uiLanguage?: string | null; language?: string | null } | undefined
+  const sessionUiLang = normalizeUiLocale(sessionUser?.uiLanguage)
+  const mappedSessionLanguage = sessionUser?.language
+    ? LANGUAGE_MAP[sessionUser.language]
+    : undefined
+  const sessionHasExplicitLanguage =
+    !!sessionUser && !isDefaultLanguagePreference(sessionUser.uiLanguage, sessionUser.language)
+  const detectedLocale = useState<UiLocale | null>('tolgee-detected-ui-locale', () => {
+    if (import.meta.server) {
+      return parseAcceptLanguageHeader(useRequestHeader('accept-language'))
+    }
+
+    return detectBrowserUiLocale(
+      navigator.languages?.length ? navigator.languages : navigator.language
+    )
+  })
 
   let initialLanguage = 'en'
 
@@ -363,17 +370,15 @@ export default defineNuxtPlugin((nuxtApp) => {
     localeCookie.value = langFromQuery
   } else if (normalizeUiLocale(localeCookie.value)) {
     initialLanguage = localeCookie.value as string
-  } else if (session.value?.user) {
-    const userUiLang = normalizeUiLocale((session.value.user as any).uiLanguage)
-    if (userUiLang) {
-      initialLanguage = userUiLang
-    } else {
-      // Fallback to mapping legacy language if uiLanguage is missing
-      const userLang = (session.value.user as any).language
-      if (userLang && LANGUAGE_MAP[userLang]) {
-        initialLanguage = LANGUAGE_MAP[userLang]
-      }
-    }
+  } else if (sessionHasExplicitLanguage && sessionUiLang) {
+    initialLanguage = sessionUiLang
+  } else if (sessionHasExplicitLanguage && mappedSessionLanguage) {
+    initialLanguage = mappedSessionLanguage
+  } else if (detectedLocale.value) {
+    initialLanguage = detectedLocale.value
+    localeCookie.value = detectedLocale.value
+  } else if (sessionUiLang) {
+    initialLanguage = sessionUiLang
   }
 
   const tolgee = builder.init({
@@ -687,6 +692,16 @@ export default defineNuxtPlugin((nuxtApp) => {
           void tolgee.changeLanguage(langFromQuery)
         }
 
+        // Keep the cookie aligned with Tolgee when the user has not chosen explicitly yet.
+        const resolvedLocale = normalizeUiLocale(tolgee.getLanguage())
+        if (
+          resolvedLocale &&
+          localeCookie.value !== resolvedLocale &&
+          !sessionHasExplicitLanguage
+        ) {
+          localeCookie.value = resolvedLocale
+        }
+
         // Strip ?lang= so the URL stays clean after the preference is stored
         if (langFromQuery && route.query.lang != null) {
           const query = { ...route.query }
@@ -713,11 +728,22 @@ export default defineNuxtPlugin((nuxtApp) => {
             return
           }
 
-          let newIsoCode = normalizeUiLocale(profileUiLang || userUiLang)
+          const resolvedUiLang = profileUiLang || userUiLang
+          const resolvedAiLang = profileLang || userLang
+
+          // Keep a detected browser/cookie locale until the profile stores a real preference.
+          if (isDefaultLanguagePreference(resolvedUiLang, resolvedAiLang)) {
+            const activeLocale =
+              normalizeUiLocale(tolgee.getLanguage()) ?? normalizeUiLocale(localeCookie.value)
+            if (activeLocale && activeLocale !== 'en') {
+              return
+            }
+          }
+
+          let newIsoCode: string | null = normalizeUiLocale(resolvedUiLang)
           if (!newIsoCode) {
-            const fallbackLang = profileLang || userLang
-            if (fallbackLang) {
-              newIsoCode = LANGUAGE_MAP[fallbackLang] ?? null
+            if (resolvedAiLang) {
+              newIsoCode = LANGUAGE_MAP[resolvedAiLang] ?? null
             }
           }
 

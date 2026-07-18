@@ -110,9 +110,10 @@
 </template>
 
 <script setup lang="ts">
-  import { useTranslate } from '@tolgee/vue'
+  import { useTranslate, useTolgee } from '@tolgee/vue'
   import { PRIVACY_POLICY_VERSION, TERMS_OF_SERVICE_VERSION } from '#shared/policy-versions'
   import { sanitizeCallbackUrl } from '#shared/safe-callback-url'
+  import { LOCALE_COOKIE_NAME, normalizeUiLocale } from '#shared/ui-locale'
 
   definePageMeta({
     layout: 'simple',
@@ -120,10 +121,20 @@
   })
 
   const { t } = useTranslate('onboarding')
+  const tolgee = useTolgee(['language'])
+  const localeCookie = useCookie(LOCALE_COOKIE_NAME, { maxAge: 60 * 60 * 24 * 365 })
   const route = useRoute()
   const { refresh } = useAuth()
   const toast = useToast()
   const { trackConsentViewed, trackConsentCompleted } = useAnalytics()
+
+  function resolveConsentUiLanguage() {
+    return (
+      normalizeUiLocale(tolgee.value.getLanguage()) ??
+      normalizeUiLocale(localeCookie.value) ??
+      undefined
+    )
+  }
 
   const acceptedTerms = ref(false)
   const acceptedHealth = ref(false)
@@ -200,14 +211,21 @@
 
     loading.value = true
     try {
+      const uiLanguage = resolveConsentUiLanguage()
+
       await $fetch('/api/user/consent', {
         method: 'POST',
         body: {
           termsVersion: TERMS_OF_SERVICE_VERSION,
           privacyPolicyVersion: PRIVACY_POLICY_VERSION,
-          healthConsentAccepted: true
+          healthConsentAccepted: true,
+          ...(uiLanguage ? { uiLanguage } : {})
         }
       })
+
+      if (uiLanguage && localeCookie.value !== uiLanguage) {
+        localeCookie.value = uiLanguage
+      }
 
       await refresh()
 

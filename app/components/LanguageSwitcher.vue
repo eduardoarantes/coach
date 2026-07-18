@@ -1,8 +1,9 @@
 <script setup lang="ts">
   import { useTolgee } from '@tolgee/vue'
+  import { LOCALE_COOKIE_NAME } from '#shared/ui-locale'
 
   const tolgee = useTolgee(['language'])
-  const localeCookie = useCookie('cw_locale', { maxAge: 60 * 60 * 24 * 365 })
+  const localeCookie = useCookie(LOCALE_COOKIE_NAME, { maxAge: 60 * 60 * 24 * 365 })
 
   const languageOptions = [
     { value: 'de', label: 'Deutsch' },
