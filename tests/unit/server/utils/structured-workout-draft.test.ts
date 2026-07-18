@@ -107,6 +107,24 @@ describe('structured workout draft compiler', () => {
     expect(isDraftStructuredWorkoutSupported('WeightTraining')).toBe(false)
   })
 
+  it('truncates runaway targetSplit text when compiling drafts', () => {
+    const compiled = compileWorkoutPlanDraftToStructure({
+      coachInstructions: 'Stay easy.',
+      steps: [
+        {
+          type: 'Active',
+          name: 'Endurance',
+          durationSeconds: 1800,
+          targetSplit: 'x'.repeat(600),
+          target: { metric: 'pace', range: { start: 0.7, end: 0.8 }, units: 'Pace' }
+        }
+      ]
+    })
+
+    expect(compiled.steps[0].targetSplit.endsWith('...')).toBe(true)
+    expect(compiled.steps[0].targetSplit.length).toBeLessThanOrEqual(500)
+  })
+
   it('compiles swim-specific draft fields', () => {
     const compiled = compileWorkoutPlanDraftToStructure({
       coachInstructions: 'Hold form through the set.',

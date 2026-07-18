@@ -12,6 +12,8 @@ vi.mock('../../../trigger/summarize-chat', () => ({
 
 const {
   buildApprovedContinuationConfirmation,
+  buildEmptyResponseFallbackFromToolResults,
+  buildReadRepairSystemInstruction,
   getHardcodedChatProviderOptions,
   buildWriteRepairSystemInstruction,
   buildTurnExecutionSkillConfig,
@@ -19,6 +21,7 @@ const {
   normalizeMessagesForSdk,
   scheduleChatRoomSummaryIfNeeded,
   shouldScheduleChatRoomSummary,
+  shouldUseReadRepairPrompt,
   shouldUseWriteRepairPrompt
 } = await import('./turn-executor')
 
@@ -243,6 +246,24 @@ describe('write repair prompt helpers', () => {
     ).toBe(false)
   })
 
+  it('uses the read repair prompt for tool-enabled read skills', () => {
+    expect(
+      shouldUseReadRepairPrompt({
+        skillIds: ['planning_read'],
+        confidence: 1,
+        useTools: true
+      } as any)
+    ).toBe(true)
+
+    expect(
+      shouldUseReadRepairPrompt({
+        skillIds: ['planning_write'],
+        confidence: 1,
+        useTools: true
+      } as any)
+    ).toBe(false)
+  })
+
   it('adds strict tool-or-clarify repair instructions', () => {
     const result = buildWriteRepairSystemInstruction('BASE')
 
@@ -250,6 +271,57 @@ describe('write repair prompt helpers', () => {
     expect(result).toContain('Emit the relevant tool call now')
     expect(result).toContain('Ask exactly one blocking clarification question')
     expect(result).toContain('Do not answer with general prose')
+  })
+
+  it('adds read-turn repair instructions that require textual answers', () => {
+    const result = buildReadRepairSystemInstruction('BASE')
+
+    expect(result).toContain('Empty-Response Repair Rules')
+    expect(result).toContain('tool-enabled read turn')
+    expect(result).toContain('MUST produce a clear textual answer')
+    expect(result).toContain('Do not end the turn with only tool calls')
+  })
+
+  it('synthesizes a planned-workout fallback from successful tool results', () => {
+    const result = buildEmptyResponseFallbackFromToolResults([
+      {
+        toolName: 'get_planned_workout_details',
+        result: {
+          success: true,
+          title: 'Course à pied - Endurance',
+          type: 'Run',
+          date: '2026-07-17',
+          duration_minutes: 60,
+          tss: 64,
+          description: "Sortie d'endurance fondamentale."
+        }
+      },
+      {
+        toolName: 'get_planned_workout_structure',
+        result: {
+          success: true,
+          structured_workout: {
+            steps: [
+              {
+                name: 'Échauffement progressif',
+                durationSeconds: 600,
+                targetSplit: 'Stay easy in Z1.'
+              },
+              {
+                name: 'Endurance Fondamentale',
+                durationSeconds: 2700,
+                targetSplit: 'Hold Z2 endurance.'
+              }
+            ]
+          }
+        }
+      }
+    ])
+
+    expect(result).toContain('Course à pied - Endurance')
+    expect(result).toContain('Duration: 60 min')
+    expect(result).toContain('Échauffement progressif (10 min)')
+    expect(result).toContain('Hold Z2 endurance.')
   })
 })
 

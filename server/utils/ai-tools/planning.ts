@@ -89,6 +89,82 @@ function getStructuredWorkoutLimitError(structure: unknown): string | null {
   return validateStructuredWorkoutLimits(structure).at(0)?.message || null
 }
 
+const CHAT_TARGET_SPLIT_MAX_CHARS = 240
+
+function truncateChatText(value: string, maxChars: number) {
+  const trimmed = value.trim()
+  if (trimmed.length <= maxChars) return trimmed
+  return `${trimmed.slice(0, Math.max(0, maxChars - 3)).trimEnd()}...`
+}
+
+function compactStructuredStepForChat(step: unknown): unknown {
+  if (!step || typeof step !== 'object' || Array.isArray(step)) return step
+
+  const source = step as Record<string, unknown>
+  const compacted: Record<string, unknown> = { ...source }
+
+  if (typeof compacted.targetSplit === 'string') {
+    compacted.targetSplit = truncateChatText(compacted.targetSplit, CHAT_TARGET_SPLIT_MAX_CHARS)
+  }
+
+  if (compacted.pace && typeof compacted.pace === 'object' && !Array.isArray(compacted.pace)) {
+    const pace = compacted.pace as Record<string, unknown>
+    compacted.pace = {
+      metric: pace.metric,
+      units: pace.units,
+      value: pace.value,
+      range: pace.range,
+      relativeToThreshold: pace.relativeToThreshold
+    }
+  }
+
+  if (
+    compacted.heartRate &&
+    typeof compacted.heartRate === 'object' &&
+    !Array.isArray(compacted.heartRate)
+  ) {
+    const heartRate = compacted.heartRate as Record<string, unknown>
+    compacted.heartRate = {
+      metric: heartRate.metric,
+      units: heartRate.units,
+      value: heartRate.value,
+      range: heartRate.range,
+      relativeToThreshold: heartRate.relativeToThreshold
+    }
+  }
+
+  if (compacted.power && typeof compacted.power === 'object' && !Array.isArray(compacted.power)) {
+    const power = compacted.power as Record<string, unknown>
+    compacted.power = {
+      metric: power.metric,
+      units: power.units,
+      value: power.value,
+      range: power.range,
+      relativeToThreshold: power.relativeToThreshold
+    }
+  }
+
+  if (Array.isArray(compacted.steps)) {
+    compacted.steps = compacted.steps.map((child) => compactStructuredStepForChat(child))
+  }
+
+  return compacted
+}
+
+function compactStructuredWorkoutForChat(structure: unknown) {
+  if (!structure || typeof structure !== 'object' || Array.isArray(structure)) return structure
+
+  const source = structure as Record<string, unknown>
+  const compacted: Record<string, unknown> = { ...source }
+  delete compacted.zoneProfileSnapshot
+
+  if (Array.isArray(compacted.steps)) {
+    compacted.steps = compacted.steps.map((step) => compactStructuredStepForChat(step))
+  }
+
+  return compacted
+}
+
 function normalizeStructuredStepTypeInput(value: unknown) {
   if (typeof value !== 'string') return value
 
@@ -725,7 +801,9 @@ export const planningTools = (userId: string, timezone: string, aiSettings: AiSe
         type: workout.type,
         duration_minutes: workout.durationSec ? Math.round(workout.durationSec / 60) : undefined,
         has_structure: Boolean(workout.structuredWorkout),
-        structured_workout: workout.structuredWorkout || null,
+        structured_workout: workout.structuredWorkout
+          ? compactStructuredWorkoutForChat(workout.structuredWorkout)
+          : null,
         updated_at: workout.updatedAt
       }
     }

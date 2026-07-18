@@ -150,6 +150,47 @@ describe('planningTools', () => {
       )
     })
 
+    it('omits zoneProfileSnapshot from chat structure payloads', async () => {
+      vi.mocked(plannedWorkoutRepository.getById).mockResolvedValue({
+        id: 'pw-1',
+        title: 'VO2 Session',
+        date: new Date('2026-02-20T00:00:00Z'),
+        type: 'Ride',
+        durationSec: 3600,
+        updatedAt: new Date('2026-02-14T12:00:00Z'),
+        structuredWorkout: {
+          description: 'VO2 repeats',
+          zoneProfileSnapshot: { power: { unit: 'watts', ranges: [] } },
+          steps: [
+            {
+              type: 'Warmup',
+              name: '10m easy',
+              stroke: 'Free',
+              targetSplit: 'x'.repeat(300),
+              pace: {
+                metric: 'pace',
+                units: 'm/s',
+                range: { start: 2.5, end: 3.0 },
+                rangeMps: { min: 2.5, max: 3.0 },
+                relativeToThreshold: { min: 0.6, max: 0.7 }
+              }
+            }
+          ]
+        }
+      } as any)
+
+      const result = await tools.get_planned_workout_structure.execute(
+        { workout_id: 'pw-1' },
+        { toolCallId: '1', messages: [] }
+      )
+
+      expect(result.structured_workout.zoneProfileSnapshot).toBeUndefined()
+      expect(result.structured_workout.steps[0].stroke).toBe('Free')
+      expect(result.structured_workout.steps[0].pace.rangeMps).toBeUndefined()
+      expect(result.structured_workout.steps[0].targetSplit.endsWith('...')).toBe(true)
+      expect(result.structured_workout.steps[0].targetSplit.length).toBeLessThanOrEqual(240)
+    })
+
     it('returns not found error for unknown workout', async () => {
       vi.mocked(plannedWorkoutRepository.getById).mockResolvedValue(null)
 

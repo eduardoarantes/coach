@@ -235,7 +235,11 @@ function compileDraftStep(step: WorkoutPlanDraftStep): any {
     compiled.restSeconds = Math.round(step.restSeconds)
   }
   if (typeof step.targetSplit === 'string' && step.targetSplit.trim()) {
-    compiled.targetSplit = step.targetSplit.trim()
+    const trimmed = step.targetSplit.trim()
+    // Guard against runaway model verbosity that can inflate chat/tool payloads.
+    const maxChars = 500
+    compiled.targetSplit =
+      trimmed.length > maxChars ? `${trimmed.slice(0, maxChars - 3).trimEnd()}...` : trimmed
   }
   if (typeof step.cssPercent === 'number' && step.cssPercent > 0) {
     compiled.cssPercent = Number(step.cssPercent)

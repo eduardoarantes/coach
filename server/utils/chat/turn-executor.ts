@@ -331,11 +331,23 @@ const WRITE_REPAIR_SKILL_IDS = new Set([
   'nutrition'
 ])
 
+const EMPTY_RESPONSE_FALLBACK =
+  'I hit a response issue while processing that. Please retry your last message.'
+
 export function shouldUseWriteRepairPrompt(skillSelection: ChatSkillSelection) {
   return (
     !!skillSelection?.useTools &&
     Array.isArray(skillSelection?.skillIds) &&
     skillSelection.skillIds.some((skillId) => WRITE_REPAIR_SKILL_IDS.has(skillId))
+  )
+}
+
+export function shouldUseReadRepairPrompt(skillSelection: ChatSkillSelection) {
+  return (
+    !!skillSelection?.useTools &&
+    Array.isArray(skillSelection?.skillIds) &&
+    skillSelection.skillIds.length > 0 &&
+    !shouldUseWriteRepairPrompt(skillSelection)
   )
 }
 
@@ -350,6 +362,86 @@ export function buildWriteRepairSystemInstruction(systemInstruction: string) {
 - Ask exactly one blocking clarification question if one concrete missing detail prevents the tool call.
 - Do not answer with general prose, summaries, fake approval text, or unsupported free text.
 - Do not say that something was prepared, created, updated, deleted, or ready for approval unless the matching tool call is emitted in this turn.`
+}
+
+export function buildReadRepairSystemInstruction(systemInstruction: string) {
+  return `${systemInstruction}
+
+## Empty-Response Repair Rules
+
+- This is a retry after an invalid empty response on a tool-enabled read turn.
+- Call the needed read tools if you still lack facts, then you MUST produce a clear textual answer for the athlete.
+- Do not end the turn with only tool calls and no assistant text.
+- Prefer a concise coaching summary over dumping raw tool JSON.
+- If tools already answered the question, summarize the key guidance now.`
+}
+
+function truncateFallbackText(value: string, maxChars: number) {
+  const trimmed = value.trim()
+  if (trimmed.length <= maxChars) return trimmed
+  return `${trimmed.slice(0, Math.max(0, maxChars - 3)).trimEnd()}...`
+}
+
+function getToolResultPayload(toolResult: any) {
+  return toolResult?.result ?? toolResult?.output ?? toolResult?.response ?? null
+}
+
+export function buildEmptyResponseFallbackFromToolResults(toolResults: any[]): string | null {
+  const latestByName = new Map<string, any>()
+
+  for (const toolResult of toolResults || []) {
+    const toolName = toolResult?.toolName || toolResult?.name
+    const payload = getToolResultPayload(toolResult)
+    if (!toolName || !payload || payload.error || payload.success === false) continue
+    latestByName.set(toolName, payload)
+  }
+
+  const details = latestByName.get('get_planned_workout_details')
+  const structure = latestByName.get('get_planned_workout_structure')
+  if (!details && !structure) return null
+
+  const title = details?.title || structure?.title || 'Planned workout'
+  const type = details?.type || structure?.type
+  const date = details?.date || structure?.date
+  const durationMinutes = details?.duration_minutes || structure?.duration_minutes
+  const tss = details?.tss
+  const description = typeof details?.description === 'string' ? details.description.trim() : ''
+
+  const lines = [
+    'I recovered your planned session details after a temporary reply issue:',
+    '',
+    `**${title}**${type ? ` (${type})` : ''}`
+  ]
+
+  const meta = [
+    date ? `Date: ${date}` : null,
+    typeof durationMinutes === 'number' ? `Duration: ${durationMinutes} min` : null,
+    typeof tss === 'number' ? `TSS: ${tss}` : null
+  ].filter(Boolean)
+  if (meta.length > 0) lines.push(meta.join(' · '))
+  if (description) {
+    lines.push('', description)
+  }
+
+  const steps = structure?.structured_workout?.steps
+  if (Array.isArray(steps) && steps.length > 0) {
+    lines.push('', 'Key focus by step:')
+    for (const step of steps.slice(0, 8)) {
+      const name = step?.name || step?.type || 'Step'
+      const mins =
+        typeof step?.durationSeconds === 'number'
+          ? `${Math.round(step.durationSeconds / 60)} min`
+          : null
+      const cue =
+        typeof step?.targetSplit === 'string' && step.targetSplit.trim()
+          ? truncateFallbackText(step.targetSplit, 160)
+          : null
+      lines.push(`- ${name}${mins ? ` (${mins})` : ''}${cue ? `: ${cue}` : ''}`)
+    }
+  }
+
+  lines.push('', 'Ask again if you want more specific cues for this session.')
+  return lines.join('\n')
 }
 
 export function getHardcodedChatProviderOptions(modelType: 'flash' | 'pro', modelId: string) {
@@ -1082,14 +1174,20 @@ export async function executeChatTurn(turnId: string, expectedRunId?: string | n
       const executeStreamAttempt = async (attemptIndex: number) => {
         let shouldRetryEmptyResponse = false
         const attemptProviderOptions = providerOptions
-        const repairPromptUsed = attemptIndex > 0 && shouldUseWriteRepairPrompt(skillSelection)
-        const attemptSystemInstruction = repairPromptUsed
+        const writeRepairPromptUsed = attemptIndex > 0 && shouldUseWriteRepairPrompt(skillSelection)
+        const readRepairPromptUsed = attemptIndex > 0 && shouldUseReadRepairPrompt(skillSelection)
+        const repairPromptUsed = writeRepairPromptUsed || readRepairPromptUsed
+        const attemptSystemInstruction = writeRepairPromptUsed
           ? buildWriteRepairSystemInstruction(finalSystemInstruction)
-          : finalSystemInstruction
+          : readRepairPromptUsed
+            ? buildReadRepairSystemInstruction(finalSystemInstruction)
+            : finalSystemInstruction
 
         if (repairPromptUsed) {
           await chatTurnService.recordEvent(turn.id, CHAT_TURN_EVENT_TYPE.SLOW_RESPONSE, {
-            reason: 'empty_response_repair_prompt',
+            reason: writeRepairPromptUsed
+              ? 'empty_response_repair_prompt'
+              : 'empty_response_read_repair_prompt',
             attempt: attemptIndex + 1,
             phase: currentPhase
           } as any)
@@ -1229,7 +1327,7 @@ export async function executeChatTurn(turnId: string, expectedRunId?: string | n
 
             if (shouldFallbackForEmptyResponse) {
               assistantText =
-                'I hit a response issue while processing that. Please retry your last message.'
+                buildEmptyResponseFallbackFromToolResults(allToolResults) || EMPTY_RESPONSE_FALLBACK
             }
 
             if (finalStepResults?.length) {
