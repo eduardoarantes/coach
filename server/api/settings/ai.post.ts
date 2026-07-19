@@ -1,5 +1,5 @@
 import { defineEventHandler, createError, readBody } from 'h3'
-import { getServerSession } from '../../utils/session'
+import { requireAuth } from '../../utils/auth-guard'
 import { prisma } from '../../utils/db'
 
 defineRouteMeta({
@@ -7,6 +7,7 @@ defineRouteMeta({
     tags: ['Settings'],
     summary: 'Update AI settings',
     description: 'Updates the AI preferences for the authenticated user.',
+    security: [{ bearerAuth: [] }],
     requestBody: {
       content: {
         'application/json': {
@@ -79,13 +80,7 @@ defineRouteMeta({
 })
 
 export default defineEventHandler(async (event) => {
-  const session = await getServerSession(event)
-  if (!session?.user?.email) {
-    throw createError({
-      statusCode: 401,
-      message: 'Unauthorized'
-    })
-  }
+  const authUser = await requireAuth(event, ['profile:write'])
 
   const body = await readBody(event)
   const {
@@ -183,7 +178,7 @@ export default defineEventHandler(async (event) => {
   }
 
   const user = await prisma.user.update({
-    where: { email: session.user.email },
+    where: { id: authUser.id },
     data: {
       ...(aiPersona !== undefined && { aiPersona }),
       ...(aiModelPreference !== undefined && { aiModelPreference }),

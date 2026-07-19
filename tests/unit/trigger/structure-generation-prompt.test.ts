@@ -3,12 +3,17 @@ import { describe, expect, it } from 'vitest'
 import { assertRenderableStructure } from '../../../server/utils/structured-workout-validation'
 import {
   buildCorrectiveStructureRetryPrompt,
+  buildLegacyStructureInstructions,
+  buildLegacyStructureJsonRules,
+  buildSportSpecificInstructions,
   buildStructureAiCallOptions,
   filterZonesForWorkout,
   formatAiContextForStructureGen,
+  isStrengthWorkoutType,
   looksLikeSteadyStateWorkout,
   resolveStructureContextProfile
 } from '../../../trigger/utils/structure-generation-prompt'
+import { strengthWorkoutStructureSchema } from '../../../trigger/utils/structure-generation-schemas'
 import { formatCompactTargetingBlock } from '../../../trigger/utils/workout-targeting'
 import { normalizeTargetFormatPolicy } from '../../../server/utils/workout-target-format-policy'
 import { normalizeTargetPolicy } from '../../../server/utils/workout-target-policy'
@@ -126,6 +131,57 @@ describe('structure generation prompt helpers', () => {
 
     expect(first.disableThinking).toBe(true)
     expect(second.thinkingLevelOverride).toBe('low')
+  })
+
+  it('detects strength workout types', () => {
+    expect(isStrengthWorkoutType('WeightTraining')).toBe(true)
+    expect(isStrengthWorkoutType('Gym')).toBe(true)
+    expect(isStrengthWorkoutType('Ride')).toBe(false)
+  })
+
+  it('builds strength legacy instructions for blocks and setRows', () => {
+    const instructions = buildLegacyStructureInstructions({
+      workoutType: 'WeightTraining',
+      durationMinutes: 60,
+      mode: 'generate',
+      persona: 'direct'
+    })
+    const jsonRules = buildLegacyStructureJsonRules('WeightTraining')
+    const sportRules = buildSportSpecificInstructions({
+      workoutType: 'WeightTraining',
+      targetFormatPolicy: normalizeTargetFormatPolicy(null),
+      steadyTargetStyleRule: 'Prefer metric ranges'
+    })
+
+    expect(instructions).toContain("native strength 'blocks'")
+    expect(instructions).toContain('setRows')
+    expect(instructions).not.toContain('Warmup, Intervals, Rest, Cooldown')
+    expect(jsonRules).toContain("'blocks'")
+    expect(jsonRules).not.toContain('durationSeconds')
+    expect(sportRules).toContain('setRows')
+  })
+
+  it('keeps endurance legacy instructions on interval-style steps', () => {
+    const instructions = buildLegacyStructureInstructions({
+      workoutType: 'Ride',
+      durationMinutes: 90,
+      mode: 'generate',
+      persona: 'direct'
+    })
+    const jsonRules = buildLegacyStructureJsonRules('Ride')
+
+    expect(instructions).toContain('Warmup, Intervals, Rest, Cooldown')
+    expect(instructions).not.toContain("native strength 'blocks'")
+    expect(jsonRules).toContain('durationSeconds')
+  })
+
+  it('requires blocks and omits top-level steps in the strength schema', () => {
+    expect(strengthWorkoutStructureSchema.required).toEqual(
+      expect.arrayContaining(['coachInstructions', 'blocks'])
+    )
+    expect(strengthWorkoutStructureSchema.properties).toHaveProperty('blocks')
+    expect(strengthWorkoutStructureSchema.properties).not.toHaveProperty('steps')
+    expect(strengthWorkoutStructureSchema.properties).not.toHaveProperty('exercises')
   })
 })
 

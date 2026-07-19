@@ -90,6 +90,7 @@ export default defineEventHandler(async (event) => {
         athleteProfileSlug: true,
         athletePublicPage: true,
         nutritionTrackingEnabled: true,
+        aiContext: true,
         accounts: {
           select: {
             provider: true,
@@ -183,6 +184,7 @@ export default defineEventHandler(async (event) => {
         athleteProfileSlug: user.athleteProfileSlug,
         athletePublicPage: user.athletePublicPage,
         nutritionTrackingEnabled: user.nutritionTrackingEnabled,
+        aiContext: user.aiContext,
         accounts: user.accounts,
         integrations: user.integrations,
         sportSettings: sportSettings,

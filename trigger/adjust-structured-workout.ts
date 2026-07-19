@@ -48,11 +48,15 @@ import {
   buildCompactZoneDefinitions,
   buildCorrectiveStructureRetryPrompt,
   buildDraftOutputRules,
+  buildLegacyStructureInstructions,
+  buildLegacyStructureJsonRules,
   buildSportSpecificInstructions,
   buildStructureAiCallOptions,
+  isStrengthWorkoutType,
   looksLikeIntervalWorkout,
   resolveStructureContextProfile
 } from './utils/structure-generation-prompt'
+import { strengthWorkoutStructureSchema } from './utils/structure-generation-schemas'
 import { assertRenderableStructure } from '../server/utils/structured-workout-validation'
 import {
   estimateStepDistanceMeters,
@@ -886,8 +890,7 @@ export const adjustStructuredWorkoutTask = task({
         targetPolicy.defaultTargetStyle === 'value'
           ? 'Prefer single-value targets for steady aerobic/endurance/tempo blocks. Use ranges only when the workout explicitly asks for a range or ramp.'
           : 'Prefer metric ranges for steady aerobic/endurance/tempo blocks.'
-      const workoutTypeLower = String(workout.type || '').toLowerCase()
-      const isStrength = workoutTypeLower.includes('gym') || workoutTypeLower.includes('weight')
+      const isStrength = isStrengthWorkoutType(workout.type)
       const sportSpecificInstructions = buildSportSpecificInstructions({
         workoutType: workout.type || '',
         targetFormatPolicy,
@@ -941,13 +944,13 @@ OUTPUT JSON matching the compact draft schema.`
 
 ${sharedAdjustHeader}
 
-JSON RULES:
-- Omit null/empty properties. Output valid JSON only.
+${buildLegacyStructureJsonRules(workout.type)}
 
-INSTRUCTIONS:
-- Create a NEW structure matching ${durationMinutes} minutes.
-- Respect feedback; preserve objective unless explicitly changed.
-- In-session steps only. coachInstructions: what changed and why.
+${buildLegacyStructureInstructions({
+  workoutType: workout.type,
+  durationMinutes,
+  mode: 'adjust'
+})}
 
 SPORT RULES:
 ${sportSpecificInstructions}
@@ -1010,7 +1013,7 @@ OUTPUT JSON matching the schema.`
           } else {
             structure = (await generateStructuredAnalysis(
               promptForAttempt,
-              workoutStructureSchema,
+              isStrength ? strengthWorkoutStructureSchema : workoutStructureSchema,
               'flash',
               {
                 userId: workout.userId,
@@ -1269,8 +1272,7 @@ OUTPUT JSON matching the schema.`
             })
             if (step.distance) step.distance = Number(step.distance)
           } else {
-            const isStrengthWorkout = /gym|weight/i.test(String(workout!.type || ''))
-            if (!isStrengthWorkout) {
+            if (!isStrengthWorkoutType(workout!.type)) {
               recoverTarget('heartRate')
               recoverTarget('pace')
               recoverTarget('power')

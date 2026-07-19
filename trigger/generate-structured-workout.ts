@@ -65,12 +65,16 @@ import {
   formatAiContextForStructureGen,
   buildDraftOutputRules,
   buildSportSpecificInstructions,
+  buildLegacyStructureInstructions,
+  buildLegacyStructureJsonRules,
   buildStructureAiCallOptions,
   buildCompactZoneDefinitions,
   buildCorrectiveStructureRetryPrompt,
   buildStructureGoalContextBlock,
+  isStrengthWorkoutType,
   looksLikeIntervalWorkout
 } from './utils/structure-generation-prompt'
+import { strengthWorkoutStructureSchema } from './utils/structure-generation-schemas'
 
 const workoutStructureSchema = {
   type: 'object',
@@ -1029,8 +1033,7 @@ export const generateStructuredWorkoutTask = task({
         targetPolicy.defaultTargetStyle === 'value'
           ? 'Prefer single-value targets for steady aerobic/endurance/tempo blocks. Use ranges only when the workout explicitly asks for a range or ramp.'
           : 'Prefer metric ranges for steady aerobic/endurance/tempo blocks.'
-      const workoutTypeLower = String(workout.type || '').toLowerCase()
-      const isStrength = workoutTypeLower.includes('gym') || workoutTypeLower.includes('weight')
+      const isStrength = isStrengthWorkoutType(workout.type)
       const sportSpecificInstructions = buildSportSpecificInstructions({
         workoutType: workout.type || '',
         targetFormatPolicy,
@@ -1095,17 +1098,15 @@ OUTPUT JSON matching the compact draft schema.`
 
 ${sharedWorkoutHeader}
 
-JSON RULES:
-- Omit null/empty properties.
-- Every step must have non-zero durationSeconds.
-- Output valid JSON only.
+${buildLegacyStructureJsonRules(workout.type)}
 
-INSTRUCTIONS:
-- Create steps (Warmup, Intervals, Rest, Cooldown) matching ${durationMinutes} minutes.
-- ${preserveExistingStructure ? 'Regenerate while preserving session identity unless title/description require change.' : 'Build the session from scratch.'}
-- Every step needs an intent and valid primary target.
-- description: complete sentences only. coachInstructions: 2-3 sentences in "${persona}" tone.
-- In-session steps only; no stretching/mobility as steps.
+${buildLegacyStructureInstructions({
+  workoutType: workout.type,
+  durationMinutes,
+  mode: 'generate',
+  preserveExistingStructure,
+  persona
+})}
 
 SPORT RULES:
 ${sportSpecificInstructions}
@@ -1161,7 +1162,7 @@ OUTPUT JSON matching the schema.`
           } else {
             structure = await generateStructuredAnalysis(
               promptForAttempt,
-              workoutStructureSchema,
+              isStrength ? strengthWorkoutStructureSchema : workoutStructureSchema,
               'flash',
               aiOptions
             )
@@ -1422,8 +1423,7 @@ OUTPUT JSON matching the schema.`
             })
             if (step.distance) step.distance = Number(step.distance)
           } else {
-            const isStrengthWorkout = /gym|weight/i.test(String(workout.type || ''))
-            if (!isStrengthWorkout) {
+            if (!isStrengthWorkoutType(workout.type)) {
               recoverTarget('heartRate')
               recoverTarget('pace')
               recoverTarget('power')

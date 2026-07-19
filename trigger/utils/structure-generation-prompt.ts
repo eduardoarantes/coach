@@ -203,6 +203,77 @@ export function buildRunPaceUnitInstruction(targetFormatPolicy: TargetFormatPoli
     : 'Use heartRate.units="LTHR" and pace.units="Pace" for percentage targets.'
 }
 
+export function isStrengthWorkoutType(workoutType: unknown): boolean {
+  const normalized = String(workoutType || '')
+    .trim()
+    .toLowerCase()
+  return normalized.includes('gym') || normalized.includes('weight')
+}
+
+export function buildLegacyStructureJsonRules(workoutType: unknown): string {
+  if (isStrengthWorkoutType(workoutType)) {
+    return `JSON RULES:
+- Omit null/empty properties.
+- Return a non-empty 'blocks' array; do not include top-level 'steps' or 'exercises'.
+- Output valid JSON only.`
+  }
+
+  return `JSON RULES:
+- Omit null/empty properties.
+- Every step must have non-zero durationSeconds.
+- Output valid JSON only.`
+}
+
+export function buildLegacyStructureInstructions(params: {
+  workoutType: unknown
+  durationMinutes: number
+  mode: 'generate' | 'adjust'
+  preserveExistingStructure?: boolean
+  persona?: string
+}): string {
+  const durationMinutes = Math.max(1, Math.round(Number(params.durationMinutes) || 60))
+
+  if (isStrengthWorkoutType(params.workoutType)) {
+    const sessionIdentityLine =
+      params.mode === 'adjust'
+        ? 'Respect feedback; preserve the workout objective unless explicitly changed.'
+        : params.preserveExistingStructure
+          ? 'Regenerate while preserving session identity unless title/description require change.'
+          : 'Build the session from scratch.'
+    const coachLine =
+      params.mode === 'adjust'
+        ? 'coachInstructions: explain what changed and the key execution cue (2-3 sentences).'
+        : `coachInstructions: 2-3 sentences${params.persona ? ` in "${params.persona}" tone` : ''}.`
+
+    return `INSTRUCTIONS:
+- Return native strength 'blocks' (warmup, single_exercise, superset, circuit, cooldown) totaling about ${durationMinutes} minutes.
+- Each exercise inside a block is a step with setRows; loaded lifts need real sets/reps/load (not one long duration row).
+- Do NOT return top-level interval-style 'steps' (Warmup/Active/Rest/Cooldown) or flat 'exercises'.
+- ${sessionIdentityLine}
+- description: complete sentences only. ${coachLine}`
+  }
+
+  if (params.mode === 'adjust') {
+    return `INSTRUCTIONS:
+- Create a NEW structure matching ${durationMinutes} minutes.
+- Respect feedback; preserve objective unless explicitly changed.
+- In-session steps only. coachInstructions: what changed and why.`
+  }
+
+  return `INSTRUCTIONS:
+- Create steps (Warmup, Intervals, Rest, Cooldown) matching ${durationMinutes} minutes.
+- ${
+    params.preserveExistingStructure
+      ? 'Regenerate while preserving session identity unless title/description require change.'
+      : 'Build the session from scratch.'
+  }
+- Every step needs an intent and valid primary target.
+- description: complete sentences only. coachInstructions: 2-3 sentences${
+    params.persona ? ` in "${params.persona}" tone` : ''
+  }.
+- In-session steps only; no stretching/mobility as steps.`
+}
+
 export function buildSportSpecificInstructions(params: {
   workoutType: string
   targetFormatPolicy: TargetFormatPolicy
@@ -212,7 +283,7 @@ export function buildSportSpecificInstructions(params: {
   const isCycling = workoutType.includes('ride')
   const isRun = workoutType.includes('run')
   const isSwim = workoutType.includes('swim')
-  const isStrength = workoutType.includes('gym') || workoutType.includes('weight')
+  const isStrength = isStrengthWorkoutType(params.workoutType)
   const runPaceUnitInstruction = buildRunPaceUnitInstruction(params.targetFormatPolicy)
 
   if (isCycling) {
