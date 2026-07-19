@@ -1035,7 +1035,7 @@
     v-model:open="showPublishModal"
     :title="publishModalTitle"
     :description="
-      garminConnected || rouvyConnected
+      hasMultiplePublishDestinations
         ? 'Choose where to send this planned workout.'
         : isLocalWorkout
           ? 'Sync this workout to your Intervals.icu calendar.'
@@ -1043,7 +1043,7 @@
     "
   >
     <template #body>
-      <div class="p-6 space-y-4">
+      <div class="space-y-4 p-6">
         <UAlert
           v-if="publishBlockedReason"
           color="warning"
@@ -1063,26 +1063,58 @@
           <strong>{{ formatDateUTC(workout.date, 'EEEE, MMMM d, yyyy') }}</strong
           >.
         </p>
-        <div
-          v-if="garminConnected || rouvyConnected"
-          class="bg-gray-50 dark:bg-gray-900 p-4 rounded-lg text-sm"
-        >
-          <ul class="list-disc list-inside space-y-1 text-gray-600 dark:text-gray-400">
-            <li>
-              <strong>Intervals.icu:</strong>
-              {{ isLocalWorkout ? 'create a new calendar workout' : 'update the synced workout' }}
-            </li>
-            <li v-if="rouvyConnected">
-              <strong>ROUVY:</strong> send the structured workout as a ZWO workout for that day
-            </li>
-            <li v-if="garminConnected">
-              <strong>Garmin Training:</strong> send the structured workout to Garmin Connect for
-              that day
-            </li>
-          </ul>
+
+        <!-- Stacked destinations stay fully visible when many integrations are connected. -->
+        <div v-if="hasMultiplePublishDestinations" class="space-y-2">
+          <p class="text-sm font-medium text-gray-900 dark:text-white">Send to</p>
+          <UButton
+            block
+            :label="isLocalWorkout ? 'Intervals.icu' : 'Update on Intervals.icu'"
+            color="primary"
+            :loading="publishing"
+            :disabled="!canPublishWorkout"
+            @click="
+              () => {
+                void publishWorkout()
+              }
+            "
+          />
+          <UButton
+            v-if="rouvyConnected"
+            block
+            label="ROUVY"
+            color="neutral"
+            variant="outline"
+            :loading="publishingRouvy"
+            :disabled="!canPublishWorkout"
+            @click="
+              () => {
+                void publishWorkoutToRouvy()
+              }
+            "
+          />
+          <UButton
+            v-if="garminConnected"
+            block
+            label="Garmin Training"
+            color="neutral"
+            variant="outline"
+            :loading="publishingGarminTraining"
+            :disabled="!canPublishWorkout"
+            @click="
+              () => {
+                void publishWorkoutToGarmin('training')
+              }
+            "
+          />
+          <p class="text-xs text-gray-500 dark:text-gray-400">
+            Structured intervals, TSS/duration targets, and coaching messages are included where
+            supported.
+          </p>
         </div>
-        <div class="bg-gray-50 dark:bg-gray-900 p-4 rounded-lg text-sm">
-          <ul class="list-disc list-inside space-y-1 text-gray-600 dark:text-gray-400">
+
+        <div v-else class="rounded-lg bg-gray-50 p-4 text-sm dark:bg-gray-900">
+          <ul class="list-inside list-disc space-y-1 text-gray-600 dark:text-gray-400">
             <li>Structured intervals will be {{ isLocalWorkout ? 'included' : 'updated' }}</li>
             <li>TSS and duration targets will be synced</li>
             <li>Any coaching messages will be added</li>
@@ -1091,7 +1123,7 @@
       </div>
     </template>
     <template #footer>
-      <div class="flex justify-end gap-2">
+      <div class="flex w-full flex-wrap items-center justify-end gap-2">
         <UButton
           label="Cancel"
           color="neutral"
@@ -1103,6 +1135,7 @@
           "
         />
         <UButton
+          v-if="!hasMultiplePublishDestinations"
           :label="isLocalWorkout ? 'Publish Workout' : 'Update Workout'"
           color="primary"
           :loading="publishing"
@@ -1110,32 +1143,6 @@
           @click="
             () => {
               void publishWorkout()
-            }
-          "
-        />
-        <UButton
-          v-if="rouvyConnected"
-          label="Publish ROUVY"
-          color="neutral"
-          variant="outline"
-          :loading="publishingRouvy"
-          :disabled="!canPublishWorkout"
-          @click="
-            () => {
-              void publishWorkoutToRouvy()
-            }
-          "
-        />
-        <UButton
-          v-if="garminConnected"
-          label="Publish Garmin Training"
-          color="neutral"
-          variant="outline"
-          :loading="publishingGarminTraining"
-          :disabled="!canPublishWorkout"
-          @click="
-            () => {
-              void publishWorkoutToGarmin('training')
             }
           "
         />
@@ -1820,6 +1827,9 @@
     if (garminConnected.value || rouvyConnected.value) return 'Publish Workout'
     return isLocalWorkout.value ? 'Publish to Intervals.icu' : 'Update on Intervals.icu'
   })
+  const hasMultiplePublishDestinations = computed(
+    () => garminConnected.value || rouvyConnected.value
+  )
 
   function openPublishModal() {
     if (!canPublishWorkout.value) return
