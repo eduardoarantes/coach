@@ -101,11 +101,14 @@
     error
   } = await useAsyncData(
     () => `coach-join-${slug.value}`,
-    () => $fetch<CoachJoinResponse>(`/api/public/coaches/${slug.value}/join`),
+    async (): Promise<CoachJoinResponse> => {
+      // Cast breaks Nitro's deep $fetch route inference (TS2589).
+      return (await $fetch(`/api/public/coaches/${slug.value}/join`)) as CoachJoinResponse
+    },
     { watch: [slug] }
   )
 
-  const joinExperience = computed(() => {
+  const joinExperience = computed((): CoachJoinExperience | null => {
     const join = joinPayload.value?.join
     if (!join?.coach?.name || !join.joinPage?.headline || !join.proof) return null
     return join
