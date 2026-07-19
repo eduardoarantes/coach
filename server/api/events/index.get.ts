@@ -1,11 +1,12 @@
-import { getServerSession } from '../../utils/session'
+import { requireAuth } from '../../utils/auth-guard'
 import { prisma } from '../../utils/db'
 
 defineRouteMeta({
   openAPI: {
     tags: ['Events'],
     summary: 'List events',
-    description: 'Returns a list of racing events for the authenticated user.',
+    description:
+      'Returns a list of racing/life events for the authenticated user (session or Bearer with goal:read).',
     responses: {
       200: {
         description: 'Success',
@@ -38,20 +39,11 @@ defineRouteMeta({
 })
 
 export default defineEventHandler(async (event) => {
-  const session = await getServerSession(event)
-
-  if (!session?.user) {
-    throw createError({
-      statusCode: 401,
-      message: 'Unauthorized'
-    })
-  }
-
-  const userId = (session.user as any).id
+  const user = await requireAuth(event, ['goal:read'])
 
   try {
     const events = await prisma.event.findMany({
-      where: { userId },
+      where: { userId: user.id },
       orderBy: { date: 'asc' },
       include: { goals: true }
     })
