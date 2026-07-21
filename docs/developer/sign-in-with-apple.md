@@ -38,6 +38,12 @@ When configured, `runtimeConfig.public.appleSignInEnabled` becomes true and the 
 
 `NUXT_AUTH_ORIGIN` must remain `https://coachwatts.com/api/auth` in production so the callback path matches Apple’s Return URL.
 
+## PKCE / form_post cookies
+
+Apple’s web flow posts the authorization code back (`response_mode=form_post`). Auth.js stores the PKCE `code_verifier` in a cookie; with the default `SameSite=Lax`, browsers do not attach that cookie on Apple’s cross-site POST, and the callback fails with `PKCE code_verifier cookie was missing` (surface error: “Try signing in with a different account.”).
+
+`server/api/auth/[...].ts` overrides `cookies.pkceCodeVerifier` to `SameSite=None; Secure` so the verifier survives the Apple callback.
+
 ## Account linking
 
 Apple uses `allowDangerousEmailAccountLinking: true` (same as Google). Stable identity is Apple `sub` on the `Account` row. Returning sign-ins may omit email; a synthetic `…@apple.coachwatts.com` email is only used when Apple does not return one (first-login Hide My Email still provides a relay address).
