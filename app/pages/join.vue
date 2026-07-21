@@ -55,6 +55,24 @@
 
             <div class="mt-8 space-y-3">
               <UButton
+                v-if="appleSignInEnabled"
+                block
+                size="xl"
+                icon="i-simple-icons-apple"
+                color="neutral"
+                variant="solid"
+                class="h-14 min-w-full rounded-xl bg-black text-xs font-bold uppercase tracking-[0.15em] text-white hover:bg-neutral-900"
+                :loading="loadingApple"
+                @click="
+                  () => {
+                    void handleAppleLogin()
+                  }
+                "
+              >
+                {{ joinApple }}
+              </UButton>
+
+              <UButton
                 block
                 size="xl"
                 icon="i-simple-icons-google"
@@ -154,6 +172,8 @@
   const route = useRoute()
   const toast = useToast()
   const { trackSignupStarted, trackSignupFailed } = useAnalytics()
+  const runtimeConfig = useRuntimeConfig()
+  const appleSignInEnabled = computed(() => Boolean(runtimeConfig.public.appleSignInEnabled))
 
   const acquisitionContext = computed(() => buildAcquisitionContext(route.query, 'join'))
 
@@ -178,6 +198,7 @@
   })
 
   const loading = ref(false)
+  const loadingApple = ref(false)
   const loadingStrava = ref(false)
   const loadingIntervals = ref(false)
 
@@ -199,6 +220,10 @@
     ['Create your Coach Watts account. No credit card required.']
   )
   const joinErrorTitle = translateOrFallback('join.error_title', 'Signup failed')
+  const joinErrorApple = translateOrFallback(
+    'join.error_apple',
+    'Could not start Apple signup. Please try again.'
+  )
   const joinErrorGoogle = translateOrFallback(
     'join.error_google',
     'Could not start Google signup. Please try again.'
@@ -211,6 +236,7 @@
     'join.error_intervals',
     'Could not start Intervals signup. Please try again.'
   )
+  const joinApple = translateOrFallback('join.apple', 'Create Account with Apple')
   const joinGoogle = translateOrFallback('join.google', 'Create Account with Google')
   const joinStrava = translateOrFallback('join.strava', 'Create Account with Strava')
   const joinIntervals = translateOrFallback('join.intervals', 'Create Account with Intervals.icu')
@@ -251,7 +277,7 @@
   function showSignupError(
     description: string,
     error: unknown,
-    provider: 'google' | 'strava' | 'intervals'
+    provider: 'apple' | 'google' | 'strava' | 'intervals'
   ) {
     console.error(`${provider} signup error:`, error)
     toast.add({
@@ -266,6 +292,18 @@
       return error.message.slice(0, 64)
     }
     return 'unknown_error'
+  }
+
+  async function handleAppleLogin() {
+    trackSignupStarted('apple', acquisitionContext.value)
+    loadingApple.value = true
+    try {
+      await signIn('apple', { callbackUrl })
+    } catch (error: unknown) {
+      showSignupError(joinErrorApple.value, error, 'apple')
+      trackSignupFailed('apple', 'oauth_start', signupFailureCode(error), acquisitionContext.value)
+      loadingApple.value = false
+    }
   }
 
   async function handleGoogleLogin() {

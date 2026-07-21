@@ -73,6 +73,24 @@
         <!-- Auth Options -->
         <div class="space-y-3">
           <UButton
+            v-if="appleSignInEnabled"
+            block
+            size="lg"
+            icon="i-simple-icons-apple"
+            color="neutral"
+            variant="solid"
+            class="font-bold py-3 bg-black text-white hover:bg-neutral-900 dark:bg-white dark:text-black dark:hover:bg-neutral-100"
+            :loading="loadingApple"
+            @click="
+              () => {
+                void handleLogin('apple')
+              }
+            "
+          >
+            Sign in with Apple
+          </UButton>
+
+          <UButton
             block
             size="lg"
             icon="i-lucide-chrome"
@@ -147,8 +165,12 @@
     auth: false
   })
 
+  const runtimeConfig = useRuntimeConfig()
+  const appleSignInEnabled = computed(() => Boolean(runtimeConfig.public.appleSignInEnabled))
+
   const user = computed(() => authData.value?.user)
   const loadingApp = ref(true)
+  const loadingApple = ref(false)
   const loadingGoogle = ref(false)
   const loadingIntervals = ref(false)
   const app = ref<any>(null)
@@ -183,15 +205,16 @@
     }
   }
 
-  async function handleLogin(provider: 'google' | 'intervals') {
-    if (provider === 'google') loadingGoogle.value = true
+  async function handleLogin(provider: 'apple' | 'google' | 'intervals') {
+    if (provider === 'apple') loadingApple.value = true
+    else if (provider === 'google') loadingGoogle.value = true
     else loadingIntervals.value = true
 
     try {
-      // For OAuth login, we force account selection to satisfy the "Switch Account" requirement
+      // Force account selection for Google; Apple ignores prompt but accepts the call.
       await signIn(provider, {
         callbackUrl,
-        prompt: 'select_account'
+        ...(provider === 'google' ? { prompt: 'select_account' } : {})
       })
     } catch (error: any) {
       toast.add({
@@ -199,6 +222,7 @@
         description: error.message || `Could not initiate ${provider} login.`,
         color: 'error'
       })
+      loadingApple.value = false
       loadingGoogle.value = false
       loadingIntervals.value = false
     }

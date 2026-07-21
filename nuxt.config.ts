@@ -325,6 +325,15 @@ export default defineNuxtConfig({
       stripeProAnnualEurPriceId: process.env.STRIPE_PRO_ANNUAL_EUR_PRICE_ID || '',
       subscriptionsEnabled: process.env.NUXT_PUBLIC_SUBSCRIPTIONS_ENABLED !== 'false',
       stravaEnabled: process.env.NUXT_PUBLIC_STRAVA_ENABLED !== 'false',
+      // Sign in with Apple (Guideline 4.8) — true when Services ID + key env are present
+      appleSignInEnabled: Boolean(
+        process.env.NUXT_PUBLIC_APPLE_SIGN_IN_ENABLED === 'true' ||
+        ((process.env.APPLE_ID || process.env.APPLE_CLIENT_ID) &&
+          (process.env.APPLE_CLIENT_SECRET ||
+            (process.env.APPLE_TEAM_ID &&
+              process.env.APPLE_KEY_ID &&
+              process.env.APPLE_PRIVATE_KEY)))
+      ),
       tolgee: {
         apiUrl:
           process.env.TOLGEE_API_ENABLED === 'true'

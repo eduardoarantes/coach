@@ -1,4 +1,5 @@
 import { NuxtAuthHandler } from '#auth'
+import AppleProvider from 'next-auth/providers/apple'
 import GoogleProvider from 'next-auth/providers/google'
 import StravaProvider from 'next-auth/providers/strava'
 import { PrismaAdapter } from '@next-auth/prisma-adapter'
@@ -12,6 +13,7 @@ import {
   userHasHealthConsent
 } from '../../utils/deferred-provider-ingest'
 import { recordAccountCreated } from '../../utils/product-analytics'
+import { isAppleSignInConfigured, resolveAppleClientSecret } from '../../utils/apple-client-secret'
 
 const adapter = PrismaAdapter(prisma)
 const originalLinkAccount = adapter.linkAccount
@@ -122,9 +124,48 @@ const syncStravaIntegration = async (user: any, account: any) => {
   }
 }
 
-export default NuxtAuthHandler({
-  adapter,
-  providers: [
+function buildAuthProviders() {
+  const providers: any[] = []
+
+  // Sign in with Apple first when configured (App Store Guideline 4.8 / equal prominence).
+  if (isAppleSignInConfigured()) {
+    const appleClientId = process.env.APPLE_ID || process.env.APPLE_CLIENT_ID
+    const appleClientSecret = resolveAppleClientSecret()
+    if (appleClientId && appleClientSecret) {
+      providers.push(
+        // @ts-expect-error - Types mismatch between next-auth versions
+        AppleProvider.default({
+          clientId: appleClientId,
+          clientSecret: appleClientSecret,
+          allowDangerousEmailAccountLinking: true,
+          profile(profile: any) {
+            const nameFromObject =
+              profile.name && typeof profile.name === 'object'
+                ? `${profile.name.firstName || ''} ${profile.name.lastName || ''}`.trim()
+                : null
+            const name =
+              (typeof profile.name === 'string' ? profile.name : null) ||
+              nameFromObject ||
+              profile.email?.split('@')[0] ||
+              'Athlete'
+            // Returning Apple sign-ins may omit email; Account.providerAccountId (sub) is the stable key.
+            const email = profile.email || `${profile.sub}@apple.coachwatts.com`
+            console.log(`[Auth] Apple profile mapping for ${profile.sub}: using email ${email}`)
+            return {
+              id: profile.sub,
+              name,
+              email,
+              image: null
+            }
+          }
+        })
+      )
+    } else {
+      console.warn('[Auth] Apple Sign In env present but client secret could not be resolved')
+    }
+  }
+
+  providers.push(
     // @ts-expect-error - Types mismatch between next-auth versions
     GoogleProvider.default({
       clientId: process.env.GOOGLE_CLIENT_ID!,
@@ -205,7 +246,14 @@ export default NuxtAuthHandler({
         }
       }
     }
-  ],
+  )
+
+  return providers
+}
+
+export default NuxtAuthHandler({
+  adapter,
+  providers: buildAuthProviders(),
   secret: process.env.NUXT_AUTH_SECRET,
   callbacks: {
     async signIn({ user }: any) {

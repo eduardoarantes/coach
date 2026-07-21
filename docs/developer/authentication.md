@@ -2,6 +2,8 @@
 
 Coach Watts uses standard OAuth 2.0 with **PKCE (Proof Key for Code Exchange)** to secure user data.
 
+**Human login (web IdP):** athletes sign in with **Sign in with Apple** (when configured), Google, Strava, or Intervals.icu via Auth.js — see [sign-in-with-apple.md](./sign-in-with-apple.md). There is no first-party email/password. The official mobile app uses the OAuth2+PKCE API below after the athlete authenticates on `/oauth/login`.
+
 ## The Authorization Code Flow
 
 1.  **Redirect** the user to the authorization endpoint.

@@ -45,6 +45,24 @@
 
             <div class="mt-8 space-y-3">
               <UButton
+                v-if="appleSignInEnabled"
+                block
+                size="xl"
+                icon="i-simple-icons-apple"
+                color="neutral"
+                variant="solid"
+                class="h-14 min-w-full rounded-xl bg-black text-xs font-bold uppercase tracking-[0.15em] text-white hover:bg-neutral-900"
+                :loading="loadingApple || isInitializing"
+                @click="
+                  () => {
+                    void handleAppleLogin()
+                  }
+                "
+              >
+                {{ isInitializing ? t('login.connecting') : t('login.apple') }}
+              </UButton>
+
+              <UButton
                 block
                 size="xl"
                 icon="i-simple-icons-google"
@@ -154,6 +172,8 @@
   const route = useRoute()
   const toast = useToast()
   const { trackLogin } = useAnalytics()
+  const runtimeConfig = useRuntimeConfig()
+  const appleSignInEnabled = computed(() => Boolean(runtimeConfig.public.appleSignInEnabled))
 
   definePageMeta({
     layout: 'home',
@@ -176,9 +196,27 @@
   })
 
   const loading = ref(false)
+  const loadingApple = ref(false)
   const loadingStrava = ref(false)
   const loadingIntervals = ref(false)
   const isInitializing = ref(false)
+
+  async function handleAppleLogin() {
+    trackLogin('apple')
+    isInitializing.value = true
+    loadingApple.value = true
+    try {
+      await signIn('apple', { callbackUrl })
+    } catch (error: any) {
+      toast.add({
+        title: t.value('login.error_title'),
+        description: error.message || t.value('login.error_apple'),
+        color: 'error'
+      })
+      isInitializing.value = false
+      loadingApple.value = false
+    }
+  }
 
   async function handleGoogleLogin() {
     trackLogin('google')
